@@ -1,0 +1,12 @@
+fn add(a, b) {
+    return a + b;
+}
+
+let i = 1;
+let sum = 0;
+
+while (i <= 5) {
+    let sum = add(sum, i);
+    let i = add(i, 1);
+}
+print sum;

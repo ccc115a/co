@@ -1,0 +1,1 @@
+gcc -std=c99 vm2asm.c -o vm2asm
