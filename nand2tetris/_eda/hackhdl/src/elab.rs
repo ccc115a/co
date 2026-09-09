@@ -15,6 +15,15 @@ use crate::ast::{Chip, Expr, Pin, Range};
 pub enum Builtin {
     Nand,
     Dff,
+    /// ch05 CPU 的 A/D 暫存器（16-bit，含 load）
+    ARegister,
+    DRegister,
+    /// ch05 程式記憶體（載入 .hack）
+    Rom32k,
+    /// ch05 螢幕記憶體對映（本專案自動化測試不驅動）
+    Screen,
+    /// ch05 鍵盤對映（本專案自動化測試固定為 0）
+    Keyboard,
 }
 
 impl Builtin {
@@ -22,6 +31,11 @@ impl Builtin {
         match name {
             "Nand" => Some(Builtin::Nand),
             "DFF" => Some(Builtin::Dff),
+            "ARegister" => Some(Builtin::ARegister),
+            "DRegister" => Some(Builtin::DRegister),
+            "ROM32K" => Some(Builtin::Rom32k),
+            "Screen" => Some(Builtin::Screen),
+            "Keyboard" => Some(Builtin::Keyboard),
             _ => None,
         }
     }
@@ -29,6 +43,11 @@ impl Builtin {
         match self {
             Builtin::Nand => "Nand",
             Builtin::Dff => "DFF",
+            Builtin::ARegister => "ARegister",
+            Builtin::DRegister => "DRegister",
+            Builtin::Rom32k => "ROM32K",
+            Builtin::Screen => "Screen",
+            Builtin::Keyboard => "Keyboard",
         }
     }
     pub fn in_out(&self) -> (Vec<Pin>, Vec<Pin>) {
@@ -41,11 +60,34 @@ impl Builtin {
                 vec![Pin { name: "in".into(), width: 1 }],
                 vec![Pin { name: "out".into(), width: 1 }],
             ),
+            Builtin::ARegister | Builtin::DRegister => (
+                vec![
+                    Pin { name: "in".into(), width: 16 },
+                    Pin { name: "load".into(), width: 1 },
+                ],
+                vec![Pin { name: "out".into(), width: 16 }],
+            ),
+            Builtin::Rom32k => (
+                vec![Pin { name: "address".into(), width: 15 }],
+                vec![Pin { name: "out".into(), width: 16 }],
+            ),
+            Builtin::Screen => (
+                vec![
+                    Pin { name: "in".into(), width: 16 },
+                    Pin { name: "load".into(), width: 1 },
+                    Pin { name: "address".into(), width: 13 },
+                ],
+                vec![Pin { name: "out".into(), width: 16 }],
+            ),
+            Builtin::Keyboard => (vec![], vec![Pin { name: "out".into(), width: 16 }]),
         }
     }
     /// 是否為有狀態（clocked）晶片
     pub fn sequential(&self) -> bool {
-        matches!(self, Builtin::Dff)
+        matches!(
+            self,
+            Builtin::Dff | Builtin::ARegister | Builtin::DRegister | Builtin::Screen
+        )
     }
 }
 

@@ -24,9 +24,9 @@ struct Cli {
     #[arg(long = "dir", value_name = "DIR", required = true)]
     dirs: Vec<String>,
 
-    /// 只執行單一 .tst（完整路徑）；省略則跑程式庫目錄下所有 .tst
+    /// 只執行指定的 .tst（完整路徑，可多次指定）；省略則跑程式庫目錄下所有 .tst
     #[arg(long)]
-    test: Option<String>,
+    test: Vec<String>,
 
     /// 產出目錄
     #[arg(long, default_value = "gen")]
@@ -52,9 +52,10 @@ fn main() {
         });
     }
 
-    let tests: Vec<PathBuf> = match &cli.test {
-        Some(t) => vec![PathBuf::from(t)],
-        None => collect_tests(&cli.dirs),
+    let tests: Vec<PathBuf> = if cli.test.is_empty() {
+        collect_tests(&cli.dirs)
+    } else {
+        cli.test.iter().map(PathBuf::from).collect()
     };
     if tests.is_empty() {
         eprintln!("找不到任何 .tst 檔案");

@@ -95,14 +95,17 @@ pub fn data_line(
             continue;
         }
         let v = get(&f.name);
-        let cell = match v {
-            None => "*".repeat(f.b),
-            Some(v) => match f.kind {
-                Kind::Bin => bin_field(v, f.b),
-                Kind::Dec => dec_field(v, f.b),
-                Kind::Hex => hex_field(v, f.b),
-                Kind::Sym => unreachable!(),
-            },
+        if v.is_none() {
+            // 未定義：整個欄位（a+b+c 寬度）填滿 `*`
+            body.push("*".repeat(f.width()));
+            continue;
+        }
+        let v = v.unwrap();
+        let cell = match f.kind {
+            Kind::Bin => bin_field(v, f.b),
+            Kind::Dec => dec_field(v, f.b),
+            Kind::Hex => hex_field(v, f.b),
+            Kind::Sym => unreachable!(),
         };
         body.push(format!("{}{}{}", " ".repeat(f.a), cell, " ".repeat(f.c)));
     }

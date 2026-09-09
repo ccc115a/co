@@ -55,6 +55,11 @@ fn chip_type(e: &Elab, clip: &PartClip) -> String {
         PartClip::User(idx) => format!("{}Chip", san(&e.chips[*idx].name)),
         PartClip::Builtin(Builtin::Nand) => "NandChip".to_string(),
         PartClip::Builtin(Builtin::Dff) => "DffChip".to_string(),
+        PartClip::Builtin(Builtin::ARegister) => "RegChip".to_string(),
+        PartClip::Builtin(Builtin::DRegister) => "RegChip".to_string(),
+        PartClip::Builtin(Builtin::Rom32k) => "Rom32KChip".to_string(),
+        PartClip::Builtin(Builtin::Screen) => "ScreenChip".to_string(),
+        PartClip::Builtin(Builtin::Keyboard) => "KeyboardChip".to_string(),
     }
 }
 
@@ -154,9 +159,73 @@ pub fn generate(e: &Elab) -> Result<String, String> {
         code.push_str("    pub fn sample(&mut self, in_: u16) { self.latch = in_ & 1; }\n");
         code.push_str("    /// tock：master latch 提交到 slave q\n");
         code.push_str("    pub fn tock(&mut self) { self.q = self.latch; }\n");
+        code.push_str("    pub fn probe_whole(&self) -> u16 { self.latch }\n");
+        code.push_str("    pub fn probe_bit(&self, i: usize) -> u16 { (self.latch >> i) & 1 }\n");
         code.push_str("}\n");
         code.push_str("#[derive(Default, Clone, Copy)]\npub struct DffOut { pub out: u16 }\n\n");
     }
+
+    // 內建 ARegister / DRegister（16-bit，ch05 CPU；sample 取樣、tock 提交）
+    code.push_str("// ---- 內建 ARegister / DRegister（16-bit register）----\n");
+    code.push_str("#[derive(Default, Clone)]\npub struct RegChip { latch: u16, q: u16 }\n");
+    code.push_str("impl RegChip {\n");
+    code.push_str("    pub fn new() -> Self { RegChip::default() }\n");
+    code.push_str("    pub fn eval(&self, _in_: u16, _load: u16) -> RegOut { RegOut { out: self.q } }\n");
+    code.push_str(
+        "    pub fn sample(&mut self, in_: u16, load: u16) { if load != 0 { self.latch = in_; } }\n",
+    );
+    code.push_str("    pub fn tock(&mut self) { self.q = self.latch; }\n");
+    code.push_str("    pub fn probe_whole(&self) -> u16 { self.latch }\n");
+    code.push_str("    pub fn probe_bit(&self, i: usize) -> u16 { (self.latch >> i) & 1 }\n");
+    code.push_str("}\n");
+    code.push_str("#[derive(Default, Clone, Copy)]\npub struct RegOut { pub out: u16 }\n\n");
+
+    // 內建 ROM32K（程式記憶體：address→out 組合讀取，程式用 load 指令餵入）
+    code.push_str("// ---- 內建 ROM32K（程式記憶體，地址空間 32768）----\n");
+    code.push_str("#[derive(Clone)]\npub struct Rom32KChip { mem: Vec<u16> }\n");
+    code.push_str("impl Default for Rom32KChip { fn default() -> Self { Rom32KChip { mem: vec![0; 32768] } } }\n");
+    code.push_str("impl Rom32KChip {\n");
+    code.push_str("    pub fn new() -> Self { Rom32KChip::default() }\n");
+    code.push_str("    pub fn eval(&self, address: u16) -> Rom32KOut { Rom32KOut { out: self.mem[address as usize] } }\n");
+    code.push_str("    pub fn tick(&mut self) {}\n");
+    code.push_str("    pub fn tock(&mut self) {}\n");
+    code.push_str("    pub fn load(&mut self, path: &std::path::Path) -> Result<(), String> {\n");
+    code.push_str("        let text = std::fs::read_to_string(path).map_err(|e| format!(\"讀取 {}: {{e}}\", path.display()))?;\n");
+    code.push_str("        let mut idx = 0usize;\n");
+    code.push_str("        for line in text.lines() {\n");
+    code.push_str("            let t = line.trim();\n");
+    code.push_str("            if t.is_empty() { continue; }\n");
+    code.push_str("            let bin = t.split_whitespace().next().unwrap();\n");
+    code.push_str("            let v = u16::from_str_radix(bin, 2).map_err(|e| format!(\"第 {} 行不是二進位: {{e}}\", idx + 1))?;\n");
+    code.push_str("            if idx >= 32768 { break; }\n");
+    code.push_str("            self.mem[idx] = v;\n");
+    code.push_str("            idx += 1;\n");
+    code.push_str("        }\n");
+    code.push_str("        Ok(())\n");
+    code.push_str("    }\n");
+    code.push_str("}\n");
+    code.push_str("#[derive(Default, Clone, Copy)]\npub struct Rom32KOut { pub out: u16 }\n\n");
+
+    // 內建 Screen / Keyboard（ch05 記憶體對映；v0.3 自動化測試不驅動，行為仍實作）
+    code.push_str("// ---- 內建 Screen（8192×16 螢幕對映）----\n");
+    code.push_str("#[derive(Clone)]\npub struct ScreenChip { mem: Vec<u16> }\n");
+    code.push_str("impl Default for ScreenChip { fn default() -> Self { ScreenChip { mem: vec![0; 8192] } } }\n");
+    code.push_str("impl ScreenChip {\n");
+    code.push_str("    pub fn new() -> Self { ScreenChip::default() }\n");
+    code.push_str("    pub fn eval(&self, _in_: u16, _load: u16, address: u16) -> ScreenOut { ScreenOut { out: self.mem[address as usize] } }\n");
+    code.push_str("    pub fn sample(&mut self, in_: u16, load: u16, address: u16) { if load != 0 { self.mem[address as usize] = in_; } }\n");
+    code.push_str("    pub fn tock(&mut self) {}\n");
+    code.push_str("}\n");
+    code.push_str("#[derive(Default, Clone, Copy)]\npub struct ScreenOut { pub out: u16 }\n\n");
+    code.push_str("// ---- 內建 Keyboard（固定輸出 0）----\n");
+    code.push_str("#[derive(Default, Clone)]\npub struct KeyboardChip {}\n");
+    code.push_str("impl KeyboardChip {\n");
+    code.push_str("    pub fn new() -> Self { KeyboardChip {} }\n");
+    code.push_str("    pub fn eval(&self) -> KeyboardOut { KeyboardOut { out: 0 } }\n");
+    code.push_str("    pub fn tick(&mut self) {}\n");
+    code.push_str("    pub fn tock(&mut self) {}\n");
+    code.push_str("}\n");
+    code.push_str("#[derive(Default, Clone, Copy)]\npub struct KeyboardOut { pub out: u16 }\n\n");
 
     for chip in &e.chips {
         gen_chip(e, chip, &mut code)?;
@@ -218,6 +287,61 @@ fn gen_chip(e: &Elab, chip: &ElabChip, code: &mut String) -> Result<(), String> 
         "    pub fn tock(&mut self) {{\n{}\n    }}\n",
         chip.parts.iter().enumerate().map(|(slot, _)| format!("        self._p{slot}.tock();")).collect::<Vec<_>>().join("\n")
     ));
+
+    // ---- probe：內部暫存器探測（`DRegister[]` 這類），讀取 master latch ----
+    let probe_names: Vec<(usize, u16)> = chip
+        .parts
+        .iter()
+        .enumerate()
+        .filter_map(|(slot, p)| {
+            if matches!(
+                p.clip,
+                PartClip::Builtin(Builtin::Dff)
+                    | PartClip::Builtin(Builtin::ARegister)
+                    | PartClip::Builtin(Builtin::DRegister)
+            ) {
+                Some((slot, 1))
+            } else {
+                None
+            }
+        })
+        .collect();
+    if !probe_names.is_empty() {
+        code.push_str("    pub fn probe_whole(&self, name: &str) -> Option<u16> {\n");
+        for (slot, _) in &probe_names {
+            let label = &chip.parts[*slot].label;
+            code.push_str(&format!("        if name == {label:?} {{ return Some(self._p{slot}.probe_whole()); }}\n"));
+        }
+        code.push_str("        None\n    }\n");
+        code.push_str("    pub fn probe_bit(&self, name: &str, i: usize) -> Option<u16> {\n");
+        for (slot, _) in &probe_names {
+            let label = &chip.parts[*slot].label;
+            code.push_str(&format!("        if name == {label:?} {{ return Some(self._p{slot}.probe_bit(i)); }}\n"));
+        }
+        code.push_str("        None\n    }\n");
+    } else {
+        code.push_str("    pub fn probe_whole(&self, _name: &str) -> Option<u16> { None }\n");
+        code.push_str("    pub fn probe_bit(&self, _name: &str, _i: usize) -> Option<u16> { None }\n");
+    }
+
+    // ---- load_program：把路徑轉發給（可直接或遞迴的）ROM32K part ----
+    code.push_str("    pub fn load_program(&mut self, path: &std::path::Path) -> Result<(), String> {\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        match &part.clip {
+            PartClip::Builtin(Builtin::Rom32k) => {
+                code.push_str(&format!(
+                    "        if self._p{slot}.load(path).is_ok() {{ return Ok(()); }}\n"
+                ));
+            }
+            PartClip::User(_) => {
+                code.push_str(&format!(
+                    "        if self._p{slot}.load_program(path).is_ok() {{ return Ok(()); }}\n"
+                ));
+            }
+            _ => {}
+        }
+    }
+    code.push_str("        Err(\"此晶片不含 ROM32K\".to_string())\n    }\n");
     code.push_str("}\n");
 
     // Out struct
@@ -318,13 +442,25 @@ pub fn generate_main(e: &Elab) -> String {
     s.push_str("            _ => return false,\n        }\n        true\n    }\n");
     s.push_str("    fn get_output(&self, name: &str) -> Option<u16> {\n        match name {\n");
     for (raw, f) in &out_pins {
-        s.push_str(&format!("            {raw:?} => return Some(self.outs.{f}),\n"));
+        if raw == "outM" && out_pins.iter().any(|(r, _)| r == "writeM") {
+            s.push_str(&format!(
+                "            {raw:?} => {{\n                if self.outs.writeM == 0 {{ return None; }}\n                return Some(self.outs.{f});\n            }}\n"
+            ));
+        } else {
+            s.push_str(&format!("            {raw:?} => return Some(self.outs.{f}),\n"));
+        }
     }
     s.push_str("            // 輸入 pin 也可以被 output-list 顯示\n");
     for (raw, f) in &in_pins {
         s.push_str(&format!("            {raw:?} => return Some(self.ins.{f}),\n"));
     }
-    s.push_str("            _ => None,\n        }\n    }\n");
+    s.push_str("            _ => {}\n        }\n");
+    s.push_str("        // 內部 probe：`DRegister[]`、`RAM8[3]` 這類 [[label][idx]]\n");
+    s.push_str("        let pr = hackrt::tst::PinRef::parse(name);\n");
+    s.push_str("        match pr.idx {\n");
+    s.push_str("            hackrt::tst::PinIdx::Whole => self.inner.probe_whole(&pr.name),\n");
+    s.push_str("            hackrt::tst::PinIdx::Bit(i) => self.inner.probe_bit(&pr.name, i),\n");
+    s.push_str("        }\n    }\n");
     s.push_str(&format!(
         "    fn do_eval(&mut self) {{\n        self.outs = self.inner.eval({});\n    }}\n",
         ins.iter().map(|i| format!("self.ins.{i}")).collect::<Vec<_>>().join(", ")
@@ -339,6 +475,9 @@ pub fn generate_main(e: &Elab) -> String {
     }
     s.push_str(&format!(
         "    fn tock(&mut self) {{\n        self.inner.tock();\n        self.do_eval();\n    }}\n"
+    ));
+    s.push_str(&format!(
+        "    fn load_rom(&mut self, path: &std::path::Path) {{\n        if let Err(e) = self.inner.load_program(path) {{ eprintln!(\"載入 ROM 失敗: {{e}}\"); }}\n    }}\n"
     ));
     s.push_str("}\n\n");
     s.push_str("fn main() {\n");
