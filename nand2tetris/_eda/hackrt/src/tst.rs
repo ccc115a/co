@@ -1,7 +1,8 @@
 //! `.tst` 測試腳本的解析與執行。
 //!
 //! 支援的子集合（M1）：`load`、`output-file`、`compare-to`、`output-list`、
-//! `set`、`eval`、`tick`、`tock`、`output`、`repeat`、`while`、`echo`、`clear-echo`。
+//! `set`、`eval`、`tick`、`tock`、`output`、`repeat`、`while`、`echo`、`clear-echo`、
+//! 以及步驟內的 `<chip> load <file>`（載入 .hack 程式）。
 //!
 //! 指令用 `,` 或 `;` 分隔；`repeat/while` 的區塊用 `{ }`。
 //! `output-list` 可跨多行，以 `;` 結尾。
@@ -40,6 +41,13 @@ pub struct PinRef {
 }
 
 impl PinRef {
+    /// 還原成腳本中的原始寫法（`RAM16K[0]`、`reset`）
+    pub fn raw(&self) -> String {
+        match self.idx {
+            PinIdx::Whole => self.name.clone(),
+            PinIdx::Bit(i) => format!("{}[{}]", self.name, i),
+        }
+    }
     pub fn parse(s: &str) -> PinRef {
         if let Some(open) = s.find('[') {
             let close = s.find(']').unwrap_or(s.len().saturating_sub(1));
@@ -80,6 +88,8 @@ pub struct Script {
 #[derive(Debug, Clone)]
 pub enum Step {
     Set(PinRef, u16),
+    /// `<chip> load <file>`：把 .hack 程式載入內部的 ROM32K
+    LoadRom(String),
     Eval,
     Tick,
     Tock,
@@ -203,6 +213,24 @@ fn parse_step_text(cmd: &str, block: Option<Vec<Step>>) -> Result<Option<Step>, 
         return Ok(Some(Step::While { name: parts[0].to_string(), op, val, body, limit: 100_000 }));
     }
 
+    // `<chip> load <file>`：ROM32K load Add.hack（把 .hack 載入程式記憶體）
+    // 注意不能誤抓 `set load 1` 這種指令：只有指令「第一個 token == chip 名」
+    // 且 chip 名不是腳本指令關鍵字時才算 ROM 載入。
+    if let Some(sp) = cmd.find(" load ") {
+        let prefix = cmd[..sp].trim();
+        let first = cmd.split_whitespace().next().unwrap_or("");
+        let kw = ["set", "echo", "repeat", "while", "eval", "tick", "tock",
+                  "output", "clear-echo", "compare-to", "output-file", "output-list", "load"];
+        let file = cmd[sp + " load ".len()..].trim().trim_end_matches(',');
+        let chip_ok = !prefix.is_empty()
+            && !prefix.contains(char::is_whitespace)
+            && prefix == first
+            && !kw.contains(&first);
+        if chip_ok && !file.is_empty() {
+            return Ok(Some(Step::LoadRom(file.to_string())));
+        }
+    }
+
     let step = match cmd {
         "eval" => Step::Eval,
         "tick" => Step::Tick,
@@ -262,10 +290,8 @@ fn parse_seq(raws: &[Raw], index: usize, stop_on_close: bool) -> Result<(Vec<Ste
                         continue;
                     }
                 }
-                for piece in trimmed.split(',') {
-                    if let Some(step) = parse_step_text(piece, None)? {
-                        steps.push(step);
-                    }
+                if let Some(step) = parse_step_text(trimmed, None)? {
+                    steps.push(step);
                 }
                 i += 1;
             }
@@ -457,7 +483,7 @@ pub fn run(
 
     let mut cycle: u64 = 0;
     let mut half = false;
-    run_steps(model, script, &script.steps, out, &mut cycle, &mut half, verbose)?;
+    run_steps(model, script, &script.steps, base_dir, out, &mut cycle, &mut half, verbose)?;
 
     if let Some(of) = &script.output_file {
         let out_path = base_dir.join(of);
@@ -481,6 +507,7 @@ fn run_steps(
     model: &mut dyn TopModel,
     script: &Script,
     steps: &[Step],
+    base_dir: &Path,
     out: &mut String,
     cycle: &mut u64,
     half: &mut bool,
@@ -489,12 +516,16 @@ fn run_steps(
     for step in steps {
         match step {
             Step::Set(pin, val) => {
-                if !model.set_input(&pin.name, *val) {
+                // 傳完整 raw 名稱（`RAM16K[0]`），由模型的 set_input 拆解
+                if !model.set_input(&pin.raw(), *val) {
                     return Err(RunErr {
                         line: 0,
-                        msg: format!("set 失敗：找不到輸入腳 {}", pin.name),
+                        msg: format!("set 失敗：找不到輸入腳 {}", pin.raw()),
                     });
                 }
+            }
+            Step::LoadRom(path) => {
+                model.load_rom(&base_dir.join(path));
             }
             Step::Eval => model.do_eval(),
             Step::Tick => {
@@ -518,7 +549,7 @@ fn run_steps(
             }
             Step::Repeat { n, body } => {
                 for _ in 0..*n {
-                    run_steps(model, script, body, out, cycle, half, verbose)?;
+                    run_steps(model, script, body, base_dir, out, cycle, half, verbose)?;
                 }
             }
             Step::While { name, op, val, body, limit } => {
@@ -539,7 +570,7 @@ fn run_steps(
                             msg: format!("while {name} 迴圈次數超過上限 {limit}"),
                         });
                     }
-                    run_steps(model, script, body, out, cycle, half, verbose)?;
+                    run_steps(model, script, body, base_dir, out, cycle, half, verbose)?;
                 }
             }
             Step::Echo(msg) => {

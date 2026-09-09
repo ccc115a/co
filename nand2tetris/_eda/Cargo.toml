@@ -1,6 +1,6 @@
 [workspace]
 resolver = "2"
-members = ["hackhdl", "hackrt", "hdl2rs"]
+members = ["hackhdl", "hackrt", "hdl2rs", "hackasm"]
 
 [workspace.package]
 version = "0.1.0"

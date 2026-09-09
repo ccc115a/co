@@ -35,6 +35,10 @@ struct Cli {
     /// 保留產出的 crate 不清除
     #[arg(long)]
     keep: bool,
+
+    /// 用 --release 建置產出的模擬 crate（大幅加速，長跑測試用）
+    #[arg(long)]
+    release: bool,
 }
 
 fn main() {
@@ -129,16 +133,20 @@ fn run_one(lib: &std::collections::HashMap<String, h::ast::Chip>, cli: &Cli, tst
     gen::gen_crate(&e, &out_dir)?;
 
     // 建置產出的 crate
-    let status = std::process::Command::new("cargo")
-        .args(["build", "--quiet", "--manifest-path"])
-        .arg(out_dir.join("Cargo.toml"))
-        .status()
-        .map_err(|e| format!("cargo 執行失敗：{e}"))?;
+    let mut cargo = std::process::Command::new("cargo");
+    cargo.args(["build", "--quiet", "--manifest-path"]).arg(out_dir.join("Cargo.toml"));
+    if cli.release {
+        cargo.arg("--release");
+    }
+    let status = cargo.status().map_err(|e| format!("cargo 執行失敗：{e}"))?;
     if !status.success() {
         return Err("產出的 Rust 程式碼編譯失敗".into());
     }
 
-    let bin = out_dir.join("target").join("debug").join(format!("{san_top}_sim"));
+    let bin = out_dir
+        .join("target")
+        .join(if cli.release { "release" } else { "debug" })
+        .join(format!("{san_top}_sim"));
     let status = std::process::Command::new(&bin)
         .arg(tst)
         .status()

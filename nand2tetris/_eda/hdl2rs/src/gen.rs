@@ -71,6 +71,37 @@ fn is_seq(e: &Elab, clip: &PartClip) -> bool {
     }
 }
 
+/// chip 是否存在「序↔序」回饋迴圈（如 Computer：Memory 的輸出餵回 CPU、
+/// CPU 的 pc/addressM 又驅動 ROM/Memory 的讀取）。若有，sample 時需在
+/// 取樣有狀態 children 前，以最終 wire 再重估一輪（eval 為純函式，永不
+/// 改變狀態），children 才取得收斂後的輸入。
+fn has_feedback(e: &Elab, chip: &ElabChip) -> bool {
+    for w in &chip.wires {
+        let wr_seq = w
+            .writers
+            .iter()
+            .any(|wr| is_seq(e, &chip.parts[wr.part].clip));
+        let rd_seq = w
+            .readers
+            .iter()
+            .any(|&rd| is_seq(e, &chip.parts[rd].clip));
+        if wr_seq && rd_seq {
+            return true;
+        }
+    }
+    false
+}
+
+/// part 直接比對的 name 條件；Screen/Keyboard 附上常見別名（`SCREEN`、`KBD`）
+fn part_name_cond(part: &hackhdl::elab::ElabPart) -> String {
+    let base = format!("name == {:?}", part.label);
+    match &part.clip {
+        PartClip::Builtin(Builtin::Screen) => format!("{base} || name == \"SCREEN\""),
+        PartClip::Builtin(Builtin::Keyboard) => format!("{base} || name == \"KBD\""),
+        _ => base,
+    }
+}
+
 /// 產生 part 輸入引數的綁定程式碼（支援多連線 set_bits 組合）
 fn emit_inputs(
     code: &mut String,
@@ -109,6 +140,40 @@ fn child_out_pin(e: &Elab, part: &hackhdl::elab::ElabPart, opi: usize) -> String
         PartClip::User(idx) => pin_san(&e.chips[*idx].out_pins[opi].name),
         PartClip::Builtin(_) => "out".to_string(),
     }
+}
+
+/// user chip 是否具有 `address` 輸入（判斷 RAM-like：可用 `[i]` 存取單元）
+fn has_address(e: &Elab, idx: usize) -> bool {
+    e.chips[idx].in_pins.iter().any(|p| p.name == "address")
+}
+
+/// user chip out 的第一個 pin 的 Rust 欄位名（探測時回傳的值）
+fn chip_out0_field(e: &Elab, idx: usize) -> String {
+    pin_san(&e.chips[idx].out_pins[0].name)
+}
+
+/// probe/set 時，對 user chip 產生「某種模式」的輸入引數
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum ProbeMode {
+    /// 全 0（探測整體值）
+    Whole,
+    /// address=i、其餘 0（探測 RAM 單元）
+    Cell,
+    /// in=val、load=1、address=i、其餘 0（寫入 RAM 單元）
+    Set,
+}
+
+fn probe_args(e: &Elab, idx: usize, mode: ProbeMode) -> Vec<String> {
+    e.chips[idx]
+        .in_pins
+        .iter()
+        .map(|p| match p.name.as_str() {
+            "address" => "i as u16".to_string(),
+            "in" if mode == ProbeMode::Set => "val".to_string(),
+            "load" if mode == ProbeMode::Set => "1u16".to_string(),
+            _ => "0u16".to_string(),
+        })
+        .collect()
 }
 
 /// 把 SrcIr 轉成目前語境的運算式
@@ -217,11 +282,13 @@ pub fn generate(e: &Elab) -> Result<String, String> {
     code.push_str("    pub fn tock(&mut self) {}\n");
     code.push_str("}\n");
     code.push_str("#[derive(Default, Clone, Copy)]\npub struct ScreenOut { pub out: u16 }\n\n");
-    code.push_str("// ---- 內建 Keyboard（固定輸出 0）----\n");
-    code.push_str("#[derive(Default, Clone)]\npub struct KeyboardChip {}\n");
+    code.push_str("// ---- 內建 Keyboard（記憶體對映鍵盤；值由 `set Keyboard N` 設定）----\n");
+    code.push_str("#[derive(Default, Clone)]\npub struct KeyboardChip { key: u16 }\n");
     code.push_str("impl KeyboardChip {\n");
-    code.push_str("    pub fn new() -> Self { KeyboardChip {} }\n");
-    code.push_str("    pub fn eval(&self) -> KeyboardOut { KeyboardOut { out: 0 } }\n");
+    code.push_str("    pub fn new() -> Self { KeyboardChip::default() }\n");
+    code.push_str("    pub fn eval(&self) -> KeyboardOut { KeyboardOut { out: self.key } }\n");
+    code.push_str("    pub fn set_key(&mut self, v: u16) { self.key = v; }\n");
+    code.push_str("    pub fn probe(&self) -> u16 { self.key }\n");
     code.push_str("    pub fn tick(&mut self) {}\n");
     code.push_str("    pub fn tock(&mut self) {}\n");
     code.push_str("}\n");
@@ -261,6 +328,11 @@ fn gen_chip(e: &Elab, chip: &ElabChip, code: &mut String) -> Result<(), String> 
     // ---- sample：tick 邊緣，先重算落定的 wire，再遞迴取樣有狀態 children ----
     code.push_str(&format!("    pub fn sample(&mut self, {sig}) {{\n"));
     emit_cascade(code, e, chip, &params, "        ");
+    if has_feedback(e, chip) {
+        code.push_str("        // 回饋迴圈（如 Computer）：以最終 wire 再完整評估一輪（不重宣告 wire），\n");
+        code.push_str("        // 有狀態 children 才取得收斂後的輸入（eval 為純函式，無副作用）。\n");
+        emit_parts_eval(code, e, chip, &params, "        ");
+    }
     if chip.has_state {
         code.push_str("        // 遞迴取樣有狀態 children\n");
         for &slot in &chip.eval_order {
@@ -288,41 +360,141 @@ fn gen_chip(e: &Elab, chip: &ElabChip, code: &mut String) -> Result<(), String> 
         chip.parts.iter().enumerate().map(|(slot, _)| format!("        self._p{slot}.tock();")).collect::<Vec<_>>().join("\n")
     ));
 
-    // ---- probe：內部暫存器探測（`DRegister[]` 這類），讀取 master latch ----
-    let probe_names: Vec<(usize, u16)> = chip
-        .parts
-        .iter()
-        .enumerate()
-        .filter_map(|(slot, p)| {
-            if matches!(
-                p.clip,
-                PartClip::Builtin(Builtin::Dff)
-                    | PartClip::Builtin(Builtin::ARegister)
-                    | PartClip::Builtin(Builtin::DRegister)
-            ) {
-                Some((slot, 1))
-            } else {
-                None
+    // ---- probe：內部腳位探測（`ARegister[]`、`RAM16K[3]` 這類），讀取 latch/記憶體 ----
+    code.push_str("    pub fn probe_whole(&self, name: &str) -> Option<u16> {\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        code.push_str(&format!("        // part {slot}: {} ({})\n", part.label, chip_type(e, &part.clip)));
+        code.push_str(&format!("        if {} {{\n", part_name_cond(part)));
+        match &part.clip {
+            PartClip::Builtin(Builtin::Dff)
+            | PartClip::Builtin(Builtin::ARegister)
+            | PartClip::Builtin(Builtin::DRegister) => {
+                code.push_str(&format!("            return Some(self._p{slot}.probe_whole());\n"));
             }
-        })
-        .collect();
-    if !probe_names.is_empty() {
-        code.push_str("    pub fn probe_whole(&self, name: &str) -> Option<u16> {\n");
-        for (slot, _) in &probe_names {
-            let label = &chip.parts[*slot].label;
-            code.push_str(&format!("        if name == {label:?} {{ return Some(self._p{slot}.probe_whole()); }}\n"));
+            PartClip::Builtin(Builtin::Keyboard) => {
+                code.push_str(&format!("            return Some(self._p{slot}.probe());\n"));
+            }
+            PartClip::User(idx) if !has_address(e, *idx) => {
+                let args = probe_args(e, *idx, ProbeMode::Whole);
+                code.push_str(&format!("            let mut __c = self._p{slot}.clone();\n"));
+                code.push_str(&format!("            let __o = __c.eval({});\n", args.join(", ")));
+                code.push_str(&format!("            return Some(__o.{});\n", chip_out0_field(e, *idx)));
+            }
+            _ => {
+                code.push_str("            return None;\n");
+            }
         }
-        code.push_str("        None\n    }\n");
-        code.push_str("    pub fn probe_bit(&self, name: &str, i: usize) -> Option<u16> {\n");
-        for (slot, _) in &probe_names {
-            let label = &chip.parts[*slot].label;
-            code.push_str(&format!("        if name == {label:?} {{ return Some(self._p{slot}.probe_bit(i)); }}\n"));
-        }
-        code.push_str("        None\n    }\n");
-    } else {
-        code.push_str("    pub fn probe_whole(&self, _name: &str) -> Option<u16> { None }\n");
-        code.push_str("    pub fn probe_bit(&self, _name: &str, _i: usize) -> Option<u16> { None }\n");
+        code.push_str("        }\n");
     }
+    code.push_str("        // 遞迴 user parts\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        if let PartClip::User(_) = &part.clip {
+            code.push_str(&format!(
+                "        if let Some(v) = self._p{slot}.probe_whole(name) {{ return Some(v); }}\n"
+            ));
+        }
+    }
+    code.push_str("        None\n    }\n");
+
+    code.push_str("    pub fn probe_indexed(&self, name: &str, i: usize) -> Option<u16> {\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        code.push_str(&format!("        // part {slot}: {} ({})\n", part.label, chip_type(e, &part.clip)));
+        code.push_str(&format!("        if {} {{\n", part_name_cond(part)));
+        match &part.clip {
+            PartClip::Builtin(Builtin::Dff)
+            | PartClip::Builtin(Builtin::ARegister)
+            | PartClip::Builtin(Builtin::DRegister) => {
+                // 官方語意：register 的 [i] 顯示整個暫存器值
+                code.push_str(&format!("            return Some(self._p{slot}.probe_whole());\n"));
+            }
+            PartClip::Builtin(Builtin::Keyboard) => {
+                code.push_str(&format!("            return Some(self._p{slot}.probe());\n"));
+            }
+            PartClip::Builtin(Builtin::Screen) => {
+                code.push_str(&format!("            return Some(self._p{slot}.eval(0u16, 0u16, i as u16).out);\n"));
+            }
+            PartClip::Builtin(Builtin::Rom32k) => {
+                code.push_str(&format!("            return Some(self._p{slot}.eval(i as u16).out);\n"));
+            }
+            PartClip::User(idx) if has_address(e, *idx) => {
+                let args = probe_args(e, *idx, ProbeMode::Cell);
+                code.push_str(&format!("            let mut __c = self._p{slot}.clone();\n"));
+                code.push_str(&format!("            let __o = __c.eval({});\n", args.join(", ")));
+                code.push_str(&format!("            return Some(__o.{});\n", chip_out0_field(e, *idx)));
+            }
+            PartClip::User(idx) => {
+                let args = probe_args(e, *idx, ProbeMode::Whole);
+                code.push_str(&format!("            let mut __c = self._p{slot}.clone();\n"));
+                code.push_str(&format!("            let __o = __c.eval({});\n", args.join(", ")));
+                code.push_str(&format!("            return Some(__o.{});\n", chip_out0_field(e, *idx)));
+            }
+            _ => {
+                code.push_str("            return None;\n");
+            }
+        }
+        code.push_str("        }\n");
+    }
+    code.push_str("        // 遞迴 user parts\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        if let PartClip::User(_) = &part.clip {
+            code.push_str(&format!(
+                "        if let Some(v) = self._p{slot}.probe_indexed(name, i) {{ return Some(v); }}\n"
+            ));
+        }
+    }
+    code.push_str("        None\n    }\n");
+
+    // ---- set_whole / set_probe：把 `set Keyboard N`、`set RAM16K[i] v` 寫進內部 ----
+    code.push_str("    pub fn set_whole(&mut self, name: &str, val: u16) -> bool {\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        if let PartClip::Builtin(Builtin::Keyboard) = &part.clip {
+            code.push_str(&format!("        if {} {{ self._p{slot}.set_key(val); return true; }}\n", part_name_cond(part)));
+        }
+    }
+    code.push_str("        // 遞迴 user parts\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        if let PartClip::User(_) = &part.clip {
+            code.push_str(&format!(
+                "        if self._p{slot}.set_whole(name, val) {{ return true; }}\n"
+            ));
+        }
+    }
+    code.push_str("        false\n    }\n");
+
+    code.push_str("    pub fn set_probe(&mut self, name: &str, i: usize, val: u16) -> bool {\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        code.push_str(&format!("        // part {slot}: {} ({})\n", part.label, chip_type(e, &part.clip)));
+        code.push_str(&format!("        if {} {{\n", part_name_cond(part)));
+        match &part.clip {
+            PartClip::Builtin(Builtin::Screen) => {
+                code.push_str(&format!("            self._p{slot}.sample(val, 1u16, i as u16);\n"));
+                code.push_str(&format!("            self._p{slot}.tock();\n"));
+                code.push_str("            return true;\n");
+            }
+            PartClip::User(idx) if has_address(e, *idx) => {
+                let args = probe_args(e, *idx, ProbeMode::Set);
+                code.push_str(&format!(
+                    "            self._p{slot}.sample({});\n",
+                    args.join(", ")
+                ));
+                code.push_str(&format!("            self._p{slot}.tock();\n"));
+                code.push_str("            return true;\n");
+            }
+            _ => {
+                code.push_str("            return false;\n");
+            }
+        }
+        code.push_str("        }\n");
+    }
+    code.push_str("        // 遞迴 user parts\n");
+    for (slot, part) in chip.parts.iter().enumerate() {
+        if let PartClip::User(_) = &part.clip {
+            code.push_str(&format!(
+                "        if self._p{slot}.set_probe(name, i, val) {{ return true; }}\n"
+            ));
+        }
+    }
+    code.push_str("        false\n    }\n");
 
     // ---- load_program：把路徑轉發給（可直接或遞迴的）ROM32K part ----
     code.push_str("    pub fn load_program(&mut self, path: &std::path::Path) -> Result<(), String> {\n");
@@ -363,12 +535,28 @@ fn emit_cascade(
     params: &[String],
     indent: &str,
 ) {
+    emit_wire_decls(code, chip, indent);
+    emit_parts_eval(code, e, chip, params, indent);
+}
+
+/// 每個 wire 的 `let mut w_xxx = 0u16;` 宣告（只宣告一次，不要重複遮蔽）
+fn emit_wire_decls(code: &mut String, chip: &ElabChip, indent: &str) {
     for w in &chip.wires {
         code.push_str(&format!(
             "{indent}let mut w_{} = 0u16;\n",
             san(&w.name)
         ));
     }
+}
+
+/// 依 eval_order 逐一評估 part，把輸出合併進 wire
+fn emit_parts_eval(
+    code: &mut String,
+    e: &Elab,
+    chip: &ElabChip,
+    params: &[String],
+    indent: &str,
+) {
     for &slot in &chip.eval_order {
         let part = &chip.parts[slot];
         let ty = chip_type(e, &part.clip);
@@ -437,9 +625,15 @@ pub fn generate_main(e: &Elab) -> String {
     s.push_str(&format!("impl TopModel for {cn}Wrap {{\n"));
     s.push_str("    fn set_input(&mut self, name: &str, val: u16) -> bool {\n        match name {\n");
     for (raw, f) in &in_pins {
-        s.push_str(&format!("            {raw:?} => self.ins.{f} = val,\n"));
+        s.push_str(&format!("            {raw:?} => {{ self.ins.{f} = val; return true; }}\n"));
     }
-    s.push_str("            _ => return false,\n        }\n        true\n    }\n");
+    s.push_str("            _ => {}\n        }\n");
+    s.push_str("        // 內部 set：`set Keyboard 65`、`set RAM16K[i] v`\n");
+    s.push_str("        let pr = hackrt::tst::PinRef::parse(name);\n");
+    s.push_str("        match pr.idx {\n");
+    s.push_str("            hackrt::tst::PinIdx::Whole => self.inner.set_whole(&pr.name, val),\n");
+    s.push_str("            hackrt::tst::PinIdx::Bit(i) => self.inner.set_probe(&pr.name, i, val),\n");
+    s.push_str("        }\n    }\n");
     s.push_str("    fn get_output(&self, name: &str) -> Option<u16> {\n        match name {\n");
     for (raw, f) in &out_pins {
         if raw == "outM" && out_pins.iter().any(|(r, _)| r == "writeM") {
@@ -459,7 +653,7 @@ pub fn generate_main(e: &Elab) -> String {
     s.push_str("        let pr = hackrt::tst::PinRef::parse(name);\n");
     s.push_str("        match pr.idx {\n");
     s.push_str("            hackrt::tst::PinIdx::Whole => self.inner.probe_whole(&pr.name),\n");
-    s.push_str("            hackrt::tst::PinIdx::Bit(i) => self.inner.probe_bit(&pr.name, i),\n");
+    s.push_str("            hackrt::tst::PinIdx::Bit(i) => self.inner.probe_indexed(&pr.name, i),\n");
     s.push_str("        }\n    }\n");
     s.push_str(&format!(
         "    fn do_eval(&mut self) {{\n        self.outs = self.inner.eval({});\n    }}\n",
