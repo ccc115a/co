@@ -1,0 +1,8 @@
+[package]
+name = "hackrt"
+description = "產出程式的執行期支援：內建晶片行為 + .tst/.cmp 測試 runner"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]

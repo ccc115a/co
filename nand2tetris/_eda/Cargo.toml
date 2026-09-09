@@ -1,0 +1,11 @@
+[workspace]
+resolver = "2"
+members = ["hackhdl", "hackrt", "hdl2rs"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[profile.release]
+opt-level = 3

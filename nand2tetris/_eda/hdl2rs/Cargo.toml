@@ -1,0 +1,11 @@
+[package]
+name = "hdl2rs"
+description = "CLI：把 HackHDL 翻譯成 Rust（類似 verilator 對 verilog 的角色）"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+hackhdl = { path = "../hackhdl" }
+hackrt = { path = "../hackrt" }
+clap = { version = "4", features = ["derive"] }

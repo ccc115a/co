@@ -1,0 +1,8 @@
+[package]
+name = "hackhdl"
+description = "HackHDL 解析與詳述（parse + elaborate），產生可直接 codegen 的 IR"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
