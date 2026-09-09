@@ -86,16 +86,27 @@ fn main() {
 fn collect_tests(dirs: &[String]) -> Vec<PathBuf> {
     let mut out = Vec::new();
     for d in dirs {
-        let Ok(entries) = std::fs::read_dir(d) else { continue };
-        let mut files: Vec<PathBuf> = entries
-            .filter_map(|e| e.ok())
-            .map(|e| e.path())
-            .filter(|p| p.extension().map(|x| x == "tst").unwrap_or(false))
-            .collect();
+        let mut files = Vec::new();
+        collect_tst_r(Path::new(d), &mut files);
         files.sort();
         out.extend(files);
     }
     out
+}
+
+fn collect_tst_r(dir: &Path, out: &mut Vec<PathBuf>) {
+    let Ok(entries) = std::fs::read_dir(dir) else { return };
+    for e in entries.flatten() {
+        let p = e.path();
+        if p.is_dir() {
+            if p.file_name().map(|n| n.to_string_lossy().starts_with('.')).unwrap_or(false) {
+                continue;
+            }
+            collect_tst_r(&p, out);
+        } else if p.extension().map(|x| x == "tst").unwrap_or(false) {
+            out.push(p);
+        }
+    }
 }
 
 /// 執行單一 test：回傳 Ok(true) 代表 PASS

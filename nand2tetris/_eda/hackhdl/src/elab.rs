@@ -156,22 +156,32 @@ pub fn mask(n: u16) -> u16 {
     if n >= 16 { 0xFFFF } else { (1u32 << n) as u16 - 1 }
 }
 
-/// 解析一個目錄下所有 `.hdl` 成 library
-pub fn load_library(dir: &std::path::Path) -> Result<HashMap<String, Chip>, ElabError> {
-    let mut lib = HashMap::new();
+/// 遞迴收集 `dir` 下的所有 `.hdl`（含子目錄，Lexical 排序，結果確定）
+fn collect_hdl(dir: &std::path::Path) -> Result<Vec<std::path::PathBuf>, ElabError> {
     let mut entries: Vec<_> = std::fs::read_dir(dir)
         .map_err(|e| ElabError { msg: format!("無法讀取 {}: {e}", dir.display()) })?
         .collect::<Result<_, _>>()
         .map_err(|e| ElabError { msg: format!("讀取 {}: {e}", dir.display()) })?;
     entries.sort_by_key(|e| e.file_name());
+    let mut out = Vec::new();
     for e in entries {
         let p = e.path();
-        let Some(ext) = p.extension().map(|x| x.to_string_lossy().to_string()) else {
-            continue;
-        };
-        if ext != "hdl" {
-            continue;
+        if p.is_dir() {
+            if p.file_name().map(|n| n.to_string_lossy().starts_with('.')).unwrap_or(false) {
+                continue;
+            }
+            out.extend(collect_hdl(&p)?);
+        } else if p.extension().map(|x| x == "hdl").unwrap_or(false) {
+            out.push(p);
         }
+    }
+    Ok(out)
+}
+
+/// 解析一個目錄（含子目錄）下所有 `.hdl` 成 library
+pub fn load_library(dir: &std::path::Path) -> Result<HashMap<String, Chip>, ElabError> {
+    let mut lib = HashMap::new();
+    for p in collect_hdl(dir)? {
         let name = p.file_stem().unwrap().to_string_lossy().to_string();
         let src = std::fs::read_to_string(&p)
             .map_err(|e| ElabError { msg: format!("讀取 {}: {e}", p.display()) })?;
@@ -550,6 +560,14 @@ impl<'a> Resolver<'a> {
 
         // 拓樸排序（前向參考允許）
         let n = parts.len();
+        // 每個 part 是否為有狀態（clocked）：其 eval 輸出取自狀態，輸入在 tick 才取樣
+        let part_seq: Vec<bool> = parts
+            .iter()
+            .map(|p| match &p.clip {
+                PartClip::Builtin(b) => b.sequential(),
+                PartClip::User(idx) => self.chips[*idx].has_state,
+            })
+            .collect();
         let mut adj: Vec<Vec<usize>> = vec![Vec::new(); n];
         let mut indeg = vec![0usize; n];
         // wire -> reader 的邊（每個 writer 都是讀者依賴的驅動者）
@@ -560,6 +578,11 @@ impl<'a> Resolver<'a> {
                 });
             }
             for &rd in &w.readers {
+                // 有狀態 part 的輸入在 tick 時才取樣：eval 順序上不算依賴
+                //（它本身就是 feedback 迴圈的中斷點）
+                if part_seq[rd] {
+                    continue;
+                }
                 for wr in &w.writers {
                     if rd == wr.part {
                         return Err(ElabError {
@@ -674,17 +697,27 @@ mod tests {
     }
 
     #[test]
-    fn elab_top_add16() {
-        let lib = lib_for(&["01", "02"]);
-        let e = elab(&lib, "Add16").unwrap();
-        // Add16 -> FullAdder (x2 層) -> HalfAdder -> And/Or/Xor -> Not/Nand
-        assert!(e.chips.len() >= 5);
-        let c = &e.chips[e.top];
-        assert_eq!(c.parts.len(), 16);
-        // 每個 FullAdder 的 in pin 都要被覆蓋到
-        let fa = &c.parts[0];
-        for ic in &fa.in_conns {
-            assert!(!ic.is_empty());
+    fn elab_ch03_sequential() {
+        let lib = lib_for(&["01", "02", "03"]);
+        for top in ["Bit", "Register", "RAM8", "RAM64", "RAM512", "RAM4K", "RAM16K", "PC"] {
+            let e = elab(&lib, top).unwrap_or_else(|er| panic!("{top}: {er}"));
+            let c = &e.chips[e.top];
+            assert!(c.has_state, "{top} 應為有狀態晶片");
+            assert_eq!(c.eval_order.len(), c.parts.len(), "{top} 組合迴圈誤報?");
+            // feedback（Bit/Register/PC 內部）不得造成拓樸誤判
+            for op in &c.out_pins {
+                assert!(
+                    c.wires.iter().any(|w| w.name == op.name && w.out_pin.is_some()),
+                    "{top}: OUT pin {} 沒驅動",
+                    op.name
+                );
+            }
+        }
+        // 組合晶片仍不誤報 feedback
+        let libc = lib_for(&["01", "02"]);
+        for top in ["Mux", "Not16", "Add16", "ALU"] {
+            let e = elab(&libc, top).unwrap_or_else(|er| panic!("{top}: {er}"));
+            assert!(!e.chips[e.top].has_state);
         }
     }
 }

@@ -53,15 +53,49 @@ fn wname(chip: &ElabChip, wire: usize) -> String {
 fn chip_type(e: &Elab, clip: &PartClip) -> String {
     match clip {
         PartClip::User(idx) => format!("{}Chip", san(&e.chips[*idx].name)),
-        PartClip::Builtin(b) => format!("{}Chip", san(b.name())),
+        PartClip::Builtin(Builtin::Nand) => "NandChip".to_string(),
+        PartClip::Builtin(Builtin::Dff) => "DffChip".to_string(),
     }
 }
 
-fn eval_fn(clip: &PartClip) -> &'static str {
+/// part 是否為有狀態（clocked）：eval 輸出取自狀態、輸入在 tick 才取樣
+fn is_seq(e: &Elab, clip: &PartClip) -> bool {
     match clip {
-        PartClip::Builtin(Builtin::Dff) => "out",
-        _ => "eval",
+        PartClip::Builtin(b) => b.sequential(),
+        PartClip::User(idx) => e.chips[*idx].has_state,
     }
+}
+
+/// 產生 part 輸入引數的綁定程式碼（支援多連線 set_bits 組合）
+fn emit_inputs(
+    code: &mut String,
+    chip: &ElabChip,
+    params: &[String],
+    part: &hackhdl::elab::ElabPart,
+    prefix: &str,
+    indent: &str,
+) -> Vec<String> {
+    let mut args = Vec::new();
+    for (ini, conns) in part.in_conns.iter().enumerate() {
+        let iv = format!("{prefix}{ini}");
+        if conns.is_empty() {
+            code.push_str(&format!("{indent}let {iv} = 0x0u16;\n"));
+        } else if conns.len() == 1 {
+            let e = src_expr(chip, &conns[0].src, params);
+            code.push_str(&format!("{indent}let {iv} = {e};\n"));
+        } else {
+            code.push_str(&format!("{indent}let mut {iv} = 0u16;\n"));
+            for c in conns {
+                let e = src_expr(chip, &c.src, params);
+                code.push_str(&format!(
+                    "{indent}set_bits(&mut {iv}, {}, {}, {e});\n",
+                    c.pin_lo, c.n
+                ));
+            }
+        }
+        args.push(iv);
+    }
+    args
 }
 
 /// child 的輸出 pin 名稱（在 `__o` 上取欄位用）
@@ -100,19 +134,25 @@ pub fn generate(e: &Elab) -> Result<String, String> {
     code.push_str("    pub fn new() -> Self { NandChip {} }\n");
     code.push_str("    pub fn eval(&mut self, a: u16, b: u16) -> NandOut {\n");
     code.push_str("        NandOut { out: if !(a != 0 && b != 0) { 1 } else { 0 } }\n");
-    code.push_str("    }\n}\n");
+    code.push_str("    }\n");
+    code.push_str("    pub fn tick(&mut self) {}\n");
+    code.push_str("    pub fn tock(&mut self) {}\n");
+    code.push_str("}\n");
     code.push_str("#[derive(Default, Clone, Copy)]\npub struct NandOut { pub out: u16 }\n\n");
 
-    // 內建 DFF（ch03 起才用；只被引用才產生）
+    // 內建 DFF（ch03 起兩階段：sample 取樣、tock 提交）
     if e.chips.iter().any(|c| {
         c.parts.iter().any(|p| matches!(p.clip, PartClip::Builtin(Builtin::Dff)))
     }) {
-        code.push_str("// ---- 內建 DFF（tick/tock 語義，見 M3）----\n");
+        code.push_str("// ---- 內建 DFF（master/slave 兩階段）----\n");
         code.push_str("#[derive(Default, Clone)]\npub struct DffChip { latch: u16, q: u16 }\n");
         code.push_str("impl DffChip {\n");
         code.push_str("    pub fn new() -> Self { DffChip::default() }\n");
-        code.push_str("    pub fn out(&self, _in_: u16) -> DffOut { DffOut { out: self.q } }\n");
-        code.push_str("    pub fn tick(&mut self, in_: u16) { self.latch = in_ & 1; }\n");
+        code.push_str("    /// eval：回傳目前狀態 q（輸出與輸入無關）\n");
+        code.push_str("    pub fn eval(&self) -> DffOut { DffOut { out: self.q } }\n");
+        code.push_str("    /// sample：tick 邊緣取樣輸入到 master latch\n");
+        code.push_str("    pub fn sample(&mut self, in_: u16) { self.latch = in_ & 1; }\n");
+        code.push_str("    /// tock：master latch 提交到 slave q\n");
         code.push_str("    pub fn tock(&mut self) { self.q = self.latch; }\n");
         code.push_str("}\n");
         code.push_str("#[derive(Default, Clone, Copy)]\npub struct DffOut { pub out: u16 }\n\n");
@@ -127,6 +167,7 @@ pub fn generate(e: &Elab) -> Result<String, String> {
 fn gen_chip(e: &Elab, chip: &ElabChip, code: &mut String) -> Result<(), String> {
     let cn = san(&chip.name);
     let params: Vec<String> = chip.in_pins.iter().map(|p| pin_san(&p.name)).collect();
+    let sig = params.iter().map(|p| format!("{p}: u16")).collect::<Vec<_>>().join(", ");
 
     code.push_str(&format!("// ---- {} ----\n", chip.name));
     code.push_str(&format!("#[derive(Default, Clone)]\npub struct {cn}Chip {{\n"));
@@ -137,78 +178,47 @@ fn gen_chip(e: &Elab, chip: &ElabChip, code: &mut String) -> Result<(), String> 
 
     code.push_str(&format!("impl {cn}Chip {{\n"));
     code.push_str(&format!("    pub fn new() -> Self {{ {cn}Chip::default() }}\n"));
-    code.push_str(&format!(
-        "    pub fn eval(&mut self, {}) -> {cn}Out {{\n",
-        params.iter().map(|p| format!("{p}: u16")).collect::<Vec<_>>().join(", ")
-    ));
 
-    // wire 宣告
-    for (wi, w) in chip.wires.iter().enumerate() {
-        code.push_str(&format!(
-            "        let mut w_{} = 0u16;\n",
-            san(&w.name)
-        ));
-        let _ = wi;
-    }
-
-    // parts 依拓樸順序求值
-    for &slot in &chip.eval_order {
-        let part = &chip.parts[slot];
-        let ty = chip_type(e, &part.clip);
-        code.push_str(&format!(
-            "        {{ // part {slot}: {} ({})\n",
-            part.label, ty
-        ));
-        // 輸入 pin 引數
-        for (ini, conns) in part.in_conns.iter().enumerate() {
-            if conns.is_empty() {
-                code.push_str(&format!("            let __i{ini} = 0x0u16;\n"));
-                continue;
-            }
-            if conns.len() == 1 {
-                let c = &conns[0];
-                let e = src_expr(chip, &c.src, &params);
-                code.push_str(&format!("            let __i{ini} = {e};\n"));
-            } else {
-                code.push_str(&format!("            let mut __i{ini} = 0u16;\n"));
-                for c in conns {
-                    let e = src_expr(chip, &c.src, &params);
-                    code.push_str(&format!(
-                        "            set_bits(&mut __i{ini}, {}, {}, {e});\n",
-                        c.pin_lo, c.n
-                    ));
-                }
-            }
-        }
-        let args: Vec<String> =
-            (0..part.in_conns.len()).map(|i| format!("__i{i}")).collect();
-        let evalf = eval_fn(&part.clip);
-        code.push_str(&format!(
-            "            let __o = self._p{slot}.{evalf}({});\n",
-            args.join(", ")
-        ));
-        // 輸出合併到 wire
-        for (opi, conns) in part.out_wires.iter().enumerate() {
-            let child_out = child_out_pin(e, part, opi);
-            for ow in conns {
-                let w = wname(chip, ow.wire);
-                let src = sub(&format!("__o.{child_out}"), ow.pin_lo, ow.n);
-                code.push_str(&format!(
-                    "            set_bits(&mut {w}, {}, {}, {src});\n",
-                    ow.dest_lo, ow.n
-                ));
-            }
-        }
-        code.push_str("        }\n");
-    }
-
-    // 回傳 out pins（來自 wire）
+    // ---- eval：獲取關聯性輸出（輸出自狀態，與輸入無關）----
+    code.push_str(&format!("    pub fn eval(&mut self, {sig}) -> {cn}Out {{\n"));
+    emit_cascade(code, e, chip, &params, "        ");
     code.push_str(&format!("        {cn}Out {{\n"));
     for op in &chip.out_pins {
         let w = format!("w_{}", san(&op.name));
         code.push_str(&format!("            {}: {w},\n", pin_san(&op.name)));
     }
-    code.push_str("        }\n    }\n}\n");
+    code.push_str("        }\n    }\n");
+
+    // ---- sample：tick 邊緣，先重算落定的 wire，再遞迴取樣有狀態 children ----
+    code.push_str(&format!("    pub fn sample(&mut self, {sig}) {{\n"));
+    emit_cascade(code, e, chip, &params, "        ");
+    if chip.has_state {
+        code.push_str("        // 遞迴取樣有狀態 children\n");
+        for &slot in &chip.eval_order {
+            let part = &chip.parts[slot];
+            if !is_seq(e, &part.clip) {
+                continue;
+            }
+            code.push_str(&format!(
+                "        {{ // part {slot}: {} ({})\n",
+                part.label, chip_type(e, &part.clip)
+            ));
+            let args = emit_inputs(code, chip, &params, part, "__c", "            ");
+            code.push_str(&format!(
+                "            self._p{slot}.sample({});\n",
+                args.join(", ")
+            ));
+            code.push_str("        }\n");
+        }
+    }
+    code.push_str("    }\n");
+
+    // ---- tock：提交所有子晶片狀態 ----
+    code.push_str(&format!(
+        "    pub fn tock(&mut self) {{\n{}\n    }}\n",
+        chip.parts.iter().enumerate().map(|(slot, _)| format!("        self._p{slot}.tock();")).collect::<Vec<_>>().join("\n")
+    ));
+    code.push_str("}\n");
 
     // Out struct
     code.push_str(&format!(
@@ -219,6 +229,60 @@ fn gen_chip(e: &Elab, chip: &ElabChip, code: &mut String) -> Result<(), String> 
     }
     code.push_str("}\n\n");
     Ok(())
+}
+
+/// 產生 eval/sample 共用的「先算 wire 再算 part」程式碼
+fn emit_cascade(
+    code: &mut String,
+    e: &Elab,
+    chip: &ElabChip,
+    params: &[String],
+    indent: &str,
+) {
+    for w in &chip.wires {
+        code.push_str(&format!(
+            "{indent}let mut w_{} = 0u16;\n",
+            san(&w.name)
+        ));
+    }
+    for &slot in &chip.eval_order {
+        let part = &chip.parts[slot];
+        let ty = chip_type(e, &part.clip);
+        code.push_str(&format!("{indent}{{ // part {slot}: {} ({})\n", part.label, ty));
+        let inner = format!("{indent}    ");
+        if matches!(part.clip, PartClip::Builtin(Builtin::Dff)) {
+            code.push_str(&format!("{inner}let __o = self._p{slot}.eval();\n"));
+        } else {
+            let args = emit_inputs(code, chip, params, part, "__i", &inner);
+            code.push_str(&format!(
+                "{inner}let __o = self._p{slot}.eval({});\n",
+                args.join(", ")
+            ));
+        }
+        emit_out_merges(code, e, chip, part, &inner);
+        code.push_str(&format!("{indent}}}\n"));
+    }
+}
+
+/// 把 part 的輸出合併到 wire
+fn emit_out_merges(
+    code: &mut String,
+    e: &Elab,
+    chip: &ElabChip,
+    part: &hackhdl::elab::ElabPart,
+    indent: &str,
+) {
+    for (opi, conns) in part.out_wires.iter().enumerate() {
+        let child_out = child_out_pin(e, part, opi);
+        for ow in conns {
+            let w = wname(chip, ow.wire);
+            let src = sub(&format!("__o.{child_out}"), ow.pin_lo, ow.n);
+            code.push_str(&format!(
+                "{indent}set_bits(&mut {w}, {}, {}, {src});\n",
+                ow.dest_lo, ow.n
+            ));
+        }
+    }
 }
 
 /// 產生被測 top 的 main.rs（TensorFlow 式的測試驅動）
@@ -264,6 +328,17 @@ pub fn generate_main(e: &Elab) -> String {
     s.push_str(&format!(
         "    fn do_eval(&mut self) {{\n        self.outs = self.inner.eval({});\n    }}\n",
         ins.iter().map(|i| format!("self.ins.{i}")).collect::<Vec<_>>().join(", ")
+    ));
+    let ins_args = ins.iter().map(|i| format!("self.ins.{i}")).collect::<Vec<_>>().join(", ");
+    if e.chips[e.top].has_state {
+        s.push_str(&format!(
+            "    fn tick(&mut self) {{\n        self.inner.sample({ins_args});\n        self.do_eval();\n    }}\n"
+        ));
+    } else {
+        s.push_str("    fn tick(&mut self) {}\n");
+    }
+    s.push_str(&format!(
+        "    fn tock(&mut self) {{\n        self.inner.tock();\n        self.do_eval();\n    }}\n"
     ));
     s.push_str("}\n\n");
     s.push_str("fn main() {\n");
