@@ -229,8 +229,8 @@ pub fn generate_main(e: &Elab) -> String {
     let in_pins: Vec<(String, String)> = top.in_pins.iter().map(|p| (p.name.clone(), pin_san(&p.name))).collect();
     let out_pins: Vec<(String, String)> = top.out_pins.iter().map(|p| (p.name.clone(), pin_san(&p.name))).collect();
     let ins: Vec<String> = in_pins.iter().map(|(_, f)| f.clone()).collect();
-    let outs: Vec<String> = out_pins.iter().map(|(_, f)| f.clone()).collect();
     let mut s = String::new();
+    s.push_str("#![allow(unused_parens, non_snake_case, non_camel_case_types, unused_variables, dead_code)]\n");
     s.push_str("mod gen;\nuse gen::*;\n");
     s.push_str("use hackrt::tst::{parse_script, run, TopModel};\n");
     s.push_str("use std::path::Path;\n\n");
