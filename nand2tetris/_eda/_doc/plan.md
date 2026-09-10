@@ -15,7 +15,7 @@
 | v0.4 | 04 | HACK 平台整合（Mult/Fill 跑在 Computer.hdl） | ✅ 已完成（2/2） |
 | v0.5 | 06+07+08+11 | 工具鏈誕生（hackasm CLI、vm2asm、jack2vm，C 版 byte 相容）＋ 全鏈路 e2e | ✅ 已完成（40/40） |
 | v0.6 | 05→06 之後 | hackemu 虛擬機（執行 .bin/.hack，egui GUI 顯示 SCREEN） | ✅ 已完成（40/40＋交叉驗證） |
-| v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | 🚧 M7.1/2/4 通過、GUI 可玩（殘影為快照語意）；M7.5 `--keys` 自動化待做（見 `_doc/v0.7.md`） |
+| v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | 🚧 M7.1/2/4/5 通過（GUI 可玩、`--keys` 方向鍵自動化）；M7.3 選做（見 `_doc/v0.7.md`） |
 | v0.8 | 未來 | 效能、除錯、追蹤、模擬器互驗 | 💡 發想 |
 
 ---
@@ -131,7 +131,7 @@
   - M7.2 裁剪版 OS headless 驗證全過（`gen/show.bin`，17770 words）。
   - M7.4 Pong 上 32K：`gen/pong.bin` **29544 words**，headless 驗證
     ball/bat/地板全渲染、ball 會動、無窮迴圈穩定。
-- 待辦：GUI 互動由 M7.5 `--keys` 自動化回歸；M7.3 各模組單測（部分已被 show/pong 覆蓋）；
+- 待辦：M7.3 各模組單測（部分已被 show/pong 覆蓋）；
   M7.5/M7.6 選做。
 - 設計與驗收細節：見 `_doc/v0.7.md`（含待解問題、步驟拆解）。
 

@@ -29,4 +29,29 @@ rm -rf gen/show_os_vm gen/show_app_vm && mkdir -p gen/show_os_vm gen/show_app_vm
 "$bin/hackemu" --headless gen/show.bin --max 10000000 --dump 200,201 --dump 22784,22784 > gen/show.out
 grep -q "RAM\[200..=201\]: \[1234, 777\]" gen/show.out
 grep -q "RAM\[22784..=22784\]: \[1\]" gen/show.out
+echo "== v0.7.1：重建 pong.bin（Pong + 裁剪版 OS）=="
+rm -rf gen/pong_os_vm gen/pong_app_vm && mkdir -p gen/pong_os_vm gen/pong_app_vm
+"$bin/jack2vm" -o gen/pong_os_vm gen/os_src
+"$bin/jack2vm" -o gen/pong_app_vm ../11/jack/Pong
+"$bin/vm2asm" gen/pong.asm gen/pong_os_vm/*.vm gen/pong_app_vm/*.vm
+"$bin/hackasm" gen/pong.asm gen/pong.bin --bin
+echo "== v0.7.1：Pong --keys 方向鍵回應（bat 位置隨按鍵分離）=="
+printf '1000000 left\n' > gen/keys.left
+printf '1000000 right\n' > gen/keys.right
+kern="$bin/hackemu"; [ -x target/release/hackemu ] && kern=target/release/hackemu
+"$kern" --headless gen/pong.bin --max 300000000 --keys gen/keys.left --img gen/pong.left.ppm >/dev/null 2>&1
+"$kern" --headless gen/pong.bin --max 300000000 --keys gen/keys.right --img gen/pong.right.ppm >/dev/null 2>&1
+python3 - gen/pong.left.ppm gen/pong.right.ppm <<'PY'
+import sys
+def bat_min_x(path):
+    d = open(path, 'rb').read().split(b'\n', 3)[3]
+    xs = []
+    for y in range(229, 237):
+        row = d[(y * 512) * 3:(y * 512 + 512) * 3]
+        xs += [x for x in range(512) if row[x * 3] < 128]
+    return min(xs) if xs else -1
+l = bat_min_x(sys.argv[1]); r = bat_min_x(sys.argv[2])
+print(f"bat min-x: left={l}  right={r}")
+assert r - l > 100, f"方向鍵未分離 bat (left={l}, right={r})"
+PY
 echo "== 全部通過 =="

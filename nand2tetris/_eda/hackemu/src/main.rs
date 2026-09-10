@@ -249,17 +249,60 @@ impl eframe::App for HackApp {
     }
 }
 
+/// `--keys <file>`：按鍵腳本，格式每行 `INSTR_COUNT KEY [down|up]`（`#` 開頭為註解、
+/// 空白行略過）。KEY 可為數字（HACK 鍵碼）或名稱（left/right/up/down/enter/esc…）
+/// 或單一字元（ASCII）。例如：
+///   `1000000 right      # 100 萬條指令後按下右鍵`
+///   `200000000 right up # 2 億條後放開`
+/// 播放時依執行到的指令數切事件，HACK 鍵盤登錄匣只剩一組鍵碼，取「最後按住」的。
+fn parse_keys(path: &str) -> Result<Vec<(u64, u16, bool)>, String> {
+    let txt = std::fs::read_to_string(path).map_err(|e| format!("--keys: {e}"))?;
+    let mut evs = Vec::new();
+    for (ln, raw) in txt.lines().enumerate() {
+        let line = raw.split('#').next().unwrap_or("").trim();
+        if line.is_empty() {
+            continue;
+        }
+        let t: Vec<&str> = line.split_whitespace().collect();
+        if t.len() < 2 {
+            return Err(format!("--keys:{ln}: 需要 `instr key` 兩欄"));
+        }
+        let at = t[0]
+            .parse::<u64>()
+            .map_err(|_| format!("--keys:{ln}: `{}` 不是指令數", t[0]))?;
+        let code = t[1] //
+            .parse::<u16>()
+            .ok()
+            .or_else(|| match t[1].to_ascii_lowercase().as_str() {
+                "backspace" => Some(128),
+                "enter" | "newline" => Some(128),
+                "left" => Some(130),
+                "up" => Some(131),
+                "right" => Some(132),
+                "down" => Some(133),
+                _ if t[1].chars().count() == 1 => Some(t[1].as_bytes()[0] as u16),
+                _ => None,
+            })
+            .ok_or_else(|| format!("--keys:{ln}: 未知按鍵 `{}`", t[1]))?;
+        let down = t.get(2).map_or(true, |s| !matches!(*s, "up" | "release" | "-"));
+        evs.push((at, code, down));
+    }
+    evs.sort_by_key(|e| e.0);
+    Ok(evs)
+}
+
 /// `--headless <file> [--max N] [--dump A,B]`：不開視窗，跑 N 條後印出狀態（供自動化/驗證）。
 /// `--dump` 印出 RAM[A..=B] 區段（如 `--dump 200,201 --dump 2048,2051`，可多次）。
 fn headless(args: &[String]) -> eframe::Result {
     let Some(file) = args.first() else {
-        eprintln!("usage: hackemu --headless <file.bin|.hack> [--max N] [--dump A,B]");
+        eprintln!("usage: hackemu --headless <file> [--max N] [--dump A,B] [--trace N] [--sample K] [--keys FILE] [--img OUT.ppm]");
         std::process::exit(2);
     };
     let mut max = 100_000u64;
     let mut dumps = Vec::new();
     let mut trace = 0usize;
     let mut sample = 0u64;
+    let mut keys_path = String::new();
     let mut i = 1;
     while i < args.len() {
         match args[i].as_str() {
@@ -286,6 +329,10 @@ fn headless(args: &[String]) -> eframe::Result {
                 sample = args.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or(0);
                 i += 2;
             }
+            "--keys" => {
+                keys_path = args.get(i + 1).cloned().unwrap_or_default();
+                i += 2;
+            }
             _ => i += 1,
         }
     }
@@ -296,48 +343,82 @@ fn headless(args: &[String]) -> eframe::Result {
     }
     println!("loaded {} ({} instructions)", file, vm.rom.len());
     println!("before: PC={} A={} D={} SP={}", vm.pc, vm.a, vm.d, vm.ram[0]);
+    let events = if keys_path.is_empty() {
+        Vec::new()
+    } else {
+        match parse_keys(&keys_path) {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("{e}");
+                std::process::exit(2);
+            }
+        }
+    };
+    let mut ei = 0usize;
+    let mut held: Vec<u16> = Vec::new();
     let mut ring: Vec<(usize, String)> = Vec::new();
     let mut samples: Vec<usize> = Vec::new();
     let mut tick = 0u64;
-    vm.run_until(max, |pc, i, _a| {
-        tick += 1;
-        if sample > 0 && tick % sample == 0 {
-            samples.push(pc);
-        }
-        if trace == 0 {
-            return true;
-        }
-        let txt = if i & 0x8000 == 0 {
-            format!("@{:>5}   ; 0x{i:04X}", i & 0x7fff)
-        } else {
-            let dst = match (i >> 3) & 0x7 {
-                0 => "",
-                1 => "M",
-                2 => "D",
-                3 => "DM",
-                4 => "A",
-                5 => "AM",
-                6 => "AD",
-                _ => "ADM",
+    let mut prev_cycles = vm.cycles;
+    loop {
+        let at = events.get(ei).map(|e| e.0).unwrap_or(max).max(vm.cycles);
+        let budget = (at - vm.cycles).min(max - vm.cycles);
+        vm.run_until(budget, |pc, i, _a| {
+            tick += 1;
+            if sample > 0 && tick % sample == 0 {
+                samples.push(pc);
+            }
+            if trace == 0 {
+                return true;
+            }
+            let txt = if i & 0x8000 == 0 {
+                format!("@{:>5}   ; 0x{i:04X}", i & 0x7fff)
+            } else {
+                let dst = match (i >> 3) & 0x7 {
+                    0 => "",
+                    1 => "M",
+                    2 => "D",
+                    3 => "DM",
+                    4 => "A",
+                    5 => "AM",
+                    6 => "AD",
+                    _ => "ADM",
+                };
+                let jmp = match i & 0x7 {
+                    0 => "",
+                    1 => ";JGT",
+                    2 => ";JEQ",
+                    3 => ";JGE",
+                    4 => ";JLT",
+                    5 => ";JNE",
+                    6 => ";JLE",
+                    _ => ";JMP",
+                };
+                format!("D={}+A {dst}{jmp}", if (i >> 12) & 1 == 1 { 'M' } else { 'A' })
             };
-            let jmp = match i & 0x7 {
-                0 => "",
-                1 => ";JGT",
-                2 => ";JEQ",
-                3 => ";JGE",
-                4 => ";JLT",
-                5 => ";JNE",
-                6 => ";JLE",
-                _ => ";JMP",
-            };
-            format!("D={}+A {dst}{jmp}", if (i >> 12) & 1 == 1 { 'M' } else { 'A' })
-        };
-        if ring.len() >= trace {
-            ring.remove(0);
+            if ring.len() >= trace {
+                ring.remove(0);
+            }
+            ring.push((pc, txt));
+            true
+        });
+        if vm.cycles >= max || vm.cycles == prev_cycles {
+            break;
         }
-        ring.push((pc, txt));
-        true
-    });
+        prev_cycles = vm.cycles;
+        while ei < events.len() && events[ei].0 <= vm.cycles {
+            let (_, code, down) = events[ei];
+            if down {
+                if !held.contains(&code) {
+                    held.push(code);
+                }
+            } else {
+                held.retain(|&c| c != code);
+            }
+            ei += 1;
+        }
+        vm.set_key(held.last().copied().unwrap_or(0));
+    }
     println!(
         "after: PC={} A={} D={} SP={} cycles={}",
         vm.pc, vm.a, vm.d, vm.ram[0], vm.cycles
