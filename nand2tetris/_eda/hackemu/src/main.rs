@@ -106,7 +106,7 @@ impl HackApp {
             path: String::new(),
             status: "No program loaded".into(),
             running: false,
-            steps_per_frame: 500,
+            steps_per_frame: 50_000,
             texture: None,
             pressed: BTreeSet::new(),
         }
@@ -125,7 +125,7 @@ impl HackApp {
                 .unwrap_or_default(),
             self.vm.rom.len()
         );
-        self.running = false;
+        self.running = true;
         Ok(())
     }
 
@@ -186,6 +186,9 @@ impl eframe::App for HackApp {
         self.handle_input(&ctx);
         if self.running && self.steps_per_frame > 0 {
             self.vm.run(self.steps_per_frame as u64);
+            // 持續動畫：每幀跑完就要求下一幀，否則 eframe 只在滑鼠/鍵盤事件
+            // 時才重繪（OS 遊戲會看起來一動也不動）。
+            ctx.request_repaint();
         }
 
         egui::Panel::top("controls").show(ui, |ui| {
@@ -212,7 +215,7 @@ impl eframe::App for HackApp {
                     self.running = false;
                 }
                 ui.label("Speed");
-                ui.add(egui::Slider::new(&mut self.steps_per_frame, 0..=50_000).logarithmic(true));
+                ui.add(egui::Slider::new(&mut self.steps_per_frame, 0..=2_000_000).logarithmic(true));
                 ui.label("(instr/frame)");
             });
             ui.horizontal(|ui| {
@@ -359,7 +362,7 @@ fn headless(args: &[String]) -> eframe::Result {
         let mut top: Vec<_> = cnt.into_iter().collect();
         top.sort_by(|a, b| b.1.cmp(&a.1));
         println!("--- top PC samples (every {sample} cycles, {} total) ---", samples.len());
-        for (pc, n) in top.iter().take(10) {
+        for (pc, n) in top.iter().take(40) {
             println!("{n:6}  PC={pc}");
         }
     }
