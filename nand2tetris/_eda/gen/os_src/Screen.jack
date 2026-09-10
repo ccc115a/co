@@ -49,7 +49,7 @@ class Screen {
         var int mask;
 
         let address = (y*32) + (x/16);
-        let mask = Math.two_to_the(x & 15);
+        let mask = Math.two_to_the(15 - (x & 15));
 
         if( cur_colour ) {
             let screen[address] = screen[address] | mask;

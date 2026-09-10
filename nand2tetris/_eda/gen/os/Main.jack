@@ -1,6 +1,6 @@
 // v0.7 最小 OS 驗證 app（不需 Output/字型，適用裁剪版 OS）：
 // 執行後雷達點：RAM[200]=1234（Memory.poke）、RAM[201]=777（Math.multiply 驗證值）、
-// RAM[16384+6400] bit0=1（Screen.drawPixel(0,200)）、a[0]=5 a[1]=7（Array.new → Memory.alloc，heap 由 2048 起）。
+// RAM[16384+6400] bit15=1（Screen.drawPixel(0,200)，HACK bit15=最左欄）、a[0]=5 a[1]=7（Array.new → Memory.alloc，heap 由 2048 起）。
 class Main {
 
     function void main() {

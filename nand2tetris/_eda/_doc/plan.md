@@ -15,7 +15,7 @@
 | v0.4 | 04 | HACK 平台整合（Mult/Fill 跑在 Computer.hdl） | ✅ 已完成（2/2） |
 | v0.5 | 06+07+08+11 | 工具鏈誕生（hackasm CLI、vm2asm、jack2vm，C 版 byte 相容）＋ 全鏈路 e2e | ✅ 已完成（40/40） |
 | v0.6 | 05→06 之後 | hackemu 虛擬機（執行 .bin/.hack，egui GUI 顯示 SCREEN） | ✅ 已完成（40/40＋交叉驗證） |
-| v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | 🚧 M7.1/2/4/5 通過（GUI 可玩、`--keys` 方向鍵自動化）；M7.3 選做（見 `_doc/v0.7.md`） |
+| v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | ✅ M7.1–M7.5 全過（v0.7.1 `--keys`、v0.7.2 M7.3 四支模組測試＋修 drawPixel 位元方向 bug）；M7.6 跳過（見 `_doc/v0.7.md`） |
 | v0.8 | 未來 | 效能、除錯、追蹤、模擬器互驗 | 💡 發想 |
 
 ---
@@ -118,7 +118,7 @@
 
 ## v0.7 — ch12 OS 在 hackemu 上執行
 
-**狀態：🚧 進行中（2026-09-10）**
+**狀態：✅ 已完成（2026-09-10）**
 
 - 範圍：把 `12/*.jack` 整包 OS 透過既有工具鏈編譯、開機、跑起來，
   並且能跑像 Pong 這種需要 OS 的應用程式（GUI 可互動）。
@@ -130,9 +130,11 @@
     極簡 Output 替身 + 自訂 Sys「Memory.init 先行」）跑進 32K。
   - M7.2 裁剪版 OS headless 驗證全過（`gen/show.bin`，17770 words）。
   - M7.4 Pong 上 32K：`gen/pong.bin` **29544 words**，headless 驗證
-    ball/bat/地板全渲染、ball 會動、無窮迴圈穩定。
-- 待辦：M7.3 各模組單測（部分已被 show/pong 覆蓋）；
-  M7.5/M7.6 選做。
+    ball/bat/地板全渲染、ball 會動、無窮迴圈穩定；GUI 方向鍵可玩。
+  - M7.5 `hackemu --keys` 方向鍵自動化回歸（v0.7.1，left/right bat 分離 >100px）。
+  - M7.3 精簡版逐模組單測（v0.7.2：Math/String/Screen/Memory 四支），
+    順手修掉官方 `Screen.drawPixel` 位元方向 bug 並發現 jack2vm「無優先權、
+    由左而右」parser 陷阱。
 - 設計與驗收細節：見 `_doc/v0.7.md`（含待解問題、步驟拆解）。
 
 ---

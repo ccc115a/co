@@ -61,7 +61,7 @@ function void drawPixel(int x, int y) {
     var int address;
     var int mask;
     let address = (y * 32) + (x / 16);
-    let mask = Math.two_to_the(x & 15);
+    let mask = Math.two_to_the(15 - (x & 15));
     if( cur_colour ) {
         let screen[address] = screen[address] | mask;      // 畫黑：OR 設位元
     } else {
@@ -72,7 +72,11 @@ function void drawPixel(int x, int y) {
 
 **位元遮罩（bitmask）原理：**
 
-`x & 15` 取得 x 除以 16 的餘數（即在 word 中的 bit 位置，0–15）。`Math.two_to_the(x & 15)` 產生對應的遮罩值：第 n 位為 1，其餘為 0。
+`x & 15` 取得 x 除以 16 的餘數（即在 word 中的 bit 位置，0–15）。
+
+⚠️ **位元方向重點：** HACK 硬體把 word 的 **bit15（MSB）映到最左像素**。因此「第 j 欄」要在 **bit (15−j)** 設 1，故取 `15 - (x & 15)` 來左右翻正。官方教材的 `two_to_the(x & 15)` 會把非對齊的單像素段（細線、圓邊、非整 word 的色塊邊緣）整個鏡像錯位——本計畫（v0.7.2）已修正。
+
+`Math.two_to_the(15 - (x & 15))` 產生對應的遮罩值：第 n 位為 1，其餘為 0。
 
 - **畫黑像素：** `screen[addr] | mask` — 用 OR 將目標位元設為 1，不影響其他位元
 - **畫白像素：** `screen[addr] & ~mask` — 用 AND 將目標位元清為 0，不影響其他位元

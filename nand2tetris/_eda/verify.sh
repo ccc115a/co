@@ -28,7 +28,7 @@ rm -rf gen/show_os_vm gen/show_app_vm && mkdir -p gen/show_os_vm gen/show_app_vm
 "$bin/hackasm" gen/show.asm gen/show.bin --bin
 "$bin/hackemu" --headless gen/show.bin --max 10000000 --dump 200,201 --dump 22784,22784 > gen/show.out
 grep -q "RAM\[200..=201\]: \[1234, 777\]" gen/show.out
-grep -q "RAM\[22784..=22784\]: \[1\]" gen/show.out
+grep -q "RAM\[22784..=22784\]: \[32768\]" gen/show.out
 echo "== v0.7.1：重建 pong.bin（Pong + 裁剪版 OS）=="
 rm -rf gen/pong_os_vm gen/pong_app_vm && mkdir -p gen/pong_os_vm gen/pong_app_vm
 "$bin/jack2vm" -o gen/pong_os_vm gen/os_src
@@ -54,4 +54,21 @@ l = bat_min_x(sys.argv[1]); r = bat_min_x(sys.argv[2])
 print(f"bat min-x: left={l}  right={r}")
 assert r - l > 100, f"方向鍵未分離 bat (left={l}, right={r})"
 PY
+echo "== v0.7.2：M7.3 逐模組單測（Math / String / Screen / Memory.deAlloc，標記槽 RAM[100..=110]）=="
+rm -rf gen/m73/os_vm && mkdir -p gen/m73/os_vm
+"$bin/jack2vm" -o gen/m73/os_vm gen/os_src
+for t in MathTest StringTest ScreenTest HeapTest; do
+    rm -rf gen/m73/$t/vm_app && mkdir -p gen/m73/$t/vm_app
+    "$bin/jack2vm" -o gen/m73/$t/vm_app gen/m73/$t >/dev/null
+    "$bin/vm2asm" gen/m73/$t.asm gen/m73/os_vm/*.vm gen/m73/$t/vm_app/*.vm >/dev/null
+    "$bin/hackasm" gen/m73/$t.asm gen/m73/$t.bin --bin >/dev/null
+done
+"$kern" --headless gen/m73/MathTest.bin --max 50000000 --dump 100,110 > gen/m73/MathTest.out 2>/dev/null
+"$kern" --headless gen/m73/StringTest.bin --max 50000000 --dump 100,110 > gen/m73/StringTest.out 2>/dev/null
+"$kern" --headless gen/m73/ScreenTest.bin --max 50000000 --dump 100,110 > gen/m73/ScreenTest.out 2>/dev/null
+"$kern" --headless gen/m73/HeapTest.bin --max 50000000 --dump 100,110 > gen/m73/HeapTest.out 2>/dev/null
+grep -q "RAM\[100..=110\]: \[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1\]" gen/m73/MathTest.out
+grep -q "RAM\[100..=110\]: \[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0\]" gen/m73/StringTest.out
+grep -q "RAM\[100..=110\]: \[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0\]" gen/m73/ScreenTest.out
+grep -q "RAM\[100..=110\]: \[1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0\]" gen/m73/HeapTest.out
 echo "== 全部通過 =="

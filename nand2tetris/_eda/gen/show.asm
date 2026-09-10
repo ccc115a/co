@@ -10722,6 +10722,14 @@ D=M
 @R13
 A=M
 M=D
+// push constant 15
+@15
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
 // push argument 0
 @0
 D=A
@@ -10747,6 +10755,12 @@ AM=M-1
 D=M
 A=A-1
 M=D&M
+// sub
+@SP
+AM=M-1
+D=M
+A=A-1
+M=M-D
 // call Math.two_to_the 1
 @Math.two_to_the$ret.33
 D=A

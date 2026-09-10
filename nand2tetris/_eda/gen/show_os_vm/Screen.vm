@@ -53,9 +53,11 @@ push constant 16
 call Math.divide 2
 add
 pop local 0
+push constant 15
 push argument 0
 push constant 15
 and
+sub
 call Math.two_to_the 1
 pop local 1
 push static 1

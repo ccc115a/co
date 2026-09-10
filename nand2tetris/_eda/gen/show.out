@@ -1,7 +1,7 @@
-loaded gen/show.bin (18098 instructions)
+loaded gen/show.bin (18110 instructions)
 before: PC=0 A=0 D=0 SP=0
-after: PC=17183 A=17186 D=0 SP=266 cycles=10000000
-RAM[0..16]: [266, 266, 261, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 262, 17058, 0]
+after: PC=17191 A=266 D=0 SP=267 cycles=10000000
+RAM[0..16]: [267, 266, 261, 0, 0, 0, 32768, 0, 0, 0, 0, 0, 0, 262, 17070, 0]
 RAM[16] static: 24576
 RAM[200..=201]: [1234, 777]
-RAM[22784..=22784]: [1]
+RAM[22784..=22784]: [32768]
