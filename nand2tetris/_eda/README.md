@@ -11,7 +11,11 @@
 _eda/
 ├─ hackhdl/   .hdl parser + AST + elaboration（選路、拓撲排序、OUT 全覆蓋檢查）
 ├─ hackrt/    執行期：.tst 解析器 + 模擬 runner + .cmp 格式化（fmt）
-└─ hdl2rs/    CLI：讀 .hdl → 產出獨立 Rust crate → cargo build → 跑測試
+├─ hdl2rs/    CLI：讀 .hdl → 產出獨立 Rust crate → cargo build → 跑測試
+├─ hackasm/   組譯器：HACK 組語 → .hack（16-bit 文字）與 .bin（u16 LE）
+├─ vm2asm/    VM → HACK 組語（ch07/08，與 08/vm2asm.c byte 相容）
+├─ jack2vm/   Jack → VM 組合語言（ch11，與 11/c/jack2vm.c byte 相容）
+└─ hackemu/    HACK 虛擬機：執行 .bin/.hack，egui GUI 顯示 SCREEN + headless 模式
 ```
 
 資料流：
@@ -68,6 +72,11 @@ cargo run -q -p hdl2rs -- --dir ../01 --test ../02/ALU.tst --out gen
 
 ## 里程碑 / 待辦
 
+各版進度與實作記錄見 `_doc/v0.x.md`（繁體中文）。目前：
+
 - [x] M1：ch01+ch02 全部組合電路測試 PASS（21/21）。
-- [ ] M2：ch03 循序電路——`tick`/`tock` 語意、`Dff` 真實行為、`Bit`/`Register`/`RAM`。
-- [ ] M3：ch05 整台電腦——`ROM32K load`、內部 `PinRef[]` 探測、內建 `ARegister`/`DRegister`。
+- [x] M2：ch03 循序電路——`tick`/`tock` 語意、`Dff` 真實行為、`Bit`/`Register`/`RAM`。
+- [x] M3：ch05 整台電腦——`ROM32K load`、內部 `PinRef[]` 探測、內建 `ARegister`/`DRegister`。
+- [x] M4：ch04（Mult、Fill 跑在 Computer.hdl 上）。
+- [x] M5：Jack → VM → ASM → HACK 全鏈路 e2e（`jack2vm`/`vm2asm` 逐位元相容 C 版）。
+- [x] M6：`hackemu` 虛擬機執行 `.bin`/`.hack`，GUI 顯示 SCREEN + headless 驗證。

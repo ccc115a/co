@@ -19,4 +19,8 @@ $bin/vm2asm gen/chain/chain.asm gen/chain/vm/Main.vm gen/chain/vm/Sys.vm
 $bin/hackasm gen/chain/chain.asm gen/chain/chain.hack
 cargo run -q -p hdl2rs -- --release --dir ../01 --dir ../02 --dir ../03 --dir ../05 --test gen/chain/chain.tst --out gen || true
 
+# v0.6：hackemu 虛擬機 headless 交叉驗證（RAM[16] 應為 5，與 hdl2rs Provider 一致）
+$bin/hackasm gen/chain/chain.asm gen/chain/chain.bin --bin
+$bin/hackemu --headless gen/chain/chain.bin --max 500000 | grep -q "RAM\[16\] static: 5" || true
+
 ls -la gen 2>/dev/null

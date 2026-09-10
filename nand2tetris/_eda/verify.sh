@@ -17,4 +17,7 @@ rm -rf gen/chain/vm && mkdir -p gen/chain/vm
 "$bin/vm2asm" gen/chain/chain.asm gen/chain/vm/Main.vm gen/chain/vm/Sys.vm
 "$bin/hackasm" gen/chain/chain.asm gen/chain/chain.hack
 cargo run -q -p hdl2rs -- --release --dir ../01 --dir ../02 --dir ../03 --dir ../05 --test gen/chain/chain.tst --out gen
+echo "== hackemu 虛擬機 headless 執行（RAM[16] 應為 5，與上面 hdl2rs 一致）=="
+"$bin/hackasm" gen/chain/chain.asm gen/chain/chain.bin --bin
+"$bin/hackemu" --headless gen/chain/chain.bin --max 500000 | grep -q "RAM\[16\] static: 5"
 echo "== 全部通過 =="
