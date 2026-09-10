@@ -106,7 +106,7 @@ impl HackApp {
             path: String::new(),
             status: "No program loaded".into(),
             running: false,
-            steps_per_frame: 50_000,
+            steps_per_frame: 1_000_000,
             texture: None,
             pressed: BTreeSet::new(),
         }
@@ -215,7 +215,7 @@ impl eframe::App for HackApp {
                     self.running = false;
                 }
                 ui.label("Speed");
-                ui.add(egui::Slider::new(&mut self.steps_per_frame, 0..=2_000_000).logarithmic(true));
+                ui.add(egui::Slider::new(&mut self.steps_per_frame, 0..=10_000_000).logarithmic(true));
                 ui.label("(instr/frame)");
             });
             ui.horizontal(|ui| {
