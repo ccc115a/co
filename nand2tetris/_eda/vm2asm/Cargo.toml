@@ -1,0 +1,12 @@
+[package]
+name = "vm2asm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "vm2asm"
+path = "src/lib.rs"
+
+[[bin]]
+name = "vm2asm"
+path = "src/main.rs"

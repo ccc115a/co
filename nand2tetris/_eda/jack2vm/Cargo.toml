@@ -1,0 +1,12 @@
+[package]
+name = "jack2vm"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "jack2vm"
+path = "src/lib.rs"
+
+[[bin]]
+name = "jack2vm"
+path = "src/main.rs"
