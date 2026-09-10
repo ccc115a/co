@@ -4,8 +4,12 @@
 //! push/pop（constant/local/argument/this/that/temp/pointer/static）、
 //! label/goto/if-goto、function/call/return（含多檔案的 `Sys.init` bootstrap）。
 //!
-//! 產生之組語與課程 C 版 `vm2asm.c` **逐位元相同**，可直接拿既有測試檔 `.asm`
-//! 做回歸對照。
+//! 多檔（bootstrap）模式下，VM 的 `label/goto/if-goto` 標記會加上 `函式$` 前綴
+//! （依 ch08 的函式作用域規範），避免不同 VM 檔之間的標記衝突；單檔模式與課程
+//! C 版 `vm2asm.c` **逐位元相同**，可直接拿既有測試檔 `.asm` 做回歸對照。
+//!
+//! 產生之組語：單檔模式與課程 C 版 `vm2asm.c` **逐位元相同**，可直接拿既有測試檔 `.asm`
+//! 做回歸對照；多檔模式加函式作用域標記（見註）。
 
 use std::path::Path;
 
@@ -13,11 +17,25 @@ struct Writer {
     out: String,
     label_count: usize,
     return_count: usize,
+    /// 多檔模式（bootstrap）下方把 `label/goto/if-goto` 標記加上 `函式$` 前綴，
+    /// 避免不同 VM 檔（不同函式）的標記互相衝突。單檔模式維持與 C 版逐位元相同。
+    scope: bool,
+    /// 目前所在的函式名稱（遇到 `function` 指令時更新）。
+    cur_func: String,
 }
 
 impl Writer {
     fn new() -> Self {
-        Writer { out: String::new(), label_count: 0, return_count: 0 }
+        Writer { out: String::new(), label_count: 0, return_count: 0, scope: false, cur_func: String::new() }
+    }
+
+    /// 取得要輸出的標記名：多檔模式加 `函式$` 前綴，單檔模式用原名。
+    fn label_name(&self, arg: &str) -> String {
+        if self.scope && !self.cur_func.is_empty() {
+            format!("{}${}", self.cur_func, arg)
+        } else {
+            arg.to_string()
+        }
     }
     fn w(&mut self, s: &str) {
         self.out.push_str(s);
@@ -49,10 +67,13 @@ fn translate_into(wr: &mut Writer, vm: &str, current_file: &str) {
             }
             "push" => write_push(wr, current_file, arg1, arg2),
             "pop" => write_pop(wr, current_file, arg1, arg2),
-            "label" => wr.w(&format!("({arg1})\n")),
-            "goto" => wr.w(&format!("@{arg1}\n0;JMP\n")),
-            "if-goto" => wr.w(&format!("@SP\nAM=M-1\nD=M\n@{arg1}\nD;JNE\n")),
-            "function" => write_function(wr, arg1, arg2),
+            "label" => wr.w(&format!("({})\n", wr.label_name(arg1))),
+            "goto" => wr.w(&format!("@{}\n0;JMP\n", wr.label_name(arg1))),
+            "if-goto" => wr.w(&format!("@SP\nAM=M-1\nD=M\n@{}\nD;JNE\n", wr.label_name(arg1))),
+            "function" => {
+                wr.cur_func = arg1.to_string();
+                write_function(wr, arg1, arg2);
+            }
             "call" => write_call(wr, arg1, arg2),
             "return" => write_return(wr),
             _ => {} // 未知指令：與 C 版一致，靜默略過
@@ -72,6 +93,7 @@ pub fn translate_file(vm: &str, current_file: &str) -> String {
 /// `SP=256` + `call Sys.init 0` 的 bootstrap（與 `vm2asm.c` 一致）。
 pub fn translate(inputs: &[(String, String)], bootstrap: bool) -> String {
     let mut wr = Writer::new();
+    wr.scope = bootstrap;
     if bootstrap {
         wr.w("// Bootstrap code\n");
         wr.w("// Initialize SP = 256\n");
@@ -320,5 +342,38 @@ M=D+M
         // 單一檔案不加 bootstrap
         let single = translate(&[("SimpleAdd.vm".into(), "push constant 1\n".into())], false);
         assert!(!single.contains("@256"));
+    }
+
+    #[test]
+    fn multifile_scopes_user_labels() {
+        // 兩檔各自有 `label WHILE_EXP2`：多檔模式必須加函式前綴避免相撞
+        let out = translate(
+            &[
+                (
+                    "A.vm".into(),
+                    "function A.f 0\nlabel WHILE_EXP2\ngoto WHILE_EXP2\nif-goto WHILE_EXP2\nreturn\n".into(),
+                ),
+                (
+                    "B.vm".into(),
+                    "function B.g 0\nlabel WHILE_EXP2\ngoto WHILE_EXP2\nif-goto WHILE_EXP2\nreturn\n".into(),
+                ),
+            ],
+            true,
+        );
+        assert!(out.contains("(A.f$WHILE_EXP2)\n"));
+        assert!(out.contains("(B.g$WHILE_EXP2)\n"));
+        assert!(out.contains("@A.f$WHILE_EXP2\n0;JMP\n"));
+        assert!(out.contains("@A.f$WHILE_EXP2\nD;JNE\n"));
+        // 不能有未加前綴的裸標記
+        assert!(!out.contains("(WHILE_EXP2)\n"));
+    }
+
+    #[test]
+    fn single_file_keeps_raw_labels() {
+        // 單檔模式與 C 版逐位元一致：標記不加工
+        let out = t("function A.f 0\nlabel WHILE_EXP2\ngoto WHILE_EXP2\nif-goto WHILE_EXP2\nreturn\n");
+        assert!(out.contains("(WHILE_EXP2)\n"));
+        assert!(out.contains("@WHILE_EXP2\n0;JMP\n"));
+        assert!(out.contains("@WHILE_EXP2\nD;JNE\n"));
     }
 }

@@ -169,6 +169,28 @@ impl Vm {
         }
     }
 
+    /// 逐條執行至多 `n` 條；每步把 **(執行前 PC, 原始指令, 執行後 A)** 交給 `f`，
+    /// `f` 回傳 false 即中止。供診斷熱點／死迴圈用。
+    pub fn run_until(&mut self, n: u64, mut f: impl FnMut(usize, u16, u16) -> bool) {
+        for _ in 0..n {
+            let pc = self.pc as usize;
+            let i = self.rom.get(pc).copied();
+            let proceed = match i {
+                Some(i) => {
+                    if !self.step() {
+                        false
+                    } else {
+                        f(pc, i, self.a)
+                    }
+                }
+                None => false,
+            };
+            if !proceed {
+                break;
+            }
+        }
+    }
+
     /// 螢幕 pixel：黑(1)=true、白(0)=false。word 的 **bit15（MSB）為最左**。
     pub fn screen_pixel(&self, row: usize, col: usize) -> bool {
         if row >= SCREEN_ROWS || col >= SCREEN_COLS {

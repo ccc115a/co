@@ -11,8 +11,8 @@ use std::path::Path;
 use eframe::egui;
 use hackemu::{
     Vm, KEY_BACKSPACE, KEY_DELETE, KEY_DOWN, KEY_END, KEY_ESCAPE, KEY_HOME, KEY_INSERT, KEY_LEFT,
-    KEY_NEWLINE, KEY_PAGE_DOWN, KEY_PAGE_UP, KEY_RIGHT, KEY_UP, KEY_F1, SCREEN_COLS,
-    SCREEN_ROWS,
+    KEY_NEWLINE, KEY_PAGE_DOWN, KEY_PAGE_UP, KEY_RIGHT, KEY_UP, KEY_F1, SCREEN_BASE,
+    SCREEN_COLS, SCREEN_ROWS,
 };
 
 fn main() -> eframe::Result {
@@ -246,15 +246,45 @@ impl eframe::App for HackApp {
     }
 }
 
-/// `--headless <file> [--max N]`：不開視窗，跑 N 條後印出狀態（供自動化/驗證）。
+/// `--headless <file> [--max N] [--dump A,B]`：不開視窗，跑 N 條後印出狀態（供自動化/驗證）。
+/// `--dump` 印出 RAM[A..=B] 區段（如 `--dump 200,201 --dump 2048,2051`，可多次）。
 fn headless(args: &[String]) -> eframe::Result {
     let Some(file) = args.first() else {
-        eprintln!("usage: hackemu --headless <file.bin|.hack> [--max N]");
+        eprintln!("usage: hackemu --headless <file.bin|.hack> [--max N] [--dump A,B]");
         std::process::exit(2);
     };
     let mut max = 100_000u64;
-    if let Some(i) = args.iter().position(|a| a == "--max") {
-        max = args.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or(max);
+    let mut dumps = Vec::new();
+    let mut trace = 0usize;
+    let mut sample = 0u64;
+    let mut i = 1;
+    while i < args.len() {
+        match args[i].as_str() {
+            "--max" => {
+                max = args.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or(max);
+                i += 2;
+            }
+            "--dump" => {
+                if let Some(range) = args.get(i + 1) {
+                    let toks: Vec<&str> = range.split(',').collect();
+                    let a = toks.first().and_then(|s| s.trim().parse::<usize>().ok());
+                    let b = toks.get(1).and_then(|s| s.trim().parse::<usize>().ok());
+                    if let (Some(a), Some(b)) = (a, b) {
+                        dumps.push((a, b));
+                    }
+                }
+                i += 2;
+            }
+            "--trace" => {
+                trace = args.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                i += 2;
+            }
+            "--sample" => {
+                sample = args.get(i + 1).and_then(|s| s.parse().ok()).unwrap_or(0);
+                i += 2;
+            }
+            _ => i += 1,
+        }
     }
     let mut vm = Vm::new();
     if let Err(e) = vm.load_file(file) {
@@ -263,11 +293,91 @@ fn headless(args: &[String]) -> eframe::Result {
     }
     println!("loaded {} ({} instructions)", file, vm.rom.len());
     println!("before: PC={} A={} D={} SP={}", vm.pc, vm.a, vm.d, vm.ram[0]);
-    vm.run(max);
+    let mut ring: Vec<(usize, String)> = Vec::new();
+    let mut samples: Vec<usize> = Vec::new();
+    let mut tick = 0u64;
+    vm.run_until(max, |pc, i, _a| {
+        tick += 1;
+        if sample > 0 && tick % sample == 0 {
+            samples.push(pc);
+        }
+        if trace == 0 {
+            return true;
+        }
+        let txt = if i & 0x8000 == 0 {
+            format!("@{:>5}   ; 0x{i:04X}", i & 0x7fff)
+        } else {
+            let dst = match (i >> 3) & 0x7 {
+                0 => "",
+                1 => "M",
+                2 => "D",
+                3 => "DM",
+                4 => "A",
+                5 => "AM",
+                6 => "AD",
+                _ => "ADM",
+            };
+            let jmp = match i & 0x7 {
+                0 => "",
+                1 => ";JGT",
+                2 => ";JEQ",
+                3 => ";JGE",
+                4 => ";JLT",
+                5 => ";JNE",
+                6 => ";JLE",
+                _ => ";JMP",
+            };
+            format!("D={}+A {dst}{jmp}", if (i >> 12) & 1 == 1 { 'M' } else { 'A' })
+        };
+        if ring.len() >= trace {
+            ring.remove(0);
+        }
+        ring.push((pc, txt));
+        true
+    });
     println!(
         "after: PC={} A={} D={} SP={} cycles={}",
         vm.pc, vm.a, vm.d, vm.ram[0], vm.cycles
     );
     println!("RAM[0..16]: {:?}\nRAM[16] static: {}", &vm.ram[0..16], vm.ram[16]);
+    for (a, b) in dumps {
+        println!("RAM[{a}..={b}]: {:?}", &vm.ram[a..=b.min(vm.ram.len() - 1)]);
+    }
+    if trace > 0 {
+        println!("--- last {trace} instructions ---");
+        let off = ring.len().saturating_sub(trace);
+        for (n, (pc, txt)) in ring.iter().enumerate().skip(off) {
+            println!("{n:5} {pc:5}: {txt}");
+        }
+    }
+    if sample > 0 {
+        use std::collections::HashMap;
+        let mut cnt: HashMap<usize, u64> = HashMap::new();
+        for &p in &samples {
+            *cnt.entry(p).or_default() += 1;
+        }
+        let mut top: Vec<_> = cnt.into_iter().collect();
+        top.sort_by(|a, b| b.1.cmp(&a.1));
+        println!("--- top PC samples (every {sample} cycles, {} total) ---", samples.len());
+        for (pc, n) in top.iter().take(10) {
+            println!("{n:6}  PC={pc}");
+        }
+    }
+    if let Some(pos) = args.iter().position(|s| s == "--img") {
+        if let Some(path) = args.get(pos + 1) {
+            let black = &vm.ram[SCREEN_BASE..SCREEN_BASE + SCREEN_ROWS * 32];
+            let mut raw = Vec::with_capacity(SCREEN_ROWS * SCREEN_COLS * 3);
+            for row in 0..SCREEN_ROWS {
+                for col in 0..SCREEN_COLS {
+                    let w = black[row * 32 + col / 16];
+                    let p = if w & (1 << (15 - col % 16)) != 0 { 0u8 } else { 255u8 };
+                    raw.extend_from_slice(&[p, p, p]);
+                }
+            }
+            let header = format!("P6\n{} {}\n255\n", SCREEN_COLS, SCREEN_ROWS);
+            std::fs::write(path, [header.as_bytes(), &raw].concat()).ok();
+            println!("wrote {path}");
+        }
+    }
     Ok(())
 }

@@ -15,7 +15,7 @@
 | v0.4 | 04 | HACK 平台整合（Mult/Fill 跑在 Computer.hdl） | ✅ 已完成（2/2） |
 | v0.5 | 06+07+08+11 | 工具鏈誕生（hackasm CLI、vm2asm、jack2vm，C 版 byte 相容）＋ 全鏈路 e2e | ✅ 已完成（40/40） |
 | v0.6 | 05→06 之後 | hackemu 虛擬機（執行 .bin/.hack，egui GUI 顯示 SCREEN） | ✅ 已完成（40/40＋交叉驗證） |
-| v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | 🔲 規劃中（設計見 `_doc/v0.7.md`） |
+| v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | 🚧 M7.1/2/4 headless 通過、GUI 人工待驗（見 `_doc/v0.7.md`） |
 | v0.8 | 未來 | 效能、除錯、追蹤、模擬器互驗 | 💡 發想 |
 
 ---
@@ -118,10 +118,21 @@
 
 ## v0.7 — ch12 OS 在 hackemu 上執行
 
-**狀態：🔲 規劃中**
+**狀態：🚧 進行中（2026-09-10）**
 
 - 範圍：把 `12/*.jack` 整包 OS 透過既有工具鏈編譯、開機、跑起來，
   並且能跑像 Pong 這種需要 OS 的應用程式（GUI 可互動）。
+- 已達成：
+  - M7.1 `jack2vm` 8/8 byte 與 C oracle 一致（含 Screen.jack 官方兩 bug 修正）。
+  - vm2asm 多檔模式 label 依函式 scope（單檔仍與 C 逐位元一致）→ 多檔 bootstrap 可用。
+  - 關鍵發現：Hack 的 `@x` 只有 15 位址位元，**ROM > 32768 words 結構上無法定址**；
+    全 OS+app 組譯 35330 words > 32K。改以「裁剪版 OS」（去 Output 字型 +
+    極簡 Output 替身 + 自訂 Sys「Memory.init 先行」）跑進 32K。
+  - M7.2 裁剪版 OS headless 驗證全過（`gen/show.bin`，17770 words）。
+  - M7.4 Pong 上 32K：`gen/pong.bin` **29544 words**，headless 驗證
+    ball/bat/地板全渲染、ball 會動、無窮迴圈穩定。
+- 待辦：GUI 人工互動（方向鍵）；M7.3 各模組單測（部分已被 show/pong 覆蓋）；
+  M7.5/M7.6 選做。
 - 設計與驗收細節：見 `_doc/v0.7.md`（含待解問題、步驟拆解）。
 
 ---

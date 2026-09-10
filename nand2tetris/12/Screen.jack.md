@@ -203,11 +203,14 @@ function void clearScreen() {
     let i = 0;
     while( i < 8192 ) {
         let screen[i] = white;    // white = false = 0
+        let i = i + 1;
     }
 }
 ```
 
 遍歷全部 8192 個 word，逐一設為 0（白色）。在實際硬體上，可以用 DMA（直接記憶體存取）或區塊搬移指令大幅加速，但在 Jack 中只能逐 word 寫入。
+
+> 注意：官方 nand2tetris 的 Screen.jack 原文少了 `let i = i + 1;`，會造成無窮迴圈（clearScreen 永遠無法結束）。此處已修正；教學時常以此當作「官方 OS 也有 bug」的例子。
 
 ### drawHorizontalLine 的位址計算技巧
 

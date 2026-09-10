@@ -20,4 +20,13 @@ cargo run -q -p hdl2rs -- --release --dir ../01 --dir ../02 --dir ../03 --dir ..
 echo "== hackemu 虛擬機 headless 執行（RAM[16] 應為 5，與上面 hdl2rs 一致）=="
 "$bin/hackasm" gen/chain/chain.asm gen/chain/chain.bin --bin
 "$bin/hackemu" --headless gen/chain/chain.bin --max 500000 | grep -q "RAM\[16\] static: 5"
+echo "== v0.7：ch12 裁剪版 OS headless（Memory.poke / Math.multiply / Screen.drawPixel 標記）=="
+rm -rf gen/show_os_vm gen/show_app_vm && mkdir -p gen/show_os_vm gen/show_app_vm
+"$bin/jack2vm" -o gen/show_os_vm gen/os_src
+"$bin/jack2vm" -o gen/show_app_vm gen/os
+"$bin/vm2asm" gen/show.asm gen/show_os_vm/*.vm gen/show_app_vm/*.vm
+"$bin/hackasm" gen/show.asm gen/show.bin --bin
+"$bin/hackemu" --headless gen/show.bin --max 10000000 --dump 200,201 --dump 22784,22784 > gen/show.out
+grep -q "RAM\[200..=201\]: \[1234, 777\]" gen/show.out
+grep -q "RAM\[22784..=22784\]: \[1\]" gen/show.out
 echo "== 全部通過 =="

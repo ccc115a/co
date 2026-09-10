@@ -76,7 +76,7 @@ M=D
 // function Main.loop 0
 (Main.loop)
 // label WHILE_EXP0
-(WHILE_EXP0)
+(Main.loop$WHILE_EXP0)
 // push constant 0
 @0
 D=A
@@ -97,13 +97,13 @@ M=!M
 @SP
 AM=M-1
 D=M
-@WHILE_END1
+@Main.loop$WHILE_END1
 D;JNE
 // goto WHILE_EXP0
-@WHILE_EXP0
+@Main.loop$WHILE_EXP0
 0;JMP
 // label WHILE_END1
-(WHILE_END1)
+(Main.loop$WHILE_END1)
 
 // ========== File: gen/chain/vm/Sys.vm ==========
 // function Sys.init 0

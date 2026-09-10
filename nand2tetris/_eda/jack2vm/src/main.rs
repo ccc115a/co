@@ -78,14 +78,15 @@ fn main() -> ExitCode {
     for f in &files {
         let stem = f.file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_default();
         let out_path = base_dir.join(format!("{stem}.vm"));
-        let src = match std::fs::read_to_string(f) {
-            Ok(s) => s,
+        let src = std::fs::read(f).map_err(|e| format!("無法讀取 {}：{e}", f.display()));
+        let src = match src {
+            Ok(b) => b,
             Err(e) => {
-                eprintln!("無法讀取 {}：{e}", f.display());
+                eprintln!("{e}");
                 return ExitCode::from(2);
             }
         };
-        let vm = jack2vm::compile(&src);
+        let vm = jack2vm::compile_bytes(&src);
         if let Err(e) = std::fs::write(&out_path, vm) {
             eprintln!("無法寫入 {}：{e}", out_path.display());
             return ExitCode::from(2);

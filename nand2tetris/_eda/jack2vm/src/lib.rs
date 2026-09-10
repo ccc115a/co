@@ -672,6 +672,17 @@ pub fn compile(source: &str) -> String {
     c.out
 }
 
+/// 以位元組級別讀入的入口：把每個 byte 直接對應到同碼值字元後再編譯。
+///
+/// 課程的 `.jack` 檔案偶有非 UTF-8 位元組（例：`12/Output.jack` 註解裡
+/// Windows-1252 的 smart quote `0x92`）。C 版把它當位元組序列處理、跳過註解，
+/// 輸出不受影響；這裡的「byte→char 同碼值」映射與 C 的 byte 語意一致，
+/// 保證 byte 相容。
+pub fn compile_bytes(bytes: &[u8]) -> String {
+    let s: String = bytes.iter().map(|&b| b as char).collect();
+    compile(&s)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -767,5 +778,19 @@ return
             "push constant 98\ncall String.appendChar 2\n",
             "call Output.printString 1\npop temp 0\n"
         )));
+    }
+
+    #[test]
+    fn compile_bytes_handles_non_utf8_comment() {
+        // 12/Output.jack 註解內有 Windows-1252 的 0x92（' ），非 UTF-8；
+        // byte→char 同碼值映射要讓編譯照常完成且註解被移除。
+        let mut src = b"class Main { // 0x92's note\n\n    function void main() {}\n}\n".to_vec();
+        let i = src.iter().position(|&b| b == b'0').unwrap();
+        src[i] = 0x92;
+        let vm = compile_bytes(&src);
+        // 註解（含 0x92）被移除、編譯正常完成：跳到 function 宣告後、
+        // 0x92 的字元（U+0092）不得殘留在輸出裡。
+        assert!(vm.starts_with("function Main.main 0\n"));
+        assert!(!vm.contains('\u{92}'));
     }
 }
