@@ -15,8 +15,18 @@ _eda/
 ├─ hackasm/   組譯器：HACK 組語 → .hack（16-bit 文字）與 .bin（u16 LE）
 ├─ vm2asm/    VM → HACK 組語（ch07/08，與 08/vm2asm.c byte 相容）
 ├─ jack2vm/   Jack → VM 組合語言（ch11，與 11/c/jack2vm.c byte 相容）
-└─ hackemu/    HACK 虛擬機：執行 .bin/.hack，egui GUI 顯示 SCREEN + headless 模式
+└─ hackemu/   HACK 虛擬機：執行 .bin/.hack，egui GUI 顯示 SCREEN + headless 模式
 ```
+
+每個子模組在自己的目錄各有 `README.md`（`.hdl` 前端/執行期、主 CLI、組譯器、
+兩支轉換器、虛擬機的用法與 API），資料流與使用方式另見各章 `_doc/v0.x.md`。
+
+## 文件導覽
+
+- **快速入門**：環境建置與各章工具速查 → `_doc/getting_started.md`
+- **版本規劃（roadmap）**：v0.1 → v0.8 對照表與每版驗收 → `_doc/plan.md`
+- **版本紀錄**：`_doc/v0.1.md` … `_doc/v0.6.md`（每版實作內容、驗證、踩到的坑）
+- **下一里程碑設計**：ch12 OS 在 hackemu 上執行 → `_doc/v0.7.md`
 
 資料流：
 

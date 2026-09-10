@@ -1,18 +1,22 @@
-# hdl2rs 版本規劃（roadmap）
+# _eda 工具鏈版本規劃（roadmap）
 
 > 目標：以 Verilator 精神，把 Nand2Tetris 的 `.hdl` 逐步轉譯成 Rust 模擬器，
-> 一個版本打通一個章節（或一組硬體里程碑），最終能跑完整台 HACK 電腦。
+> 一個版本打通一個章節（或一組里程碑），最終組成完整的 HACK 開發鏈：
+> **`.hdl` / `.jack` / `.vm` / `.asm` 都能寫、都能驗證、都能執行**。
 > 每版驗收標準：該章節**全部**官方 `.tst`（含本課程自訂測試）PASS。
 
 ## 版本對照總表
 
 | 版本 | 對應章節 | 主題 | 狀態 |
 |------|----------|------|------|
-| v0.1 | 01+02 | 組合電路 | ✅ 已完成（21/21） |
+| v0.1 | 01+02 | 組合電路（hackhdl/hackrt/hdl2rs 誕生） | ✅ 已完成（21/21） |
 | v0.2 | 03 | 循序電路（tick/tock、暫存器、記憶體） | ✅ 已完成（29/29） |
 | v0.3 | 05 | 整台電腦（CPU + 內建暫存器 + ROM32K + 內部 Probe） | ✅ 已完成（CPU 2/2） |
-| v0.4 | 04+06+05 範例 | HACK 平台整合（執行 .hack / .asm 程式） | 🔲 規劃中 |
-| v0.5 | 未來 | 擴充（效能、追蹤、介面） | 💡 發想 |
+| v0.4 | 04 | HACK 平台整合（Mult/Fill 跑在 Computer.hdl） | ✅ 已完成（2/2） |
+| v0.5 | 06+07+08+11 | 工具鏈誕生（hackasm CLI、vm2asm、jack2vm，C 版 byte 相容）＋ 全鏈路 e2e | ✅ 已完成（40/40） |
+| v0.6 | 05→06 之後 | hackemu 虛擬機（執行 .bin/.hack，egui GUI 顯示 SCREEN） | ✅ 已完成（40/40＋交叉驗證） |
+| v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | 🔲 規劃中（設計見 `_doc/v0.7.md`） |
+| v0.8 | 未來 | 效能、除錯、追蹤、模擬器互驗 | 💡 發想 |
 
 ---
 
@@ -58,34 +62,71 @@
   - **內建 `RegChip`**：ARegister/DRegister 共用 16-bit master/slave
     `{ latch, q }`；probe 讀 **latch**（tick 後立即顯示取樣值，已用 `CPU.cmp` 驗證）。
   - **`ROM32K load <file>.hack`**：`Rom32KChip::load` 解析文字二進位列；
-    `TopModel::load_rom` 沿 user 子晶片遞迴轉發（v0.3 尚無腳本觸發，v0.4 驗收）。
+    `TopModel::load_rom` 沿 user 子晶片遞迴轉發。
   - **內部 Probe**：`get_output` 對非 top pin 名稱以 `PinRef` 拆 `name[i]` 後
     查 `probe_whole/probe_bit`。
   - `outM` 於 `writeM==0` 時回 `None`（官方顯 `*******`）× `fmt` 未定義欄位
     填滿整個 `a+b+c` 寬度。
 - 驗收：`CPU-external.tst`（純外部 pin）與 `CPU.tst`（含 `DRegister[]` 探測）
   雙 PASS；ch01~ch03 回歸 29/29。
-- 未納入本版：`ComputerAdd/Max/Rect`（需 `.hack`，v0.4）、`Memory.tst`（互動式）。
 - 紀錄：見 `_doc/v0.3.md`。
 
 ---
 
 ## v0.4 — HACK 平台整合（ch04 + 執行 .asm / .hack 程式）
 
-**狀態：規劃中**
+**狀態：✅ 已完成（2026-09-10）**
 
 - 範圍：把整台模擬器當「硬體平台」，直接執行 ch04 的組合語言程式。
-- 關鍵設計：
-  - 整合 repo 內 ch06 的 assembler（`asm.cpp`）產出的 `.hack` 位元檔；
-    或內建 HACK 組合語法 translator（輸入 `.asm` → `.hack`）。
-  - 模擬器 CLI：`--rom <file.hack>`、`--max-cycles`、`--trace`（執行追蹤）。
-  - 支援 I/O 對映（`SCREEN` / `KBD` / `MEM[M]`）＋ timed `output`。
-- 驗收：ch04 範例程式（`Mult` / `Fill`）於模擬器上跑完並比對視訊記憶體 / 鍵盤。
-- 依賴：v0.3 的 `Computer` 完成。
+- 交付：
+  - `ROM32K load <file>.hack` 由腳本觸發（v0.3 只有 crystal 觸發）；
+  - ch04 `Mult` / `Fill` 在 `Computer.hdl` 上跑完並比對視訊記憶體 / 鍵盤。
+- 驗收：`Mult-hw`、`Fill-hw` 雙 PASS；ch01~ch05 回歸不受影響。
+- 紀錄：見 `_doc/v0.4.md`。
 
 ---
 
-## v0.5 — 擴充（未來發想）
+## v0.5 — 工具鏈誕生（ch06–08 + ch11）
+
+**狀態：✅ 已完成（2026-09-10）**
+
+- 範圍：由 4 crate 擴成 6 crate，補齊「寫程式」一側的工具。
+- 交付：
+  - `hackasm` CLI：`hackasm <in.asm> [out.hack] [--bin]`（`.hack` 文字 + `.bin` u16 LE）。
+  - `vm2asm`：VM → HACK 組語（ch07/08），共用計數器處理多檔；
+    與 `08/vm2asm.c` **byte 相容**（07×6 + 08×11 = 17/17）。
+  - `jack2vm`：Jack → VM（ch11），與 `11/c/jack2vm.c` **byte 相容**（11/11）。
+  - 全鏈路 e2e：`Main.jack+Sys.jack → chain.hack` 在 Computer.hdl 上 RAM[16]=5。
+- 驗收：`verify.sh` 40/40（ch01–03 29 + ch04 2 + ch05 8 + chain 1）。
+- 紀錄：見 `_doc/v0.5.md`。
+
+---
+
+## v0.6 — hackemu 虛擬機（GUI + headless）
+
+**狀態：✅ 已完成（2026-09-10）**
+
+- 範圍：第 7 個 crate `hackemu`（原名 `hackvm`，避免與 `.vm` 中間語言混淆）。
+- 交付：
+  - 純 std 的 VM 核心 `lib.rs`（32K RAM + SCREEN + KBD，`CPU.hdl` 同步語意）。
+  - egui/eframe 0.36 GUI：顯示 512×256 螢幕、鍵盤碼 128–152、載入/執行/單步/重置/速度。
+  - `--headless` 無視窗模式供自動化 grep 驗證。
+- 驗收：`verify.sh` 40/40 + headless 交叉檢查（chain.bin → RAM[16]=5，與 hdl2rs 一致）。
+- 紀錄：見 `_doc/v0.6.md`。
+
+---
+
+## v0.7 — ch12 OS 在 hackemu 上執行
+
+**狀態：🔲 規劃中**
+
+- 範圍：把 `12/*.jack` 整包 OS 透過既有工具鏈編譯、開機、跑起來，
+  並且能跑像 Pong 這種需要 OS 的應用程式（GUI 可互動）。
+- 設計與驗收細節：見 `_doc/v0.7.md`（含待解問題、步驟拆解）。
+
+---
+
+## v0.8 — 擴充（未來發想）
 
 **狀態：💡 未定型**
 
@@ -99,6 +140,6 @@
 ## 執行慣例
 
 - 每版完成時：更新 `README.md` 里程碑勾選與 `_doc/vN.N.md` 版本紀錄，
-  產出編譯物不進 git（`*.out` / `gen/` 不入庫）。
-- 驗證：先 `bash verify.sh`（可加 `-- --dir ../0N`）確認無回歸
-  （v0.1 之後手動含 ch01/02）。
+  產出編譯物不進 git（`*.out` / `gen/` / `target/` 不入庫）。
+- 驗證：先 `bash verify.sh` 確認無回歸，再跑 `bash test.sh`（容錯版）；
+  兩者皆應全綠。
