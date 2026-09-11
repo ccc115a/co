@@ -17,6 +17,7 @@
   <button id="load" title="組譯並載入到 ROM">組譯並載入</button>
   <label>速度 <input type="range" id="speed" min="0" max="100" value="55"></label>
   <span id="speedVal"></span>
+  <span id="fps" title="執行迴圈 FPS"></span>
   <span class="spacer"></span>
   <span id="status"></span>
 </header>
@@ -48,10 +49,17 @@
     <h2>③ 記憶體</h2>
     <div class="panel" style="flex:1">
       <div class="rambar">
-        <label>位址 <input id="ramStart" type="number" value="256"></label>
+        <button data-ram="0" data-len="16" title="R0–R15">R0-15</button>
+        <button data-ram="16" title="static 段">static</button>
+        <button data-ram="256" title="call stack">stack</button>
+        <button data-ram="2048" title="heap 起點">heap</button>
+        <button id="ramPrev" data-page="-1" title="上一頁">‹</button>
+        <input id="ramStart" type="number" value="256">
         <label>長度 <input id="ramLen" type="number" value="128"></label>
+        <button id="ramNext" data-page="1" title="下一頁">›</button>
         <button id="ramBtn">讀取</button>
       </div>
+      <div id="ramSum" class="dim"></div>
       <div id="ramBody"></div>
     </div>
   </section>

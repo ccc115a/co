@@ -71,4 +71,46 @@ grep -q "RAM\[100..=110\]: \[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1\]" gen/m73/MathTest
 grep -q "RAM\[100..=110\]: \[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0\]" gen/m73/StringTest.out
 grep -q "RAM\[100..=110\]: \[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0\]" gen/m73/ScreenTest.out
 grep -q "RAM\[100..=110\]: \[1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0\]" gen/m73/HeapTest.out
+echo "== v0.8：hackserve（WebSocket）端到端回歸 =="
+cargo build --release -p hackserve >/dev/null
+PORT=8087
+target/release/hackserve --port $PORT >/tmp/hackserve-v08.log 2>&1 &
+SRV=$!
+trap 'kill $SRV 2>/dev/null' EXIT
+sleep 1
+node - "$PORT" ../06/add.asm ../06/sum.asm ../04/fill/Fill.asm ../04/mult/Mult.asm <<'NODE'
+const [port, ...files] = process.argv.slice(2);
+const fs = require('fs');
+const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+const waiters = {}; let seq = 0;
+ws.onmessage = (e) => { const m = JSON.parse(e.data); if (waiters[m.id]) { waiters[m.id](m); delete waiters[m.id]; } };
+function req(o) { return new Promise((res, rej) => { const id = ++seq; o.id = id; waiters[id] = res; ws.send(JSON.stringify(o)); setTimeout(() => { if (waiters[id]) { delete waiters[id]; rej(new Error('timeout ' + o.type)); } }, 5000); }); }
+function assert(c, msg) { if (!c) { console.error('FAIL:', msg); process.exit(1); } console.log('ok -', msg); }
+ws.onopen = async () => {
+  try {
+    for (const f of files) {                     // 官方語料都要能組譯
+      const asm = fs.readFileSync(f, 'utf8');
+      const m = await req({ type: 'load', asm });
+      assert(m.ok && m.rom > 0, `assemble ${f} → ${m.rom} words`);
+    }
+    let m = await req({ type: 'load', asm: '@2\nD=A\n@3\nD=D+A\n@0\nM=D\n@0\n0;JMP\n' });
+    m = await req({ type: 'simulate', steps: 8 });  // 0;JMP 跳回 0
+    assert(m.sp === 5 && m.pc === 0, `ADD → sp=${m.sp} pc=${m.pc}`);
+    m = await req({ type: 'load', asm: '@SCREEN\nM=-1\n@0\n0;JMP\n' });
+    m = await req({ type: 'simulate', steps: 2 });  // @SCREEN 是 A 指令，第 2 步才寫入
+    let w0 = null;
+    for (const r of m.rows) if (r.r === 0) { const b = Buffer.from(r.b, 'base64'); w0 = b.readUInt16BE(0); }
+    assert(w0 === 0xffff, 'screen row0 word0 black');
+    m = await req({ type: 'load', asm: '@2\nXXX\n' });  // 組譯錯誤要帶行號
+    assert(!m.ok && m.errorLine === 2, `error line=${m.errorLine}`);
+    ws.send(JSON.stringify({ type: 'setKey', code: 65, down: true }));
+    m = await req({ type: 'ramDump', start: 24576, len: 1 });
+    assert(m.data[0] === 65, 'kbd key');
+  } catch (e) { console.error('FAIL:', e.message); process.exit(1); }
+  ws.close(); process.exit(0);
+};
+setTimeout(() => { console.error('timeout'); process.exit(1); }, 15000);
+NODE
+{ kill $SRV 2>/dev/null; wait $SRV 2>/dev/null; } || true
+trap - EXIT
 echo "== 全部通過 =="

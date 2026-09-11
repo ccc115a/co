@@ -40,38 +40,49 @@ fn predefined() -> HashMap<String, u16> {
     m
 }
 
-/// 兩 pass 組譯：一行組譯成一條 u16 指令
-pub fn assemble(src: &str) -> Result<Vec<u16>, String> {
-    // 去註解（`//` 至行尾）與空白，空行略過
-    let clean: Vec<String> = src
+/// 帶原始列號的組譯錯誤（供工具報錯定位用）。
+#[derive(Debug, Clone)]
+pub struct AsmError {
+    /// 原始原始碼的列號（1 起算，含註解/空行）。
+    pub line: usize,
+    pub message: String,
+}
+
+fn assemble_impl(src: &str) -> Result<Vec<u16>, AsmError> {
+    // 去註解（`//` 至行尾）與空白，空行略過；保留原始列號
+    let clean: Vec<(String, usize)> = src
         .lines()
-        .map(|l| l.split("//").next().unwrap_or("").trim().to_string())
-        .filter(|l| !l.is_empty())
+        .enumerate()
+        .map(|(i, l)| (l.split("//").next().unwrap_or("").trim().to_string(), i + 1))
+        .filter(|(l, _)| !l.is_empty())
         .collect();
 
     // pass1：`(LABEL)` → 位址
     let mut sym = predefined();
-    let mut lines: Vec<(String, u16)> = Vec::new();
+    let mut lines: Vec<(String, u16, usize)> = Vec::new();
     let mut addr = 0u16;
-    for line in &clean {
+    for (line, lineno) in &clean {
         if let Some(inner) = line
             .strip_prefix('(')
             .and_then(|s| s.strip_suffix(')'))
         {
             let name = inner.trim().to_string();
             if sym.contains_key(&name) {
-                return Err(format!("符號 {name} 重複定義"));
+                return Err(AsmError {
+                    line: *lineno,
+                    message: format!("符號 {name} 重複定義"),
+                });
             }
             sym.insert(name, addr);
         } else {
-            lines.push((line.clone(), addr));
+            lines.push((line.clone(), addr, *lineno));
             addr += 1;
         }
     }
 
     // pass2：編碼
     let mut out = Vec::with_capacity(lines.len());
-    for (text, _) in &lines {
+    for (text, _, lineno) in &lines {
         if let Some(s) = text.strip_prefix('@') {
             if let Ok(n) = s.parse::<u16>() {
                 out.push(n & 0x7FFF);
@@ -90,10 +101,22 @@ pub fn assemble(src: &str) -> Result<Vec<u16>, String> {
                 out.push(n);
             }
         } else {
-            out.push(encode_c(text)?);
+            out.push(
+                encode_c(text).map_err(|message| AsmError { line: *lineno, message })?,
+            );
         }
     }
     Ok(out)
+}
+
+/// 兩 pass 組譯：一行組譯成一條 u16 指令
+pub fn assemble(src: &str) -> Result<Vec<u16>, String> {
+    assemble_impl(src).map_err(|e| e.message)
+}
+
+/// 帶原始列號的組譯（供工具報錯定位用）。
+pub fn assemble_err(src: &str) -> Result<Vec<u16>, AsmError> {
+    assemble_impl(src)
 }
 
 fn encode_c(text: &str) -> Result<u16, String> {
@@ -248,5 +271,26 @@ mod tests {
         assert_eq!(out[0], 5);
         assert_eq!(out[1], one("D=A"));
         assert_eq!(out.len(), 2);
+    }
+
+    #[test]
+    fn errors_carry_original_line_numbers() {
+        let e = assemble_err("@2\nXXX\n").unwrap_err();
+        assert_eq!(e.line, 2);
+        assert!(e.message.contains("C 指令"));
+        // 訊息與 assemble()（無行號）一致
+        let msg = e.message.clone();
+        let e_plain = assemble("@2\nXXX\n").unwrap_err();
+        assert_eq!(e_plain, msg);
+        // 標籤重複：行號指向第二個 (L)
+        let e = assemble_err("(L)\n@2\n(L)\n0;JMP\n").unwrap_err();
+        assert_eq!(e.line, 3);
+        assert!(e.message.contains("重複定義"));
+        // 註解/空行也計入行號 → D=Q 在第 4 行
+        let e = assemble_err("@2\n\n// c\nD=Q\n").unwrap_err();
+        assert_eq!(e.line, 4);
+        // assemble()（不帶行號）訊息與舊版一致
+        let e2 = assemble("@2\nXXX\n").unwrap_err();
+        assert_eq!(e2, "C 指令未知 comp：XXX");
     }
 }

@@ -111,7 +111,7 @@ fn handle_text(state: &mut SessionState, text: &str) -> Vec<String> {
     let t = v["type"].as_str().unwrap_or("");
     let asm = v["asm"].as_str().unwrap_or("").to_string();
     match t {
-        "assemble" => match hackasm::assemble(&asm) {
+        "assemble" => match hackasm::assemble_err(&asm) {
             Ok(words) => {
                 state.set_asm(&asm, &words);
                 vec![reply(
@@ -121,11 +121,12 @@ fn handle_text(state: &mut SessionState, text: &str) -> Vec<String> {
                 )]
             }
             Err(e) => vec![reply(
-                &json!({"type":"asm-result","ok":false,"error":e,"lines":asm.lines().count()}),
+                &json!({"type":"asm-result","ok":false,"error":e.message,
+                        "errorLine":e.line,"lines":asm.lines().count()}),
                 id,
             )],
         },
-        "load" => match hackasm::assemble(&asm) {
+        "load" => match hackasm::assemble_err(&asm) {
             Ok(words) => {
                 let mut bytes = Vec::with_capacity(words.len() * 2);
                 for w in &words {
@@ -142,7 +143,8 @@ fn handle_text(state: &mut SessionState, text: &str) -> Vec<String> {
                 )]
             }
             Err(e) => vec![reply(
-                &json!({"type":"loaded","ok":false,"error":e,"lines":asm.lines().count()}),
+                &json!({"type":"loaded","ok":false,"error":e.message,
+                        "errorLine":e.line,"lines":asm.lines().count()}),
                 id,
             )],
         },
@@ -193,11 +195,17 @@ async fn main() {
     let app = Router::new()
         .route("/ws", get(ws_handler))
         .fallback_service(ServeDir::new(web));
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let port: u16 = std::env::args()
+        .collect::<Vec<_>>()
+        .windows(2)
+        .find(|w| w[0] == "--port")
+        .and_then(|w| w[1].parse().ok())
+        .unwrap_or(8080);
+    let addr = SocketAddr::from(([127, 0, 0, 1], port));
     let listener = tokio::net::TcpListener::bind(addr)
         .await
         .unwrap_or_else(|e| panic!("bind {addr}: {e}"));
-    println!("hackserve 已在 http://127.0.0.1:8080 提供（WebSocket /ws）");
+    println!("hackserve 已在 http://127.0.0.1:{port} 提供（WebSocket /ws）");
     axum::serve(listener, app).await.unwrap();
 }
 
@@ -291,7 +299,9 @@ mod tests {
     fn assemble_error_reports() {
         let mut s = SessionState::new();
         let out = handle_text(&mut s, &json!({"type":"load","asm":"@2\nXXX\n"}).to_string());
-        let _: Value = serde_json::from_str(&out[0]).unwrap();
-        assert!(!serde_json::from_str::<Value>(&out[0]).unwrap()["ok"].as_bool().unwrap());
+        let m: Value = serde_json::from_str(&out[0]).unwrap();
+        assert!(!m["ok"].as_bool().unwrap());
+        assert_eq!(m["errorLine"].as_u64().unwrap(), 2, "錯誤應指向第 2 行");
+        assert!(m["error"].as_str().unwrap().contains("C 指令"));
     }
 }

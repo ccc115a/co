@@ -39,6 +39,8 @@ const el = {
   ramLen: document.getElementById('ramLen'),
   ramBtn: document.getElementById('ramBtn'),
   ramBody: document.getElementById('ramBody'),
+  ramSum: document.getElementById('ramSum'),
+  fps: document.getElementById('fps'),
 };
 
 // ---------- WebSocket ----------
@@ -71,25 +73,36 @@ function req(o) {
 // ---------- 組譯／載入 ----------
 async function loadFromText() {
   const text = el.ta.value;
+  // 每次編輯後的內容都重新渲染列表（錯誤可在當前列標記）
+  state.lines = text.split('\n');
+  state.wordLine = [];
+  state.curLine = -1;
+  rebuildListing(0);
   if (!text.trim()) return;
   setStatus('組譯中…', '');
   try {
     const m = await req({ type: 'load', asm: text });
     if (m.ok) {
-      el.ta.setCustomValidity('');
-      state.lines = text.split('\n');
       state.lineMap = m.map || [];
-      state.wordLine = [];
       state.lineMap.forEach((w, i) => { if (w !== null) state.wordLine[w] = i; });
-      rebuildListing(0);
       stop();
-      setStatus(`載入成功：${m.rom} 條指令 / ${m.lines} 行`, 'ok');
-      await req({ type: 'simulate', steps: 1 });
-      refreshAll();
+      setStatus(`載入成功：${m.rom} 條命令 / ${m.lines} 行`, 'ok');
+      // 先跑 1 步，讓前端立刻看到初始畫面與暫存器
+      applySnap(await req({ type: 'simulate', steps: 1 }));
     } else {
-      setStatus(`組譯錯誤：${m.error || m.message}`, 'error');
+      setStatus(`組譯錯誤（第 ${m.errorLine} 行）：${m.error}`, 'error');
+      markErrLine(m.errorLine);
     }
   } catch (e2) { setStatus(String(e2.message || e2), 'error'); }
+}
+
+// 錯誤行標紅（組譯錯誤來自 errorLine，1 起算）
+function markErrLine(lineNo) {
+  if (!lineNo) return;
+  const l = el.listing.children[lineNo - 1];
+  if (!l) return;
+  l.classList.add('errline');
+  l.scrollIntoView({ block: 'center' });
 }
 
 function loadDefault() {
@@ -130,13 +143,31 @@ function start() {
 
 function stop() { state.running = false; updateButtons(); }
 
+// ----- W8.3 效能：FPS + 自適應 inspector 降頻 -----
+let fpsN = 0, fpsT = performance.now();
+let inspEvery = 4, inspCnt = 0;
+let emaMs = 33;
+
+function bumpFps(frameMs) {
+  fpsN++;
+  const now = performance.now();
+  if (now - fpsT >= 500) {
+    el.fps.textContent = `${(fpsN * 1000 / (now - fpsT)).toFixed(0)} fps`;
+    fpsN = 0; fpsT = now;
+  }
+  emaMs = emaMs * 0.8 + frameMs * 0.2;
+  inspEvery = emaMs > 60 ? 12 : 4; // 伺服器慢（大 N）時降低 inspector 刷新
+}
+
 async function tick() {
   let last = performance.now();
   const frameMs = 1000 / 30;
   while (state.running) {
     const now = performance.now();
-    if (now - last < frameMs) await sleep(frameMs - (now - last));
-    last = performance.now();
+    const dt = now - last;
+    bumpFps(dt);
+    if (dt < frameMs) await sleep(frameMs - dt);
+    last = now;
     try {
       const snap = await req({ type: 'simulate', steps: state.stepsPerFrame });
       if (!state.running) break; // 這幀途中被 stop
@@ -175,7 +206,9 @@ function applySnap(snap) {
 
 let frame = 0;
 function updateRegs(snap) {
-  if (++frame % 4 === 0) { // 節流 DOM 更新
+  inspCnt++;
+  if (inspCnt >= inspEvery) {
+    inspCnt = 0;
     el.regs.textContent = `PC=${snap.pc}  A=${snap.a}  D=${snap.d}  SP=${snap.sp}  ` +
       `週期=${snap.cycles}  ROM=${snap.lines}${snap.halted ? '  中止' : ''}`;
     const regs = snap.regs || [];
@@ -249,13 +282,26 @@ async function ramInspect() {
     const m = await req({ type: 'ramDump', start, len });
     const rows = [];
     for (let i = 0; i < m.data.length; i += 8) {
-      const addr = m.start + i;
-      const base = `a${addr}`;
       rows.push(`<div class="rrow">${Array.from({ length: Math.min(8, m.data.length - i) },
-        (_, k) => `<span class="cell">${addr + k}:${m.data[i + k]}</span>`).join('')}</div>`);
+        (_, k) => `<span class="cell">${m.start + i + k}:${m.data[i + k]}</span>`).join('')}</div>`);
     }
     el.ramBody.innerHTML = rows.join('');
+    const nz = m.data.reduce((a, v) => a + (v !== 0 ? 1 : 0), 0);
+    el.ramSum.textContent = `${m.start}…${m.start + m.data.length - 1}　非零 ${nz}/${m.data.length}`;
   } catch (e) { setStatus(String(e.message || e), 'error'); }
+}
+
+function ramPage(dir) {
+  const len = parseInt(el.ramLen.value, 10) || 64;
+  const start = Math.max(0, (parseInt(el.ramStart.value, 10) || 0) + dir * len);
+  el.ramStart.value = start;
+  ramInspect();
+}
+
+function ramJump(addr, len) {
+  el.ramStart.value = addr;
+  el.ramLen.value = len;
+  ramInspect();
 }
 
 // ---------- 鍵盤 → HACK code ----------
@@ -329,6 +375,12 @@ el.speed.oninput = () => {
   el.speedVal.textContent = `每幀 ${state.stepsPerFrame.toLocaleString()} 步`;
 };
 el.speed.oninput();
-el.ramBtn.onclick = ramInspect;
+  el.ramBtn.onclick = ramInspect;
+  document.querySelectorAll('[data-ram]').forEach((b) => {
+    b.onclick = () => ramJump(parseInt(b.dataset.ram, 10), parseInt(b.dataset.len || '64', 10));
+  });
+  document.querySelectorAll('[data-page]').forEach((b) => {
+    b.onclick = () => ramPage(parseInt(b.dataset.page, 10));
+  });
 el.ta.addEventListener('keydown', (e) => e.stopPropagation()); // 編輯器按鍵只給編輯器
 connect();
