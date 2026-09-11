@@ -199,25 +199,25 @@ function applySnap(snap) {
     const bytes = b64toBytes(r.b);
     state.screen.set(bytes, r.r * 64);
   }
-  updateRegs(snap);
+  updateRegs(snap, !!snap.halted || !state.running);
   draw();
   highlightPc(snap.pc);
 }
 
 let frame = 0;
-function updateRegs(snap) {
+function updateRegs(snap, force) {
+  if (force) inspCnt = inspEvery; // 終態（halt/單步/載入）強制刷新一次
   inspCnt++;
-  if (inspCnt >= inspEvery) {
-    inspCnt = 0;
-    el.regs.textContent = `PC=${snap.pc}  A=${snap.a}  D=${snap.d}  SP=${snap.sp}  ` +
-      `週期=${snap.cycles}  ROM=${snap.lines}${snap.halted ? '  中止' : ''}`;
-    const regs = snap.regs || [];
-    const vals = Array.from({ length: 16 }, (_, i) =>
-      `<span class="ch" data-r="${i}">R${i}=${regs[i] ?? '?'}</span>`);
-    el.chips.innerHTML = vals.join('');
-    const spEl = el.chips.querySelector(`[data-r="0"]`);
-    if (spEl) spEl.classList.add('sp');
-  }
+  if (inspCnt < inspEvery) return;
+  inspCnt = 0;
+  el.regs.textContent = `PC=${snap.pc}  A=${snap.a}  D=${snap.d}  SP=${snap.sp}  ` +
+    `週期=${snap.cycles}  ROM=${snap.lines}${snap.halted ? '  中止' : ''}`;
+  const regs = snap.regs || [];
+  const vals = Array.from({ length: 16 }, (_, i) =>
+    `<span class="ch" data-r="${i}">R${i}=${regs[i] ?? '?'}</span>`);
+  el.chips.innerHTML = vals.join('');
+  const spEl = el.chips.querySelector(`[data-r="0"]`);
+  if (spEl) spEl.classList.add('sp');
 }
 
 // ---------- 繪圖（512×256，bit15 = 最左黑點）----------
