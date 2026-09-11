@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HACK CPU/OS Emulator（v0.8）— 金門大學 計算機結構</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>HACK Emulator</h1>
+  <button id="run" title="執行/暫停">執行</button>
+  <button id="step" title="單步執行">Step</button>
+  <button id="reset" class="danger" title="重置">Reset</button>
+  <button id="open">開啟 .asm…</button>
+  <input type="file" id="file" accept=".asm,.hack,.vs,.jack">
+  <button id="load" title="組譯並載入到 ROM">組譯並載入</button>
+  <label>速度 <input type="range" id="speed" min="0" max="100" value="55"></label>
+  <span id="speedVal"></span>
+  <span class="spacer"></span>
+  <span id="status"></span>
+</header>
+<main>
+  <section class="col">
+    <h2>① 程式（HACK 組語）</h2>
+    <div class="panel">
+      <textarea id="asm" spellcheck="false" placeholder="貼上 HACK 組語（.asm），再按「組譯並載入」…"></textarea>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2 style="margin-bottom:4px">原始碼（PC 高亮）</h2>
+      <div id="listing"></div>
+    </div>
+  </section>
+  <section class="col">
+    <h2>② 螢幕（512×256）</h2>
+    <div id="screenwrap">
+      <canvas id="screen" width="512" height="256"></canvas>
+    </div>
+    <div class="panel">
+      <div id="regs">PC=0　A=0　D=0　SP=0</div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-bottom:4px">暫存器 R0–R15</h2>
+      <div id="chips"></div>
+    </div>
+  </section>
+  <section class="col">
+    <h2>③ 記憶體</h2>
+    <div class="panel" style="flex:1">
+      <div class="rambar">
+        <label>位址 <input id="ramStart" type="number" value="256"></label>
+        <label>長度 <input id="ramLen" type="number" value="128"></label>
+        <button id="ramBtn">讀取</button>
+      </div>
+      <div id="ramBody"></div>
+    </div>
+  </section>
+</main>
+<script src="app.js"></script>
+</body>
+</html>

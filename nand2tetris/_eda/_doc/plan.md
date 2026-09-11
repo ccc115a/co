@@ -16,7 +16,7 @@
 | v0.5 | 06+07+08+11 | 工具鏈誕生（hackasm CLI、vm2asm、jack2vm，C 版 byte 相容）＋ 全鏈路 e2e | ✅ 已完成（40/40） |
 | v0.6 | 05→06 之後 | hackemu 虛擬機（執行 .bin/.hack，egui GUI 顯示 SCREEN） | ✅ 已完成（40/40＋交叉驗證） |
 | v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | ✅ M7.1–M7.5 全過（v0.7.1 `--keys`、v0.7.2 M7.3 四支模組測試＋修 drawPixel 位元方向 bug）；M7.6 跳過（見 `_doc/v0.7.md`） |
-| v0.8 | 未來 | 效能、除錯、追蹤、模擬器互驗 | 💡 發想 |
+| v0.8 | 網頁版 | 瀏覽器 thin client + Rust 伺服器（WebSocket）當 CPU/OS Emulator（路線 B） | 🔲 進行中（W8.1 完成，見 `_doc/v0.8.md`） |
 
 ---
 
@@ -139,14 +139,19 @@
 
 ---
 
-## v0.8 — 擴充（未來發想）
+## v0.8 — 網頁版 CPU/OS Emulator（HACK simulator served via WebSocket）
 
-**狀態：💡 未定型**
+**狀態：🔲 進行中（W8.1 完成，2026-09-12；`cargo test -p hackserve` 4 支綠 + node WS 煙測通）**
 
-- 效能：組合區塊快取、逐位級寬度窄化、可比對 Verilator 的編譯式速度。
-- 除錯：波形匯出（VCD / GTKWave）、單步 + 斷點、內部 probe 可視化。
-- 介面：把 `hdl2rs --dir NM` 接到 repo 其他章節（06 之後）當驗證後端。
-- 可選：與 `verilog/`（hackcpu 等）做正確性交叉驗證。
+- 路線 B：Rust 伺服器（`hackserve`，axum + WS + 靜態）跑同一顆 `hackemu::Vm` /
+  `hackasm::assemble`；瀏覽器薄前端（`web/`，純 HTML/JS/Canvas）。
+- 仿官方 CPU Emulator：載入/直接輸入 `.asm` → 組譯 → 即時跑，觀察暫存器、
+  記憶體分頁、SCREEN、KBD 的立即反應；PC 高亮目前執行列。
+- 每視覺幀 = 「前端節拍 → `simulate{steps}` → 伺服器回 snapshot → 繪製」；
+  Speed 滑桿 = 每幀步數（與 egui 版同一模型）。
+- 保留 egui 原生 GUI 與 headless CLI（`--keys/--trace/--sample/--img`）。
+- （選做 v0.8.x）伺服器端跑 `jack2vm`+`vm2asm` → 可貼 .jack/.vm 上網執行。
+- 其餘既有發想（效能/波形/模擬器互驗）暫緩。
 
 ---
 

@@ -1,0 +1,16 @@
+[package]
+name = "hackserve"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum = { version = "0.8", features = ["ws"] }
+tokio = { version = "1", features = ["full"] }
+tower-http = { version = "0.6", features = ["fs"] }
+serde_json = "1"
+base64 = "0.22"
+hackasm = { path = "../hackasm" }
+hackemu = { path = "../hackemu" }
+
+[dev-dependencies]
+serde_json = "1"
