@@ -21,6 +21,7 @@ use std::net::SocketAddr;
 use tower_http::services::ServeDir;
 
 mod hdl;
+mod jack;
 
 /// 單一連線的模擬器 state：一個 VM + 螢幕差量追蹤 + 組譯上下文。
 struct SessionState {
@@ -239,6 +240,24 @@ async fn session(mut ws: WebSocket) {
         } else if t == "hdl-run" {
             let id = v["id"].as_u64().unwrap_or(0);
             let r = hdl::run_reply(&v, id).await;
+            if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
+                return;
+            }
+        } else if t == "jack-list" {
+            let id = v["id"].as_u64().unwrap_or(0);
+            let r = reply(&jack::list_programs(), id);
+            if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
+                return;
+            }
+        } else if t == "jack-source" {
+            let id = v["id"].as_u64().unwrap_or(0);
+            let r = jack::source_reply(&v, id);
+            if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
+                return;
+            }
+        } else if t == "jack-run" {
+            let id = v["id"].as_u64().unwrap_or(0);
+            let r = jack::run_reply(&v, id).await;
             if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
                 return;
             }

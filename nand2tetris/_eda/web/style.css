@@ -102,3 +102,18 @@ header select:disabled { opacity: .5; }
 #banner.fail { background: #3a202a; color: var(--err); }
 #errlog { margin: 0; white-space: pre-wrap; color: var(--warn); min-height: 30px; overflow: auto; }
 .hidden { display: none; }
+
+/* ---- v1.0：Jack 全鏈路頁（jack.html） ---- */
+.withosrow { color: var(--dim); font-size: 12px; display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; }
+header input[type="checkbox"] { accent-color: var(--accent); }
+#filetabs, #stagetabs, #arttabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; min-height: 24px; }
+.tab { background: #2d2f45; color: var(--fg); border: 1px solid #000; border-radius: 3px; font: inherit; font-size: 12px; padding: 2px 9px; cursor: pointer; }
+.tab:hover { outline: 1px solid #555; }
+.tab.sel { outline: 1px solid var(--accent); color: var(--accent); background: #1b1e2e; }
+.tab.bad { outline: 1px solid var(--err); color: var(--err); }
+.jtextarea { flex: 1; min-height: 0; width: 100%; background: #16161e; color: var(--fg);
+  border: 1px solid #000; border-radius: 4px; font: 12px/1.45 "SF Mono", Menlo, monospace; padding: 6px;
+  resize: none; tab-size: 2; }
+.jtextarea[readonly] { color: #c9c9d4; background: #1d1e2a; }
+#fname { width: 200px; background: #16161e; color: var(--fg); border: 1px solid #000; border-radius: 3px; font: inherit; padding: 3px 6px; }
+#fname[readonly] { color: #c9c9d4; background: #1d1e2a; }

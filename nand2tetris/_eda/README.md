@@ -132,6 +132,12 @@ cargo build --release -p hackserve
   晶片（01–05）或貼上自訂 `.hdl`/`.tst`/`.cmp` → 伺服器跑**真 hdl2rs 管線**
   （codegen + cargo build + 子程序執行 `.tst`）→ 秀 PASS/FAIL 橫幅與 `.out` 表格。
   WS 協定：`hdl-list` / `hdl-source` / `hdl-run`（細節見 `_doc/v0.9.md`）。
+- **v1.0 增 `jack.html`**：Jack 全鏈路編譯頁（`index.html`/`hdl.html` header 有導流）。
+  選內建教材程式（`../11/jack`，含 OS）／**無 OS 案例（`../11/jackNoOs`，自帶 Sys）**／
+  虛擬 e2e `chain`，或貼上自訂多檔 Jack（可併裁剪版 OS）
+  → 伺服器把既有 CLI 當子程序串管線（`jack2vm → vm2asm → hackasm → hackemu --headless`）
+  → 前端以階段側欄展開各階段產物（`.vm`／`.asm`／`.hack`／SIM 摘要＋軌跡）。
+  WS 協定：`jack-list` / `jack-source` / `jack-run`（細節見 `_doc/v1.0.md`）。
 
 ## 資料流（hdl2rs 核心流程）
 
@@ -152,8 +158,8 @@ hackrt::run(model, script) ◀───────────┘  ◀── ar
 ## 文件導覽
 
 - **快速入門**：環境建置與各章工具速查 → `_doc/getting_started.md`
-- **版本規劃（roadmap）**：v0.1 → v0.9 對照表與每版驗收 → `_doc/plan.md`
-- **版本紀錄**：`_doc/v0.1.md` … `_doc/v0.9.md`（每版實作內容、驗證、踩到的坑）
+- **版本規劃（roadmap）**：v0.1 → v1.0 對照表與每版驗收 → `_doc/plan.md`
+- **版本紀錄**：`_doc/v0.1.md` … `_doc/v1.0.md`（每版實作內容、驗證、踩到的坑）
 
 各子專案完整用法與 API 見其目錄下的 `README.md`。
 
@@ -212,3 +218,7 @@ bash test.sh     # 容錯版：逐步執行、失敗也繼續，最後印 gen/ �
 - [x] M8（v0.8）：網頁版 `hackserve` ＋ `web/` 薄前端，WS 回歸入 `verify.sh`。
 - [x] M9（v0.9）：網頁版 **HDL** 批次模擬（`hdl.html` 選章節/自訂貼上 → 真 hdl2rs
   codegen＋cargo → PASS/FAIL＋`.out` 表格），WS 回歸入 `verify.sh`/`test.sh`。
+- [x] M10（v1.0）：網頁版 **Jack 全鏈路**（`jack.html`：`.jack → .vm → .asm → .hack →`
+  hackemu 執行，各階段產物展開）；只動網頁版（hackserve＋web），不進既有回歸。
+- [ ] M11（選做）：按內容 hash 快取 hdl2rs 的產出 crate（重複晶片免重編）。
+- [ ] M12（選做）：`hackserve` 日本語料進 `verify.sh`（v0.9/v1.0 網頁功能自動化）。

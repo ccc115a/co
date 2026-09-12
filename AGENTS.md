@@ -17,6 +17,7 @@ All prose — READMEs, chapter handouts, `.md` companions — is written in **Tr
   - `12`: the OS, written in Jack.
 - `verilog/` — Verilog implementations (`hackcpu/`, `mcu0/`), simulated with Icarus Verilog (`iverilog` + `vvp`, installed at `/opt/homebrew/bin`).
 - `_more/` — reference material: `book/` (full Nand2Tetris textbook), `wiki/` (architecture glossary), `pdf/`.
+- `nand2tetris/_eda/` — **hackeda**（專案代號）：把整條 Nand2Tetris 工具鏈用 Rust 重做一遍。workspace 8 個 crate：`hackhdl`（parse/elab）、`hackrt`（執行 `.tst`/`.cmp`）、**`hdl2rs`（主 CLI：HDL→Rust 模擬程式）**、`hackasm`（組譯器）、`vm2asm`、`jack2vm`、`hackemu`（虛擬機 GUI/headless）、`hackserve`（網頁伺服器）＋ `web/` 薄前端。實作紀錄在 `_eda/_doc/v0.1.md … v0.9.md`（繁體中文）。
 
 ## Build / verify commands
 
@@ -31,10 +32,18 @@ All prose — READMEs, chapter handouts, `.md` companions — is written in **Tr
   - Python impl: `bash pyrun.sh` or `python py/Compiler.py jack/Seven`.
 - `verilog/`:
   - Per module: `iverilog -o <Base> <Base>_test.v && vvp <Base>`. `<Base>_test.v` files are the testbenches (e.g. `gate_test.v`, `computer_test.v`).
+- `nand2tetris/_eda/`（hackeda，Rust workspace，bash 工具 cwd 記得切 `nand2tetris/_eda`）:
+  - `cargo test -q` — workspace 單元測試。
+  - `bash verify.sh` — 嚴格版（set -e）全回歸：前一版區段 v0.1–v0.8，v0.9 區段另起 hackserve（port 8086）跑 WS HDL 測。
+  - `bash test.sh` — 容錯版（set -x + `|| true`），最尾 v0.9 區段同 WS 測。
+  - `target/{release,debug}/hdl2rs` — 主 CLI：HDL→Rust 模擬程式。flags：`--dir <章節目錄>`（可重複、遞迴，01/02/03/05）、`--test <檔>.tst`、`--out gen`、`--release`。產出 `gen/<Top>_sim/`，乘載 `cargo build` 子程序。搞笑地在 `_eda/` 下跑 `cargo run -q -p hdl2rs -- …` 也可，但開新終端不要 `cd` 出錯。
+  - 網頁伺服器：`cargo build --release -p hackserve && ./target/release/hackserve [--port 8080]` → 瀏覽器 `http://127.0.0.1:8080/`（`index.html`，asm Emulator）與 `/hdl.html`（v0.9 HDL 批次模擬）。WS 協定 `hdl-list`/`hdl-source`/`hdl-run` 由 `hackserve` 內部 spawn `hdl2rs` 二元檔實現，**不要為網頁改 hdl2rs 本體**。
+  - v0.9 章節語料＝`../01`、`../02`、`../03`（a/b 子目錄）、`../05`（04 無 `.hdl` 測試）。`.hdl/.cmp` 留 repo 唯讀，執行時只複製 `.tst`＋相關檔到暫存目錄。
 
 ## Gotchas
 
-- Generated artifacts are committed to git — `*.bin` (ch. 06), `sum.hack0`, `.vvp` (verilog), even `.DS_Store`. `.gitignore` is a stale generic Cargo template and covers none of these. Don't add new build outputs to commits.
-- The working tree has an in-progress move of `book/` → `_more/book/` (large deletion set + untracked `_more/`). Prefer normal commits; don't rewrite history.
+- Generated artifacts are committed to git — `*.bin` (ch. 06), `sum.hack0`, `.vvp` (verilog), even `.DS_Store`. `.gitignore` is a stale generic Cargo template and covers none of these. Don't add new build outputs to commits. `_eda/` 的 `gen/`、`target/`、`_eda` 外的臨時 `.out` 也都不要入 commit。
+- **git 樹目前 index 已清空（約千個檔處在 staged deletion），工作樹另有大量 untracked（`_more/` 搬移中）**。要復原請用 `git add -A` 整批重新掛上；**不要用 `git checkout`/`git reset`**（那會把搬移中狀態或修改砍掉）。一般性改動走正常 commit，不要改寫歷史。
 - Chapter READMEs (e.g. `01/README.md`) are the **handouts/exercises**, not docs describing a codebase. Don't delete or refactor them as if stale docs.
-- Binary CLI tools (`asm`, `vm`, `vm2asm`, `jack2vm`) are build artifacts, not tracked; always `build.sh`/`make` first.
+- Binary CLI tools (`asm`, `vm`, `vm2asm`, `jack2vm`) are build artifacts, not tracked; always `build.sh`/`make` first. 同理 `_eda/target/{debug,release}/hdl2rs`、`hackserve` 等也要先 `cargo build`。
+- 命名地雷：`_eda/` 就是「hackeda」；`hdl2rs` 是其中主 CLI 子專案名（不是 HDL 檔案、也不是移植名）。章節 11 的 `11/c` 與 `11/py` 是**另一套** Jack 實作，跟 `_eda/jack2vm` 無關。

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jack 編譯器全鏈路（v1.0）— 金門大學 計算機結構</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Jack 全鏈路編譯器（.jack → .vm → .asm → .hack → 執行）</h1>
+  <a href="index.html" style="color:var(--accent)">← 組語 Emulator</a>
+  <select id="mode">
+    <option value="builtin">內建程式</option>
+    <option value="custom">自訂貼上</option>
+  </select>
+  <select id="program"></select>
+  <span class="withosrow"><label>含作業系統 <input id="withOS" type="checkbox"></label></span>
+  <button id="run" title="jack2vm → vm2asm → hackasm → hackemu（共用既有 CLI）">編譯＋執行</button>
+  <span class="spacer"></span>
+  <span id="status"></span>
+</header>
+<main id="main">
+  <section class="col">
+    <h2>① 來源（.jack）</h2>
+    <div class="panel src">
+      <div id="filetabs"></div>
+      <label class="hdllabel" style="flex:1; min-height:0">檔名（自訂模式下可改，需以 .jack 結尾）
+        <input id="fname" spellcheck="false" value="Main.jack">
+      </label>
+      <textarea id="code" class="jtextarea" spellcheck="false"></textarea>
+    </div>
+    <div class="panel srclog">
+      <h2 style="margin-bottom:4px">錯誤／訊息</h2>
+      <pre id="errlog"></pre>
+    </div>
+  </section>
+  <section class="col">
+    <h2>② 編譯產物與 SIM</h2>
+    <div class="panel out">
+      <div id="stagetabs"></div>
+      <div id="arttabs"></div>
+      <textarea id="artifact" class="jtextarea" readonly spellcheck="false"></textarea>
+    </div>
+  </section>
+</main>
+<script src="jack.js"></script>
+</body>
+</html>
