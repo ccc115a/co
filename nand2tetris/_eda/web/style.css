@@ -78,3 +78,27 @@ canvas#screen { image-rendering: pixelated; width: 512px; height: 256px; backgro
 #ramBody .cell { color: var(--fg); }
 
 @media (max-width: 1300px) { main { grid-template-columns: 1fr 1fr; } main > .col:last-child { grid-column: 1 / -1; } }
+
+/* ---- v0.9：HDL 模擬器頁（hdl.html） ---- */
+#main { grid-template-columns: 1fr 1fr; }
+header select { background: #16161e; color: var(--fg); border: 1px solid #000; border-radius: 3px; font: inherit; padding: 3px 4px; }
+header select:disabled { opacity: .5; }
+.panel.src { flex: 1; min-height: 0; }
+.panel.out { flex: 2; min-height: 0; }
+.panel.srclog { flex: 1; min-height: 0; }
+.hdllabel { display: flex; flex-direction: column; gap: 3px; flex: 1; min-height: 0;
+  color: var(--dim); font-size: 11px; }
+.hdllabel textarea { flex: 1; min-height: 0; width: 100%; background: #16161e; color: var(--fg);
+  border: 1px solid #000; border-radius: 4px; font: 12px/1.45 "SF Mono", Menlo, monospace; padding: 6px;
+  resize: none; tab-size: 2; }
+.hdllabel textarea[readonly] { color: #c9c9d4; background: #1d1e2a; }
+#outwrap { flex: 1; overflow: auto; }
+#outtab { border-collapse: collapse; }
+#outtab th, #outtab td { border: 1px solid #333; padding: 1px 8px; white-space: pre; text-align: right; }
+#outtab th { color: var(--accent); position: sticky; top: 0; background: var(--panel); }
+#outtab td { font-size: 12px; }
+#banner { padding: 8px 12px; border-radius: 6px; margin-bottom: 8px; text-align: center; }
+#banner.pass { background: #22301f; color: var(--ok); }
+#banner.fail { background: #3a202a; color: var(--err); }
+#errlog { margin: 0; white-space: pre-wrap; color: var(--warn); min-height: 30px; overflow: auto; }
+.hidden { display: none; }

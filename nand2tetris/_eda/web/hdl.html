@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HDL 模擬器（v0.9）— 金門大學 計算機結構</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>HackHDL 模擬器（批次）</h1>
+  <a href="index.html" style="color:var(--accent)">← 組語 Emulator</a>
+  <select id="mode">
+    <option value="chapter">內建章節晶片</option>
+    <option value="custom">自訂貼上</option>
+  </select>
+  <select id="chapter"></select>
+  <select id="case"></select>
+  <button id="run" title="跑完整支 .tst（codegen＋編譯，數秒）">執行</button>
+  <span class="spacer"></span>
+  <span id="status"></span>
+</header>
+<main id="main">
+  <section class="col">
+    <h2>① 來源</h2>
+    <div class="panel src">
+      <label class="hdllabel">.hdl<textarea id="hdl" spellcheck="false" placeholder="HackHDL 晶片原始碼"></textarea></label>
+    </div>
+    <div class="panel src">
+      <label class="hdllabel">.tst<textarea id="tst" spellcheck="false" placeholder="官方 HardwareSimulator 測試腳本"></textarea></label>
+    </div>
+    <div class="panel src">
+      <label class="hdllabel">.cmp（可留空＝只看輸出，不比對）<textarea id="cmp" spellcheck="false" placeholder="期望輸出（逐位元比對）"></textarea></label>
+    </div>
+  </section>
+  <section class="col">
+    <h2>② 執行結果</h2>
+    <div id="banner" class="hidden"></div>
+    <div class="panel out">
+      <h2 style="margin-bottom:4px">.out 輸出表</h2>
+      <div id="outwrap"><table id="outtab"></table></div>
+    </div>
+    <div class="panel srclog">
+      <h2 style="margin-bottom:4px">伺服器訊息／錯誤</h2>
+      <pre id="errlog"></pre>
+    </div>
+  </section>
+</main>
+<script src="hdl.js"></script>
+</body>
+</html>

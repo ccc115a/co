@@ -77,3 +77,40 @@ grep -q "RAM\[100..=110\]: \[1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0\]" gen/m73/ScreenTe
 grep -q "RAM\[100..=110\]: \[1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0\]" gen/m73/HeapTest.out || true
 
 ls -la gen 2>/dev/null
+
+# v0.9：hackserve WebSocket HDL 批次模擬（hdl-list / hdl-run，含自訂貼上與 Computer）
+cargo build --release -p hdl2rs || true
+cargo build --release -p hackserve || true
+target/release/hackserve --port 8095 >/tmp/hackserve-v09-test.log 2>&1 &
+SRV=$!
+sleep 1
+node - 8095 <<'NODE' || true
+const port = process.argv[2];
+const ws = new WebSocket(`ws://127.0.0.1:${port}/ws`);
+const waiters = {}; let seq = 0;
+ws.onmessage = (e) => { const m = JSON.parse(e.data); if (waiters[m.id]) { waiters[m.id](m); delete waiters[m.id]; } };
+function req(o) { return new Promise((res, rej) => { const id = ++seq; o.id = id; waiters[id] = res; ws.send(JSON.stringify(o)); setTimeout(() => { if (waiters[id]) { delete waiters[id]; rej(new Error('timeout ' + o.type)); } }, 60000); }); }
+function assert(c, msg) { if (!c) { console.error('FAIL:', msg); process.exit(1); } console.log('ok -', msg); }
+ws.onopen = async () => {
+  try {
+    const list = await req({ type: 'hdl-list' });
+    assert(list.chapters.some((c) => c.name === '02'), 'hdl-list 含 02');
+    const m = await req({ type: 'hdl-run', chapter: '02', case: 'ALU' });
+    assert(m.ok && m.pass && m.lines > 0, `ALU PASS（${m.lines} 列）`);
+    const custom = await req({ type: 'hdl-run', top: 'And9',
+      hdl: 'CHIP And9 { IN a, b; OUT out; PARTS: Nand(a=a,b=b,out=n); Nand(a=n,b=n,out=out); }',
+      tst: 'load And9.hdl,\noutput-list a%B1.1.1 b%B1.1.1 out%B1.1.1;\nset a 0, set b 0, eval, output;\nset a 1, set b 0, eval, output;\nset a 1, set b 1, eval, output;',
+      cmp: '| a | b |out|\n| 0 | 0 | 0 |\n| 1 | 0 | 0 |\n| 1 | 1 | 1 |' });
+    assert(custom.ok && custom.pass, '自訂貼上（含 cmp）PASS');
+    const comp = await req({ type: 'hdl-run', release: true, chapter: '05', case: 'ComputerAdd' });
+    assert(comp.ok && comp.pass, `ComputerAdd PASS（${comp.lines} 列，含 ROM32K load）`);
+    const bad = await req({ type: 'hdl-run', top: 'Bad9',
+      hdl: 'CHIP Bad9 { IN a; OUT out; PARTS: Nand(',
+      tst: 'load Bad9.hdl,\noutput-list a%B1.1.1;\nset a 1, eval, output;' });
+    assert(!bad.ok, '錯誤 HDL → ok:false');
+  } catch (e) { console.error('FAIL:', e.message); process.exit(1); }
+  ws.close(); process.exit(0);
+};
+setTimeout(() => { console.error('timeout'); process.exit(1); }, 180000);
+NODE
+kill $SRV 2>/dev/null || true

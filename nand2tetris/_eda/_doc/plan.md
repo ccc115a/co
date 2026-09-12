@@ -17,6 +17,7 @@
 | v0.6 | 05→06 之後 | hackemu 虛擬機（執行 .bin/.hack，egui GUI 顯示 SCREEN） | ✅ 已完成（40/40＋交叉驗證） |
 | v0.7 | 12 | ch12 OS 整包在 hackemu 上執行（含 Pong 可玩） | ✅ M7.1–M7.5 全過（v0.7.1 `--keys`、v0.7.2 M7.3 四支模組測試＋修 drawPixel 位元方向 bug）；M7.6 跳過（見 `_doc/v0.7.md`） |
 | v0.8 | 網頁版 | 瀏覽器 thin client + Rust 伺服器（WebSocket）當 CPU/OS Emulator（路線 B） | ✅ 完成（見 `_doc/v0.8.md`） |
+| v0.9 | 網頁版 HDL | 網頁也能模擬 `.hdl`：批次跑完秀表格（真 hdl2rs codegen＋cargo＋子程序） | ✅ 已完成（2026-09-12；WS 回歸全綠，見 `_doc/v0.9.md`） |
 
 ---
 
@@ -152,6 +153,23 @@
 - 保留 egui 原生 GUI 與 headless CLI（`--keys/--trace/--sample/--img`）。
 - （選做 v0.8.x）伺服器端跑 `jack2vm`+`vm2asm` → 可貼 .jack/.vm 上網執行。
 - 其餘既有發想（效能/波形/模擬器互驗）暫緩。
+
+---
+
+## v0.9 — 網頁版 HDL 模擬器（批次跑完秀表格）
+
+**狀態：✅ 已完成（2026-09-12；`verify.sh`/`test.sh` 含 v0.9 區段全綠，詳見 `_doc/v0.9.md`）**
+
+- 延續 v0.8 的「Rust 伺服器 + 瀏覽器薄前端」路線，讓網頁也能模擬 **HackHDL 晶片**。
+- 執行引擎＝**真 hdl2rs 管線**：`.hdl ▸ parse/elab ▸ codegen ▸ cargo build ▸ 子程序跑 .tst`，
+  零語意分歧；`hdl2rs` 本體不改，`hackserve` 直接 spawn 其二元檔。
+- 互動＝**批次跑完秀表格**（不做單步）；來源＝**內建章節語料（01–05）＋ 自訂貼上**；
+  前端＝獨立 `hdl.html`/`hdl.js`（現有 asm 頁不動）。
+- 協定：`hdl-list`（章節/晶片清單）、`hdl-run{chapter,top} | {hdl,tst,cmp?}` →
+  回 `hdl-result{ ok, pass, out, error? }`（`.out` 全文，前端拆表 + PASS/FAIL 橫幅）。
+- 章節語料 `.hdl/.cmp` 留 repo 唯讀，`.tst`/`.cmp`/`.hdl` 複製到暫存目錄跑，不弄髒 git 樹；
+  全域單一執行 mutex；起服務前自動補建 `hdl2rs`。
+- 後續優化（選做）：按內容 hash 快取產出 crate，重複晶片免重編。
 
 ---
 

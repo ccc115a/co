@@ -20,6 +20,8 @@ use serde_json::{json, Value};
 use std::net::SocketAddr;
 use tower_http::services::ServeDir;
 
+mod hdl;
+
 /// 單一連線的模擬器 state：一個 VM + 螢幕差量追蹤 + 組譯上下文。
 struct SessionState {
     vm: Vm,
@@ -181,7 +183,7 @@ fn handle_text(state: &mut SessionState, text: &str) -> Vec<String> {
 }
 
 /// 回包帶 id 的送出訊息。
-fn reply(body: &Value, id: u64) -> String {
+pub(crate) fn reply(body: &Value, id: u64) -> String {
     let mut m = body.clone();
     if let Value::Object(o) = &mut m {
         o.insert("id".into(), Value::from(id));
@@ -219,9 +221,32 @@ async fn session(mut ws: WebSocket) {
     while let Some(msg) = ws.recv().await {
         let Ok(msg) = msg else { break };
         let Message::Text(txt) = msg else { continue };
-        for r in handle_text(&mut state, &txt) {
+        // hdl-* 訊息是 async 路徑（會 spawn hdl2rs / 孵 cargo），其餘走原 sync 路徑
+        let v: Value = serde_json::from_str(&txt).unwrap_or_default();
+        let t = v["type"].as_str().unwrap_or("").to_string();
+        if t == "hdl-list" {
+            let id = v["id"].as_u64().unwrap_or(0);
+            let r = reply(&hdl::list_corpus(), id);
             if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
                 return;
+            }
+        } else if t == "hdl-source" {
+            let id = v["id"].as_u64().unwrap_or(0);
+            let r = hdl::source_reply(&v, id);
+            if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
+                return;
+            }
+        } else if t == "hdl-run" {
+            let id = v["id"].as_u64().unwrap_or(0);
+            let r = hdl::run_reply(&v, id).await;
+            if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
+                return;
+            }
+        } else {
+            for r in handle_text(&mut state, &txt) {
+                if ws.send(Message::Text(Utf8Bytes::from(r))).await.is_err() {
+                    return;
+                }
             }
         }
     }
