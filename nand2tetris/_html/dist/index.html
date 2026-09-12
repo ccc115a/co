@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HACK Emulator（v0.8）— 金門大學 計算機結構</title>
+<style>
+  :root { --bg:#111; --panel:#1c1c1f; --line:#333; --fg:#eee; --dim:#999; --accent:#4da6ff; --danger:#ff5c5c; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--fg); font:14px/1.5 "Menlo","Monaco","Consolas",monospace; }
+  body { display:flex; flex-direction:column; }
+  header { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line); }
+  h1 { font-size:16px; margin:0 12px 0 0; }
+  button { background:#2a2a2e; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:4px 10px; cursor:pointer; }
+  button:hover { border-color:var(--accent); }
+  button.danger:hover { border-color:var(--danger); }
+  label { display:flex; align-items:center; gap:4px; color:var(--dim); font-size:12px; }
+  .spacer { flex:1; }
+  #status { color:var(--accent); font-size:12px; }
+  #status.error { color:var(--danger); }
+  main { flex:1; display:flex; gap:10px; padding:10px; min-height:0; }
+  h2 { font-size:13px; color:var(--dim); margin:0 0 6px; }
+  .col { flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; min-height:0; }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:8px; overflow:auto; }
+  textarea { width:100%; height:100%; min-height:200px; background:#0c0c0e; color:#d6e9ff; border:none; resize:none; padding:8px; }
+  #listing { font-size:12px; white-space:pre; }
+  #listing .pc { color:var(--accent); }
+  #listing .cur { background:#2a3a4a; }
+  .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  #screenwrap { border:1px solid var(--line); border-radius:6px; background:#000; line-height:0; }
+  canvas { width:100%; image-rendering:pixelated; }
+  #regs { font-size:13px; }
+  #chips { font-size:12px; column-count:4; column-gap:12px; }
+  #ramBody { font-size:12px; white-space:pre; }
+  .rambar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
+  input[type=number] { width:70px; background:#0c0c0e; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:2px 4px; }
+  #smoke { display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>HACK Emulator <span style="font-size:11px;color:var(--dim)">v0.8 純瀏覽器（零伺服器）</span></h1>
+  <a href="hdl.html" style="color:#7ec3ff;text-decoration:none">HDL 模擬器</a>
+  <a href="jack.html" style="color:#7ec3ff;text-decoration:none">Jack 編譯器</a>
+  <button id="run">執行 ▶</button>
+  <button id="step">Step</button>
+  <button id="reset" class="danger">Reset</button>
+  <button id="open">開啟 .asm…</button>
+  <input type="file" id="file" accept=".asm,.hack" hidden>
+  <button id="load">組譯並載入</button>
+  <label title="對數刻度：每幀執行步數">速度 <input type="range" id="speed" min="0" max="100" value="80"></label>
+  <span id="fps" title="執行迴圈 FPS"></span>
+  <span class="spacer"></span>
+  <span id="status"></span>
+</header>
+<main>
+  <section class="col">
+    <h2>① 程式（HACK 組語）</h2>
+    <div class="panel" style="flex:1.2">
+      <textarea id="asm" spellcheck="false" placeholder="貼上 HACK 組語（.asm），再按「組譯並載入」…
+範例可直接載入底下 R0-R15 = 乘法：@2 D=A @3 M=D …"></textarea>
+    </div>
+    <div class="panel" style="flex:1">
+      <h2 style="margin-bottom:4px">原始碼（PC 高亮）</h2>
+      <div id="listing"></div>
+    </div>
+  </section>
+  <section class="col">
+    <h2>② 螢幕（512×256）</h2>
+    <div id="screenwrap">
+      <canvas id="screen" width="512" height="256"></canvas>
+    </div>
+    <div class="panel">
+      <div id="regs">PC=0　A=0　D=0　SP=0　(指令 #0)</div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-bottom:4px">暫存器 R0–R15</h2>
+      <div id="chips"></div>
+    </div>
+  </section>
+  <section class="col">
+    <h2>③ 記憶體</h2>
+    <div class="panel" style="flex:1">
+      <div class="rambar">
+        <button data-ram="0" data-len="16">R0-15</button>
+        <button data-ram="16" data-len="16">static</button>
+        <button data-ram="256" data-len="32">stack</button>
+        <button data-ram="2048" data-len="32">heap</button>
+        <button id="ramPrev" data-page="-1">‹</button>
+        <label>起點 <input id="ramStart" type="number" value="256"></label>
+        <label>長度 <input id="ramLen" type="number" value="128"></label>
+        <button id="ramNext" data-page="1">›</button>
+        <button id="ramBtn">讀取</button>
+      </div>
+      <div id="ramBody"></div>
+    </div>
+  </section>
+</main>
+<script src="embed.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

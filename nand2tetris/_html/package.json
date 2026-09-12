@@ -1,0 +1,11 @@
+{
+  "name": "hackjs",
+  "version": "0.1.0",
+  "description": "_html 工具鏈（hackjs）：JavaScript 版 Nand2Tetris 全工具鏈",
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/",
+    "build": "node tools/build.js"
+  },
+  "license": "MIT"
+}

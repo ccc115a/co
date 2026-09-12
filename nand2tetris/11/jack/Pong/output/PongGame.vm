@@ -64,7 +64,7 @@ pop this 2
 push constant 0
 pop this 5
 push pointer 0
-return  
+return
 function PongGame.dispose 0
 push argument 0
 pop pointer 0
@@ -78,32 +78,32 @@ push pointer 0
 call Memory.deAlloc 1
 pop temp 0
 push constant 0
-return  
+return
 function PongGame.newInstance 0
 call PongGame.new 0
 pop static 0
 push constant 0
-return  
+return
 function PongGame.getInstance 0
 push static 0
-return  
+return
 function PongGame.run 1
 push argument 0
 pop pointer 0
-label label1 
+label WHILE_EXP0
 push this 3
-not  
-not  
-if-goto label2 
-label label3 
+not
+not
+if-goto WHILE_END1
+label WHILE_EXP2
 push local 0
 push constant 0
-eq  
+eq
 push this 3
-not  
-and  
-not  
-if-goto label4 
+not
+and
+not
+if-goto WHILE_END3
 call Keyboard.keyPressed 0
 pop local 0
 push this 0
@@ -112,53 +112,51 @@ pop temp 0
 push pointer 0
 call PongGame.moveBall 1
 pop temp 0
-goto label3 
-label label4 
+goto WHILE_EXP2
+label WHILE_END3
 push local 0
 push constant 130
-eq  
-not  
-if-goto label6 
+eq
+not
+if-goto IF_FALSE4
 push this 0
 push constant 1
 call Bat.setDirection 2
 pop temp 0
-goto label5 
-label label6 
+goto IF_END5
+label IF_FALSE4
 push local 0
 push constant 132
-eq  
-not  
-if-goto label8 
+eq
+not
+if-goto IF_FALSE6
 push this 0
 push constant 2
 call Bat.setDirection 2
 pop temp 0
-goto label7 
-label label8 
+goto IF_END7
+label IF_FALSE6
 push local 0
 push constant 140
-eq  
-not  
-if-goto label10 
-push constant 1
-neg  
+eq
+not
+if-goto IF_FALSE8
+push constant 0
+not
 pop this 3
-goto label9 
-label label10 
-label label9 
-label label7 
-label label5 
-label label11 
+label IF_FALSE8
+label IF_END7
+label IF_END5
+label WHILE_EXP10
 push local 0
 push constant 0
-eq  
-not  
+eq
+not
 push this 3
-not  
-and  
-not  
-if-goto label12 
+not
+and
+not
+if-goto WHILE_END11
 call Keyboard.keyPressed 0
 pop local 0
 push this 0
@@ -167,13 +165,13 @@ pop temp 0
 push pointer 0
 call PongGame.moveBall 1
 pop temp 0
-goto label11 
-label label12 
-goto label1 
-label label2 
+goto WHILE_EXP10
+label WHILE_END11
+goto WHILE_EXP0
+label WHILE_END1
 push this 3
-not  
-if-goto label14 
+not
+if-goto IF_FALSE12
 push constant 10
 push constant 27
 call Output.moveCursor 2
@@ -200,11 +198,9 @@ push constant 114
 call String.appendChar 2
 call Output.printString 1
 pop temp 0
-goto label13 
-label label14 
-label label13 
+label IF_FALSE12
 push constant 0
-return  
+return
 function PongGame.moveBall 5
 push argument 0
 pop pointer 0
@@ -213,14 +209,14 @@ call Ball.move 1
 pop this 2
 push this 2
 push constant 0
-gt  
+gt
 push this 2
 push this 5
-eq  
-not  
-and  
-not  
-if-goto label16 
+eq
+not
+and
+not
+if-goto IF_FALSE14
 push this 2
 pop this 5
 push constant 0
@@ -239,49 +235,47 @@ call Ball.getRight 1
 pop local 4
 push this 2
 push constant 4
-eq  
-not  
-if-goto label18 
+eq
+not
+if-goto IF_FALSE16
 push local 1
 push local 4
-gt  
+gt
 push local 2
 push local 3
-lt  
-or  
+lt
+or
 pop this 3
 push this 3
-not  
-not  
-if-goto label20 
+not
+not
+if-goto IF_FALSE18
 push local 4
 push local 1
 push constant 10
-add  
-lt  
-not  
-if-goto label22 
+add
+lt
+not
+if-goto IF_FALSE20
 push constant 1
-neg  
+neg
 pop local 0
-goto label21 
-label label22 
+goto IF_END21
+label IF_FALSE20
 push local 3
 push local 2
 push constant 10
-sub  
-gt  
-not  
-if-goto label24 
+sub
+gt
+not
+if-goto IF_FALSE22
 push constant 1
 pop local 0
-goto label23 
-label label24 
-label label23 
-label label21 
+label IF_FALSE22
+label IF_END21
 push this 6
 push constant 2
-sub  
+sub
 pop this 6
 push this 0
 push this 6
@@ -289,7 +283,7 @@ call Bat.setWidth 2
 pop temp 0
 push this 4
 push constant 1
-add  
+add
 pop this 4
 push constant 22
 push constant 7
@@ -298,18 +292,12 @@ pop temp 0
 push this 4
 call Output.printInt 1
 pop temp 0
-goto label19 
-label label20 
-label label19 
-goto label17 
-label label18 
-label label17 
+label IF_FALSE18
+label IF_FALSE16
 push this 1
 push local 0
 call Ball.bounce 2
 pop temp 0
-goto label15 
-label label16 
-label label15 
+label IF_FALSE14
 push constant 0
-return  
+return

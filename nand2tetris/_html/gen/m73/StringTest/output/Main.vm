@@ -1,0 +1,151 @@
+function Main.check 0
+push argument 0
+push argument 1
+eq
+not
+if-goto IF_FALSE0
+push argument 2
+push constant 1
+call Memory.poke 2
+pop temp 0
+goto IF_END1
+label IF_FALSE0
+push argument 2
+push constant 0
+call Memory.poke 2
+pop temp 0
+label IF_END1
+push constant 0
+return
+function Main.main 3
+push constant 16
+call String.new 1
+pop local 0
+push local 0
+push constant 88
+call String.appendChar 2
+pop temp 0
+push local 0
+push constant 89
+call String.appendChar 2
+pop temp 0
+push local 0
+call String.length 1
+push constant 2
+push constant 100
+call Main.check 3
+pop temp 0
+push local 0
+push constant 0
+call String.charAt 2
+push constant 88
+push constant 101
+call Main.check 3
+pop temp 0
+push local 0
+push constant 1
+call String.charAt 2
+push constant 89
+push constant 102
+call Main.check 3
+pop temp 0
+push local 0
+push constant 0
+push constant 65
+call String.setCharAt 3
+pop temp 0
+push local 0
+push constant 0
+call String.charAt 2
+push constant 65
+push constant 103
+call Main.check 3
+pop temp 0
+push local 0
+call String.eraseLastChar 1
+pop temp 0
+push local 0
+call String.length 1
+push constant 1
+push constant 104
+call Main.check 3
+pop temp 0
+push local 0
+push constant 1234
+call String.setInt 2
+pop temp 0
+push local 0
+call String.length 1
+push constant 4
+push constant 105
+call Main.check 3
+pop temp 0
+push local 0
+push constant 0
+call String.charAt 2
+push constant 49
+push constant 106
+call Main.check 3
+pop temp 0
+push local 0
+push constant 0
+call String.setInt 2
+pop temp 0
+push local 0
+call String.length 1
+push constant 1
+push constant 107
+call Main.check 3
+pop temp 0
+push constant 6
+call String.new 1
+pop local 1
+push local 1
+push constant 49
+call String.appendChar 2
+pop temp 0
+push local 1
+push constant 50
+call String.appendChar 2
+pop temp 0
+push local 1
+push constant 51
+call String.appendChar 2
+pop temp 0
+push local 1
+push constant 52
+call String.appendChar 2
+pop temp 0
+push local 1
+call String.intValue 1
+push constant 1234
+push constant 108
+call Main.check 3
+pop temp 0
+push constant 6
+call String.new 1
+pop local 2
+push local 2
+push constant 45
+call String.appendChar 2
+pop temp 0
+push local 2
+push constant 53
+call String.appendChar 2
+pop temp 0
+push local 2
+call String.intValue 1
+push constant 5
+neg
+push constant 109
+call Main.check 3
+pop temp 0
+label WHILE_EXP2
+push constant 0
+not
+not
+if-goto WHILE_END3
+goto WHILE_EXP2
+label WHILE_END3
+push constant 0
+return

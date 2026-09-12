@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jack 編譯器全鏈路（v1.0）— 金門大學 計算機結構</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #1b2027; color: #dce1e8; }
+  header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #232b36; border-bottom: 1px solid #3a4a5e; flex-wrap: wrap; }
+  header h1 { font-size: 15px; margin: 0 14px 0 0; white-space: nowrap; }
+  a { color: #7ec3ff; text-decoration: none; }
+  select, button, input, textarea { background: #2a3441; color: #e6ecf4; border: 1px solid #435269; border-radius: 5px; font: inherit; }
+  select { padding: 4px 6px; }
+  button { padding: 5px 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { margin-left: auto; font-size: 13px; }
+  main { display: grid; grid-template-columns: 46% 1fr; gap: 14px; padding: 14px; height: calc(100vh - 56px); }
+  section.col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .panel { display: flex; flex-direction: column; background: #232b36; border: 1px solid #38445a; border-radius: 8px; padding: 8px; min-height: 0; }
+  h2 { font-size: 13px; margin: 0 0 6px; color: #9fb2c8; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+  .tabs button { padding: 3px 10px; font-size: 12px; background: #2c3547; }
+  .tabs button.on { background: #3d6ea0; border-color: #6aa1d4; }
+  .fnamebar { display: flex; gap: 6px; margin-bottom: 6px; font-size: 12px; color: #9fb2c8; align-items: center; }
+  .fnamebar input { flex: 1; padding: 2px 6px; }
+  textarea { flex: 1; resize: none; line-height: 1.45; padding: 6px; min-height: 60px; }
+  #code { background: #1d232e; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; color: #ffb3a5; flex: 1; overflow: auto; }
+  #info { font-size: 12px; color: #9fb2c8; margin-bottom: 6px; white-space: pre-wrap; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Jack 全鏈路編譯器（.jack → .vm → .asm → .hack → 執行，v1.0）</h1>
+  <a href="index.html">← 組語 Emulator</a>
+  <a href="hdl.html">← HDL 模擬器</a>
+  <select id="mode">
+    <option value="builtin">內建程式</option>
+    <option value="custom">自訂貼上</option>
+  </select>
+  <select id="program"></select>
+  <label style="font-size:12px;color:#9fb2c8">含作業系統 <input id="withOS" type="checkbox"></label>
+  <button id="run" title="jack2vm → vm2asm → hackasm → hackemu（瀏覽器內免伺服器）">編譯＋執行</button>
+  <span class="spacer"></span>
+  <span id="status"></span>
+</header>
+<main>
+  <section class="col">
+    <h2>① 來源（.jack）</h2>
+    <div class="panel" style="flex:5">
+      <h2 style="margin-bottom:4px">檔案 tab</h2>
+      <div class="fnamebar" id="fnamebar">
+        <span>檔名：</span><input id="fname" spellcheck="false" value="Main.jack">
+        <button id="addfile" title="新增一個 .jack 檔">＋</button>
+        <button id="delfile" title="移除目前 tab">－</button>
+      </div>
+      <div class="tabs" id="filetabs"></div>
+      <textarea id="code" spellcheck="false" placeholder="Jack 原始碼（class 宣告,無 extends）"></textarea>
+    </div>
+    <div class="panel" style="flex:2">
+      <h2 style="margin-bottom:4px">錯誤／訊息</h2>
+      <pre id="errlog">結果：\n</pre>
+    </div>
+  </section>
+  <section class="col">
+    <h2>② 編譯產物與 SIM</h2>
+    <div class="panel" style="flex:1; min-height:0">
+      <div class="tabs" id="stagetabs"></div>
+      <div id="info"></div>
+      <textarea id="artifact" readonly spellcheck="false" style="flex:1"></textarea>
+    </div>
+  </section>
+</main>
+<script src="corpus.js"></script>
+<script src="hdl-rt.js"></script>
+<script src="embed.js"></script>
+<script src="jack.js"></script>
+</body>
+</html>

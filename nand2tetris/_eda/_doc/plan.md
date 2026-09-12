@@ -176,12 +176,12 @@
 
 ## v1.0 — 網頁版 Jack 全鏈路編譯器
 
-**狀態：✅ 已完成（2026-09-12；`cargo test -q -p hackserve` 11 綠、WS 冒煙 7 案例全過、詳見 `_doc/v1.0.md`）**
+**狀態：✅ 已完成（2026-09-12；`cargo test -q -p hackserve` 11 綠、WS 冒煙全過、詳見 `_doc/v1.0.md`）**
 
 - 延續 v0.8/v0.9 的「Rust 伺服器 + 瀏覽器薄前端」路線，讓網頁也能從 **Jack 原始碼一路跑到執行**。
 - 管線＝把既有四支 CLI 當子程序串起來：`jack2vm → vm2asm → hackasm → hackemu --headless`，
   各階段產物（`.vm`／`.asm`／`.hack`／SIM 摘要與軌跡）全部抓回前端逐段展開；引擎與 CLI 一行未動。
-- 來源＝**內建教材程式（`../11/jack`，6 支，全 needsOS=true）＋ 無 OS 案例（`../11/jackNoOs`，Sum/Factorial/Fib/GCD/PrimeUnder100，自帶 Sys）＋ 虛擬 e2e `chain`（oracle RAM[16]=5）＋ 自訂多檔貼上（可併裁剪版 OS）**。
+- 來源＝**內建教材程式（`../11/jack`，6 支，全 needsOS=true）＋ 無 OS 案例（`../11/jackNoOs`，Sum/Factorial/Fib/GCD/PrimeUnder100，自帶 Sys、前端標「（無 OS）」）＋ 虛擬 e2e `chain`（oracle RAM[16]=5）＋ 自訂多檔貼上（可併裁剪版 OS）**。
 - 前端＝獨立 `jack.html`/`jack.js`；`index.html`/`hdl.html` header 互導。
 - v1.0 刻意**不進 `verify.sh`/`test.sh`**（既有回歸保持現狀），驗證在 `cargo test -p hackserve`＋WS 冒煙。
 

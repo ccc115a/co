@@ -1,0 +1,6 @@
+loaded gen/m73/ScreenTest.bin (19144 instructions)
+before: PC=0 A=0 D=0 SP=0
+after: PC=19083 A=0 D=0 SP=267 cycles=50000000
+RAM[0..16]: [267, 266, 261, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 270, 19070, 0]
+RAM[16] static: 24576
+RAM[100..=110]: [1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]

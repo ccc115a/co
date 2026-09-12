@@ -13,11 +13,11 @@ All prose — READMEs, chapter handouts, `.md` companions — is written in **Tr
   - `06`: assembler + VM simulator (`asm.cpp`/`vm.c`/`dasm.c` in C/C++).
   - `07`: VM→asm translator, stack arithmetic. `08`: same, with functions/control flow. Both share a `vm2asm.c` + `build.sh`.
   - `09`: compiler experiments, one self-contained dir per experiment (`01-anbn`, `05-p0func`, …), each with its own `compiler.py`/`vm.py`.
-  - `11`: Jack compiler with **two independent implementations**: `py/` (Python) and `c/` (C). Confusing them is the #1 mistake.
+  - `11`: Jack compiler with **two independent implementations**: `py/` (Python) and `c/` (C). Confusing them is the #1 mistake. 語料本體：`11/jack`（教材程式，需 OS）與 `11/jackNoOs`（自帶 `Sys.jack` 的無 OS 案例）；兩者都是網頁版 v1.0 的 Jack 語料。
   - `12`: the OS, written in Jack.
 - `verilog/` — Verilog implementations (`hackcpu/`, `mcu0/`), simulated with Icarus Verilog (`iverilog` + `vvp`, installed at `/opt/homebrew/bin`).
 - `_more/` — reference material: `book/` (full Nand2Tetris textbook), `wiki/` (architecture glossary), `pdf/`.
-- `nand2tetris/_eda/` — **hackeda**（專案代號）：把整條 Nand2Tetris 工具鏈用 Rust 重做一遍。workspace 8 個 crate：`hackhdl`（parse/elab）、`hackrt`（執行 `.tst`/`.cmp`）、**`hdl2rs`（主 CLI：HDL→Rust 模擬程式）**、`hackasm`（組譯器）、`vm2asm`、`jack2vm`、`hackemu`（虛擬機 GUI/headless）、`hackserve`（網頁伺服器）＋ `web/` 薄前端。實作紀錄在 `_eda/_doc/v0.1.md … v0.9.md`（繁體中文）。
+- `nand2tetris/_eda/` — **hackeda**（專案代號）：把整條 Nand2Tetris 工具鏈用 Rust 重做一遍。workspace 8 個 crate：`hackhdl`（parse/elab）、`hackrt`（執行 `.tst`/`.cmp`）、**`hdl2rs`（主 CLI：HDL→Rust 模擬程式）**、`hackasm`（組譯器）、`vm2asm`、`jack2vm`、`hackemu`（虛擬機 GUI/headless）、`hackserve`（網頁伺服器）＋ `web/` 薄前端（`index.html` asm、`hdl.html` HDL、`jack.html` Jack）。實作紀錄在 `_eda/_doc/v0.1.md … v1.0.md`（繁體中文）。
 
 ## Build / verify commands
 
@@ -37,7 +37,8 @@ All prose — READMEs, chapter handouts, `.md` companions — is written in **Tr
   - `bash verify.sh` — 嚴格版（set -e）全回歸：前一版區段 v0.1–v0.8，v0.9 區段另起 hackserve（port 8086）跑 WS HDL 測。
   - `bash test.sh` — 容錯版（set -x + `|| true`），最尾 v0.9 區段同 WS 測。
   - `target/{release,debug}/hdl2rs` — 主 CLI：HDL→Rust 模擬程式。flags：`--dir <章節目錄>`（可重複、遞迴，01/02/03/05）、`--test <檔>.tst`、`--out gen`、`--release`。產出 `gen/<Top>_sim/`，乘載 `cargo build` 子程序。搞笑地在 `_eda/` 下跑 `cargo run -q -p hdl2rs -- …` 也可，但開新終端不要 `cd` 出錯。
-  - 網頁伺服器：`cargo build --release -p hackserve && ./target/release/hackserve [--port 8080]` → 瀏覽器 `http://127.0.0.1:8080/`（`index.html`，asm Emulator）與 `/hdl.html`（v0.9 HDL 批次模擬）。WS 協定 `hdl-list`/`hdl-source`/`hdl-run` 由 `hackserve` 內部 spawn `hdl2rs` 二元檔實現，**不要為網頁改 hdl2rs 本體**。
+  - 網頁伺服器：`cargo build --release -p hackserve && ./target/release/hackserve [--port 8080]` → 瀏覽器 `http://127.0.0.1:8080/`（`index.html` asm Emulator）、`/hdl.html`（v0.9 HDL 批次模擬）、`/jack.html`（v1.0 Jack 全鏈路）。WS 協定 `hdl-list`/`hdl-source`/`hdl-run` 由 `hackserve` 內部 spawn `hdl2rs` 二元檔實現，`jack-list`/`jack-source`/`jack-run` 則 spawn `jack2vm`/`vm2asm`/`hackasm`/`hackemu` 二元檔——**不要為網頁改這些引擎/CLI 本體**。v1.0 的 Jack 語料對照表在 `hackserve/src/jack.rs` 的 `JACK_PROGRAMS`/`JACK_NOOS_PROGRAMS`/`VIRTUAL_PROGRAMS` 常數（分別對應 `../11/jack`、`../11/jackNoOs`、`gen/chain`）。
+  - v1.0 驗證**不進 `verify.sh`/`test.sh`**：只在 `cargo test -q -p hackserve`（含 `jack.rs` 單元測）＋ WS 冒煙測。
   - v0.9 章節語料＝`../01`、`../02`、`../03`（a/b 子目錄）、`../05`（04 無 `.hdl` 測試）。`.hdl/.cmp` 留 repo 唯讀，執行時只複製 `.tst`＋相關檔到暫存目錄。
 
 ## Gotchas

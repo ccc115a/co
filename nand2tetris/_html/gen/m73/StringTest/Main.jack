@@ -1,0 +1,47 @@
+class Main {
+    function void check(int got, int want, int slot) {
+        if (got = want) {
+            do Memory.poke(slot, 1);
+        } else {
+            do Memory.poke(slot, 0);
+        }
+        return;
+    }
+
+    function void main() {
+        var String s, t, u;
+
+        let s = String.new(16);
+        do s.appendChar(88);
+        do s.appendChar(89);
+        do Main.check(s.length(), 2, 100);
+        do Main.check(s.charAt(0), 88, 101);
+        do Main.check(s.charAt(1), 89, 102);
+
+        do s.setCharAt(0, 65);
+        do Main.check(s.charAt(0), 65, 103);
+        do s.eraseLastChar();
+        do Main.check(s.length(), 1, 104);
+
+        do s.setInt(1234);
+        do Main.check(s.length(), 4, 105);
+        do Main.check(s.charAt(0), 49, 106);
+        do s.setInt(0);
+        do Main.check(s.length(), 1, 107);
+
+        let t = String.new(6);
+        do t.appendChar(49);
+        do t.appendChar(50);
+        do t.appendChar(51);
+        do t.appendChar(52);
+        do Main.check(t.intValue(), 1234, 108);
+
+        let u = String.new(6);
+        do u.appendChar(45);
+        do u.appendChar(53);
+        do Main.check(u.intValue(), -5, 109);
+
+        while (true) {}
+        return;
+    }
+}

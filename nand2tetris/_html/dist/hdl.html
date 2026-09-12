@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HDL 模擬器（v0.9）— 金門大學 計算機結構</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #1b2027; color: #dce1e8; }
+  header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #232b36; border-bottom: 1px solid #3a4a5e; flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0 14px 0 0; white-space: nowrap; }
+  a { color: #7ec3ff; text-decoration: none; }
+  select, button, textarea { background: #2a3441; color: #e6ecf4; border: 1px solid #435269; border-radius: 5px; font: inherit; }
+  select { padding: 4px 6px; }
+  button { padding: 5px 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { margin-left: auto; font-size: 13px; }
+  main { display: grid; grid-template-columns: 46% 1fr; gap: 14px; padding: 14px; height: calc(100vh - 56px); }
+  section.col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .panel { display: flex; flex-direction: column; background: #232b36; border: 1px solid #38445a; border-radius: 8px; padding: 8px; min-height: 0; }
+  h2 { font-size: 13px; margin: 0 0 6px; color: #9fb2c8; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #9fb2c8; }
+  textarea { flex: 1; min-height: 90px; resize: none; line-height: 1.45; padding: 6px; }
+  #banner { padding: 8px 12px; border-radius: 6px; font-weight: 700; }
+  #banner.pass { background: #1d3b2a; color: #6fe39a; border: 1px solid #2e7d4c; }
+  #banner.fail { background: #46241f; color: #ff9b8a; border: 1px solid #a03a2b; }
+  #outwrap { overflow: auto; flex: 1; min-height: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th, td { border: 1px solid #3a4a5e; padding: 3px 8px; text-align: right; white-space: pre; }
+  th { background: #2c3547; position: sticky; top: 0; }
+  td.num { color: #ffd479; }
+  td.mism { color: #ff9b8a; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; color: #ffb3a5; flex: 1; overflow: auto; }
+  #hdlrow { flex: 4; } #tstrow { flex: 2; } #cmprow { flex: 2; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>HackHDL 模擬器（批次，v0.9）</h1>
+  <a href="index.html">← 組語 Emulator</a>
+  <a href="jack.html" title="Jack 全鏈路（v1.0）">Jack 編譯器 →</a>
+  <select id="mode">
+    <option value="chapter">內建章節晶片</option>
+    <option value="custom">自訂貼上</option>
+  </select>
+  <select id="chapter"></select>
+  <select id="case"></select>
+  <button id="run" title="跑完整支 .tst（codegen＋編譯，數秒）">執行</button>
+  <span class="spacer"></span>
+  <span id="status"></span>
+</header>
+<main>
+  <section class="col">
+    <h2>① 來源</h2>
+    <div class="panel" id="hdlrow"><label>.hdl<textarea id="hdl" spellcheck="false" placeholder="HackHDL 晶片原始碼"></textarea></label></div>
+    <div class="panel" id="tstrow"><label>.tst<textarea id="tst" spellcheck="false" placeholder="官方 HardwareSimulator 測試腳本"></textarea></label></div>
+    <div class="panel" id="cmprow"><label>.cmp（可留空＝只看輸出，不比對）<textarea id="cmp" spellcheck="false" placeholder="期望輸出（逐位元比對）"></textarea></label></div>
+  </section>
+  <section class="col">
+    <h2>② 執行結果</h2>
+    <div id="banner" class="hidden"></div>
+    <div class="panel" style="flex:3">
+      <h2 style="margin-bottom:4px">.out 輸出表</h2>
+      <div id="outwrap"><table id="outtab"></table></div>
+    </div>
+    <div class="panel" style="flex:2">
+      <h2 style="margin-bottom:4px">錯誤／訊息</h2>
+      <pre id="errlog"></pre>
+    </div>
+  </section>
+</main>
+<script src="corpus.js"></script>
+<script src="hdl-rt.js"></script>
+<script src="embed.js"></script>
+<script src="hdl.js"></script>
+</body>
+</html>

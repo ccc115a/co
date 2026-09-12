@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>計算機結構 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <h1>計算機結構 — Nand2Tetris 互動教材</h1>
+    <p>從一顆 NAND 閘，到一台能玩俄羅斯方塊的電腦（章節 00–12）</p>
+    <div class="badges">
+      <span>金門大學 資訊工程系</span>
+      <span>陳鍾誠</span>
+      <span>115 學年上學期</span>
+      <span>全離線互動</span>
+    </div>
+  </div>
+</header>
+
+<nav id="toc">
+  <div class="wrap">
+    <a href="#ch00">00 總覽</a>
+    <a href="#ch01">01 邏輯閘</a>
+    <a href="#ch02">02 算術 / ALU</a>
+    <a href="#ch03">03 記憶體</a>
+    <a href="#ch04">04 機器語言</a>
+    <a href="#ch05">05 CPU</a>
+    <a href="#ch06">06 組譯器</a>
+    <a href="#ch07">07 VM 堆疊</a>
+    <a href="#ch08">08 函式呼叫</a>
+    <a href="#ch09">09 Jack 導覽</a>
+    <a href="#ch11">11 Jack 編譯器</a>
+    <a href="#ch12">12 作業系統</a>
+    <a href="#chAp">附錄</a>
+  </div>
+</nav>
+
+<main class="wrap">
+
+<!-- ================= 00 ================= -->
+<section class="chapter prose" id="ch00">
+  <h2><span class="tag">00</span>課程總覽：從 NAND 到 Tetris</h2>
+  <div class="goals">
+    <ul>
+      <li>了解 Nand2Tetris 的「自底向上」路線圖與每個章節的產物</li>
+      <li>認識硬體描述語言 HDL、組譯器、VM、編譯器、作業系統之間的關係</li>
+      <li>熟悉本課程（金門大學計算機結構）的教材與工具布局</li>
+    </ul>
+  </div>
+
+  <p>整套課程只從一件預設存在的事物出發：<b>Nand 閘</b>（「正反及閘」，只有兩個輸入都為 1 時輸出 0）。之後每一章都在前一章的基礎上多蓋一層：</p>
+
+  <figure class="diag">
+    <svg viewBox="0 0 960 130" width="960" height="130" role="img" aria-label="Nand2Tetris 課程地圖">
+      <defs>
+        <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#2563eb"/>
+        </marker>
+      </defs>
+      <g font-family="PingFang TC, sans-serif" font-size="13" text-anchor="middle">
+        <g>
+          <rect x="10" y="30" width="108" height="44" rx="8" fill="#0f172a"/>
+          <text x="64" y="56" fill="#fff">Nand 閘</text>
+        </g>
+        <line x1="118" y1="52" x2="142" y2="52" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+        <g>
+          <rect x="142" y="30" width="108" height="44" rx="8" fill="#1e3a8a"/>
+          <text x="196" y="56" fill="#fff">邏輯閘＋ALU</text>
+        </g>
+        <line x1="250" y1="52" x2="274" y2="52" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+        <g>
+          <rect x="274" y="30" width="108" height="44" rx="8" fill="#1e40af"/>
+          <text x="328" y="56" fill="#fff">記憶體＋CPU</text>
+        </g>
+        <line x1="382" y1="52" x2="406" y2="52" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+        <g>
+          <rect x="406" y="30" width="108" height="44" rx="8" fill="#1d4ed8"/>
+          <text x="460" y="56" fill="#fff">機器語言</text>
+        </g>
+        <line x1="514" y1="52" x2="538" y2="52" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+        <g>
+          <rect x="538" y="30" width="108" height="44" rx="8" fill="#2563eb"/>
+          <text x="592" y="56" fill="#fff">組譯器</text>
+        </g>
+        <line x1="646" y1="52" x2="670" y2="52" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+        <g>
+          <rect x="670" y="30" width="108" height="44" rx="8" fill="#3b82f6"/>
+          <text x="724" y="56" fill="#fff">虛擬機 VM</text>
+        </g>
+        <line x1="778" y1="52" x2="802" y2="52" stroke="#2563eb" stroke-width="2" marker-end="url(#arr)"/>
+        <g>
+          <rect x="802" y="30" width="148" height="44" rx="8" fill="#0891b2"/>
+          <text x="876" y="56" fill="#fff">Jack／作業系統</text>
+        </g>
+      </g>
+      <g font-size="11" fill="#5a6473" text-anchor="middle">
+        <text x="64" y="100">01</text>
+        <text x="197" y="100">02</text>
+        <text x="328" y="100">03</text>
+        <text x="460" y="100">04</text>
+        <text x="592" y="100">06</text>
+        <text x="724" y="100">07–08</text>
+        <text x="876" y="100">09–12</text>
+      </g>
+    </svg>
+  </figure>
+
+  <h3>各章產物整理</h3>
+  <table>
+    <tr><th>章節</th><th>你要完成的東西</th><th>repository 對應</th></tr>
+    <tr><td>00</td><td>認識工具與 HDL</td><td><code>nand2tetris/00/</code></td></tr>
+    <tr><td>01</td><td>Not / And / Or / Xor / Mux / DMux 及 16 位元系列</td><td><code>nand2tetris/01/*.hdl</code></td></tr>
+    <tr><td>02</td><td>半加器、全加器、Add16、Inc16、ALU</td><td><code>nand2tetris/02/</code></td></tr>
+    <tr><td>03</td><td>Bit→Register→RAM8…RAM16K→PC</td><td><code>nand2tetris/03/{a,b}/</code></td></tr>
+    <tr><td>04</td><td>Mult.asm、Fill.asm 兩個機器語言程式</td><td><code>nand2tetris/04/</code></td></tr>
+    <tr><td>05</td><td>Memory、CPU、Computer 三大晶片</td><td><code>nand2tetris/05/*.hdl</code></td></tr>
+    <tr><td>06</td><td>兩階段組譯器（C/C++/Python）</td><td><code>nand2tetris/06/</code></td></tr>
+    <tr><td>07–08</td><td>VM→組語翻譯器（堆疊算術、函式呼叫）</td><td><code>nand2tetris/07</code>、<code>08</code></td></tr>
+    <tr><td>09</td><td>編譯器前端實驗（p0 到 p0func）</td><td><code>nand2tetris/09/</code></td></tr>
+    <tr><td>11</td><td>Jack 編譯器（Python 與 C 兩套）</td><td><code>nand2tetris/11/{py,c}/</code></td></tr>
+    <tr><td>12</td><td>作業系統（螢幕、鍵盤、字串、記憶體配置）</td><td><code>nand2tetris/12/*.jack</code></td></tr>
+  </table>
+
+  <h3>工具鏈（本課程的再實作與替代工具）</h3>
+  <ul>
+    <li><b>hackeda</b>（專案代號）：用 Rust 把整條工具鏈重做一遍——<code>hdl2rs</code>（HDL 批次模擬）、<code>hackasm</code>、<code>vm2asm</code>、<code>jack2vm</code>、<code>hackemu</code>（圖形模擬器）、<code>hackserve</code>（網頁伺服器）。見 <code>nand2tetris/_eda/</code>。</li>
+    <li><b>Verilog 實作</b>：同一台 HackCPU／mcu0 用 Verilog 重寫，以 Icarus Verilog 模擬。見 <code>verilog/</code>。</li>
+    <li><b>網頁版</b>：執行 <code>cargo build --release -p hackserve</code> 後連 <code>http://127.0.0.1:8080/</code>，有 asm 模擬器、HDL 批次模擬與 Jack 編譯器。</li>
+  </ul>
+
+  <div class="note">💡 本頁每個互動面板都可以直接用瀏覽器開啟（<code>file://</code>），不需要安裝任何東西。</div>
+
+  <div data-quiz="ch00"></div>
+</section>
+
+<!-- ================= 01 ================= -->
+<section class="chapter prose" id="ch01">
+  <h2><span class="tag">01</span>布林邏輯：從 Nand 開始蓋邏輯閘</h2>
+  <div class="goals">
+    <ul>
+      <li>用 Nand 組合出 Not、And、Or、Xor、Mux、DMux</li>
+      <li>理解 Mux（二選一）與 DMux（一對二）的用途</li>
+      <li>把單一位元邏輯擴展成 16 位元的 <code>Not16 / And16 / Or16 / Mux16</code> 等</li>
+    </ul>
+  </div>
+
+  <p>原著把 Nand 當成「免費提供」的唯一原料，其餘全部要自己蓋。下面是七個基礎閘的互動面板——<b>點擊輸入晶片</b>（0/1）看輸出即時變化；真值表會同步反白你目前的輸入組合。</p>
+
+  <div class="note">公式口訣：<code>not(x,y) = nand(x,x)</code>；<code>and(x,y) = not(nand(x,y))</code>；<code>or(x,y) = not(not x and not y)</code>；<code>xor(x,y) = and(x,not y) or and(not x,y)</code>。</div>
+
+  <div id="g-nand"></div>
+  <div id="g-not"></div>
+  <div id="g-and"></div>
+  <div id="g-or"></div>
+  <div id="g-xor"></div>
+  <div id="g-mux"></div>
+  <div id="g-dmux"></div>
+
+  <h3>16 位元與寬位元版本</h3>
+  <p>教材的 CPU 是 16 位元，所以每個閘都有對應的「16 位元平行版」。輸入請填 4 位 16 進位（可試 <code>0b</code> 前置二進位或十進位）。</p>
+  <div id="g-not16"></div>
+  <div id="g-and16"></div>
+  <div id="g-or16"></div>
+  <div id="g-mux16"></div>
+  <div id="g-or8"></div>
+  <div id="g-mux4"></div>
+  <div id="g-mux8"></div>
+  <div id="g-dmux4"></div>
+  <div id="g-dmux8"></div>
+
+  <h3>作業</h3>
+  <p>在 <code>nand2tetris/01/</code> 依序完成 <code>And.hdl</code>、<code>Or.hdl</code>、<code>Xor.hdl</code>、<code>Mux.hdl</code>、<code>DMux.hdl</code> 及 16 位元系列，每個檔都要通過對應的 <code>.tst</code> 測試。</p>
+
+  <div data-quiz="ch01"></div>
+</section>
+
+<!-- ================= 02 ================= -->
+<section class="chapter prose" id="ch02">
+  <h2><span class="tag">02</span>算術與 ALU</h2>
+  <div class="goals">
+    <ul>
+      <li>用加法串出 16 位元加法器：HalfAdder → FullAdder → Add16 → Inc16</li>
+      <li>掌握二補數表示法：<code>!v = -v - 1</code>，即 <code>-v = !v + 1</code></li>
+      <li>理解 ALU 6 個控制位元 <code>zx nx zy ny f no</code> 如何產生 18 種函式</li>
+    </ul>
+  </div>
+
+  <h3>加法器</h3>
+  <p><b>半加器</b>把兩個位元相加，輸出 sum 與進位 carry；<b>全加器</b>再加上一個來自低位的進位入 cin。Adder16 就是 16 個全加器像鏈子一樣串起來。</p>
+  <div id="halfadder"></div>
+  <div id="fulladder"></div>
+  <div id="add16"></div>
+  <div id="inc16"></div>
+
+  <h3>Hack ALU：18 種函式的控制編碼</h3>
+  <p>ALU 對兩個 16 位元輸入 x、y，依 6 個控制位元產生輸出，並額外回報兩個旗標：<code>zr</code>（out=0）與 <code>ng</code>（out&lt;0）。</p>
+  <table>
+    <tr><th>位元</th><th>=1</th><th>=0</th></tr>
+    <tr><td>zx</td><td>x = 0</td><td>x 不動</td></tr>
+    <tr><td>nx</td><td>x = !x</td><td>x 不動</td></tr>
+    <tr><td>zy</td><td>y = 0</td><td>y 不動</td></tr>
+    <tr><td>ny</td><td>y = !y</td><td>y 不動</td></tr>
+    <tr><td>f</td><td>out = x + y</td><td>out = x &amp; y</td></tr>
+    <tr><td>no</td><td>out = !out</td><td>out 不動</td></tr>
+  </table>
+
+  <div id="alu"></div>
+
+  <p>所有 18 種函式的完整編碼表 <code>(zx,nx,zy,ny,f,no)</code>：</p>
+  <pre>zx nx zy ny f no  輸出
+ 1  0  1  0  1  0   0
+ 1  1  1  1  1  1   1
+ 1  1  1  0  1  0  -1
+ 0  0  1  1  0  0   x
+ 1  1  0  0  0  0   y
+ 0  0  1  1  0  1  !x
+ 1  1  0  0  0  1  !y
+ 0  0  1  1  1  1  -x
+ 1  1  0  0  1  1  -y
+ 0  1  1  1  1  1  x+1
+ 1  1  0  1  1  1  y+1
+ 0  0  1  1  1  0  x-1
+ 1  1  0  0  1  0  y-1
+ 0  0  0  0  1  0  x+y
+ 0  1  0  0  1  1  x-y
+ 0  0  0  1  1  1  y-x
+ 0  0  0  0  0  0  x&amp;y
+ 0  1  0  1  0  1  x|y</pre>
+
+  <div class="note">關鍵捷徑：取 <code>x</code> 時一律 <code>zy=1, ny=1</code>（把 y 弄成 -1），再 <code>y=f</code>… 等等——其實是要讓 <code>x &amp; (-1) = x</code>；而 <code>x|y</code> 靠德摩根定律：<code>x|y = !(!x &amp; !y)</code>。</div>
+
+  <div data-quiz="ch02"></div>
+</section>
+
+<!-- ================= 03 ================= -->
+<section class="chapter prose" id="ch03">
+  <h2><span class="tag">03</span>記憶體：從暫存器到 RAM16K</h2>
+  <div class="goals">
+    <ul>
+      <li>了解 DFF（資料正反器）如何讓電路「記住一拍」</li>
+      <li>用 Mux 迴授做出 Bit，再用 16 個 Bit 組成 Register</li>
+      <li>逐層放大記憶體：RAM8 → RAM64 → RAM512 → RAM4K → RAM16K</li>
+      <li>設計程式計數器 PC（inc / load / reset）</li>
+    </ul>
+  </div>
+
+  <p>前兩章全是<b>組合邏輯</b>：輸入一消失輸出就跟著消失。電腦要「記得」事情就得靠<b>循序邏輯</b>。核心是 <code>DFF</code>：它在時脈上升沿讀輸入，下一時刻才呈現在輸出。</p>
+
+  <p><b>Bit = Mux 迴授 + DFF。</b> <code>load=1</code> 時 Mux 選外面的 <code>in</code>，把新位元寫入；<code>load=0</code> 時 Mux 選回 DFF 自己的輸出，形成迴路把舊值「鎖住」。</p>
+
+  <div id="ram8"></div>
+  <div id="pc"></div>
+
+  <h3>記憶體層級</h3>
+  <table>
+    <tr><th>元件</th><th>容量</th><th>由誰組成</th></tr>
+    <tr><td>Bit</td><td>1 bit</td><td>DFF + Mux 迴授</td></tr>
+    <tr><td>Register</td><td>16 bit</td><td>16 個 Bit（共用 load）</td></tr>
+    <tr><td>RAM8</td><td>8 words</td><td>8 個 Register＋位址解碼</td></tr>
+    <tr><td>RAM64</td><td>64 words</td><td>8× RAM8</td></tr>
+    <tr><td>RAM512</td><td>512 words</td><td>8× RAM64</td></tr>
+    <tr><td>RAM4K</td><td>4096 words</td><td>8× RAM512</td></tr>
+    <tr><td>RAM16K</td><td>16384 words</td><td>4× RAM4K（14 位元位址）</td></tr>
+  </table>
+
+  <div data-quiz="ch03"></div>
+</section>
+
+<!-- ================= 04 ================= -->
+<section class="chapter prose" id="ch04">
+  <h2><span class="tag">04</span>機器語言：HACK 組合語言</h2>
+  <div class="goals">
+    <ul>
+      <li>認識 Hack 的兩種 16 位元指令：A 指令與 C 指令</li>
+      <li>理解螢幕（SCREEN=16384）與鍵盤（KBD=24576）的記憶體映射</li>
+      <li>寫出 Mult.asm（乘法）與 Fill.asm（螢幕反白）</li>
+    </ul>
+  </div>
+
+  <h3>A 指令與 C 指令</h3>
+  <table>
+    <tr><th>型態</th><th>格式</th><th>意義</th></tr>
+    <tr><td>A 指令</td><td><code>0xxxxxxxxxxxxxxx</code></td><td>把 15 位元常數載入 A 暫存器（資料或記憶體位址）</td></tr>
+    <tr><td>C 指令</td><td><code>111 a c1..c6 d1 d2 d3 j1 j2 j3</code></td><td>運算（a + 6 個 ALU 位元）＋目的地（A/D/M）＋跳轉（<0/=0/&gt;0）</td></tr>
+  </table>
+
+  <p>螢幕是 <code>RAM[16384..24575]</code>，每 1 個 bit 對應 1 個像素（共 512×256）；鍵盤只要 <code>RAM[24576]</code> 一個 word，讀到的就是現在按下的按鍵碼。</p>
+
+  <h3>互動組譯器：組語 → 機器碼</h3>
+  <p>下方直接輸入組語，即時得到每一列的 16 位元機器碼（含符號解析與標籤）。也可以先點「範例」開始。</p>
+
+  <div class="panel asm-box">
+    <div class="ptitle">Hack 組譯器（即時，HTML 版）</div>
+    <div class="field">
+      <label>組語 .asm</label>
+      <textarea class="asm" rows="12" spellcheck="false" style="width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.85em;border:1px solid var(--line);border-radius:8px;padding:8px">@2
+D=A
+@3
+D=D+A
+@0
+M=D</textarea>
+    </div>
+    <div class="sigline">
+      <button class="btn small" data-sample="add">載入 add.asm</button>
+      <button class="btn small" data-sample="sum">載入 sum.asm</button>
+      <button class="btn small" data-sample="fill">載入 螢幕掃暗（含 label）</button>
+    </div>
+    <div class="pass-status sig"></div>
+    <div class="asm-out"></div>
+    <div class="asm-syms"></div>
+  </div>
+
+  <div data-quiz="ch04"></div>
+</section>
+
+<!-- ================= 05 ================= -->
+<section class="chapter prose" id="ch05">
+  <h2><span class="tag">05</span>CPU 與 Computer</h2>
+  <div class="goals">
+    <ul>
+      <li>看懂 CPU 方塊：指令解碼、A/D 暫存器、ALU、PC</li>
+      <li>掌握 5 個關鍵布林控制式（Aload、Dload、writeM、gt、PCload）</li>
+      <li>把 Memory + CPU + ROM 組合成整台 Computer</li>
+    </ul>
+  </div>
+
+  <figure class="diag">
+    <svg viewBox="0 0 860 300" width="860" height="300" role="img" aria-label="Hack CPU 示意圖">
+      <defs>
+        <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#475569"/>
+        </marker>
+      </defs>
+      <g font-family="ui-monospace,Menlo,monospace" font-size="12" text-anchor="middle">
+        <rect x="20" y="60" width="150" height="70" rx="10" fill="#e0f2fe" stroke="#0ea5e9"/>
+        <text x="95" y="100">instruction[16]</text>
+        <text x="95" y="118" font-size="11" fill="#334155">解碼器</text>
+        <rect x="360" y="140" width="140" height="70" rx="10" fill="#fef3c7" stroke="#f59e0b"/>
+        <text x="430" y="180">ALU</text>
+        <text x="430" y="196" font-size="11" fill="#334155">zx nx zy ny f no</text>
+        <rect x="285" y="30" width="110" height="56" rx="10" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="340" y="53">A 暫存器</text>
+        <text x="340" y="70" font-size="10" fill="#334155">Aload</text>
+        <rect x="470" y="30" width="110" height="56" rx="10" fill="#dcfce7" stroke="#16a34a"/>
+        <text x="525" y="53">D 暫存器</text>
+        <text x="525" y="70" font-size="10" fill="#334155">Dload</text>
+        <rect x="600" y="30" width="110" height="56" rx="10" fill="#ede9fe" stroke="#7c3aed"/>
+        <text x="655" y="53">PC</text>
+        <text x="655" y="70" font-size="10" fill="#334155">reset/load/inc</text>
+        <line x1="170" y1="95" x2="285" y2="75" stroke="#475569" marker-end="url(#a2)"/>
+        <line x1="285" y1="86" x2="360" y2="150" stroke="#475569" marker-end="url(#a2)"/>
+        <line x1="500" y1="86" x2="430" y2="140" stroke="#475569" marker-end="url(#a2)"/>
+        <line x1="430" y1="140" x2="380" y2="86" stroke="#475569" marker-end="url(#a2)"/>
+        <line x1="655" y1="86" x2="655" y2="80" stroke="none"/>
+      </g>
+      <g font-size="11" fill="#5a6473">
+        <text x="20" y="240" font-family="PingFang TC,sans-serif">CPU 接腳：inM（來自 Memory）、instruction（來自 ROM32K）、reset；</text>
+        <text x="20" y="258" font-family="PingFang TC,sans-serif">輸出 outM / writeM / addressM 送回 Memory，pc 送回 ROM32K。</text>
+      </g>
+    </svg>
+  </figure>
+
+  <h3>5 個關鍵布林式</h3>
+  <table>
+    <tr><th>信號</th><th>布林式</th><th>意義</th></tr>
+    <tr><td>isC / isA</td><td>instruction[15] / ¬isC</td><td>是不是 C 指令</td></tr>
+    <tr><td>Aload</td><td>isA ∨ (isC ∧ d1)</td><td>A 暫存器何時允許載入</td></tr>
+    <tr><td>Dload</td><td>isC ∧ d2</td><td>D 暫存器何時載入</td></tr>
+    <tr><td>writeM</td><td>isC ∧ d3</td><td>何時對記憶體寫入</td></tr>
+    <tr><td>gt</td><td>¬(ng ∨ zr)</td><td>ALU 輸出 &gt; 0（=1）</td></tr>
+    <tr><td>PCload</td><td>isC ∧ ((ng∧j1)∨(zr∧j2)∨(gt∧j3))</td><td>PC 何時跳轉</td></tr>
+  </table>
+
+  <h3>跳轉條件</h3>
+  <table class="tt">
+    <tr><th>ALU 輸出</th><th>ng</th><th>zr</th><th>gt</th><th>會跳的欄位</th></tr>
+    <tr><td>out &lt; 0</td><td>1</td><td>0</td><td>0</td><td>j1（JLT）</td></tr>
+    <tr><td>out = 0</td><td>0</td><td>1</td><td>0</td><td>j2（JEQ）</td></tr>
+    <tr><td>out &gt; 0</td><td>0</td><td>0</td><td>1</td><td>j3（JGT）</td></tr>
+  </table>
+
+  <h3>互動反組譯器：機器碼 → 語意</h3>
+  <p>貼上 16 位元機器碼（二進位或 4 位 HEX），看看 CPU「眼中的指令」長什麼樣。</p>
+  <div class="panel sim">
+    <div class="ptitle">C 指令 / A 指令解碼</div>
+    <div class="field">
+      <label>機器碼</label>
+      <input type="text" id="decode-in" style="font-family:ui-monospace,Menlo,monospace;width:240px" placeholder="如 1110 1100 0001 0000 或 EC10">
+    </div>
+    <div id="decode-out"></div>
+  </div>
+
+  <div data-quiz="ch05"></div>
+</section>
+
+<!-- ================= 06 ================= -->
+<section class="chapter prose" id="ch06">
+  <h2><span class="tag">06</span>兩階段組譯器</h2>
+  <div class="goals">
+    <ul>
+      <li>看懂 pass1（收集標籤、建符號表）與 pass2（逐列產機器碼）的分工</li>
+      <li>記住預定義符號：SP=0、LCL=1、ARG=2、THIS=3、THAT=4、R0–R15、SCREEN、KBD</li>
+      <li>用 C 版 <code>asm</code> 與 Python 版跑範例 <code>add.asm</code>、<code>sum.asm</code></li>
+    </ul>
+  </div>
+
+  <p>組譯器的輸入是「人讀」的 .asm，輸出是「機器來得及讀」的 .hack。因為程式裡有「還不知道位址的標籤」（例如 <code>0;JMP</code> 要跳去 <code>(LOOP)</code>），所以要掃兩遍：</p>
+  <ol>
+    <li><b>pass1</b>：掃每一列算出位址，把 <code>(LABEL)</code> 的代表位址填入符號表；也先記錄 R0–R15 等內定符號。</li>
+    <li><b>pass2</b>：重掃一遍，<code>@var</code> 或跳轉目標改查符號表（未定義的變數從位址 16 起依序分配），每一列編成 16 位元機器碼。</li>
+  </ol>
+
+  <div class="panel asm-box">
+    <div class="ptitle">兩 pass 觀察：同一顆組譯器（上面的面板是給 ch04 用的，這裡觀察符號表）</div>
+    <div class="field">
+      <label>組語 .asm</label>
+      <textarea class="asm" rows="14" spellcheck="false" style="width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.85em;border:1px solid var(--line);border-radius:8px;padding:8px">// sum = 1+2+...+10
+@10
+D=A
+@R0
+M=D
+@0
+D=A
+@sum
+M=D
+@i
+M=1
+(LOOP)
+@i
+D=M
+@R0
+D=D-M
+@STOP
+D;JGT
+@i
+D=M
+@sum
+M=D+M
+@i
+M=M+1
+@LOOP
+0;JMP
+(STOP)</textarea>
+    </div>
+    <div class="sigline">
+      <button class="btn small" data-sample="sum">sum.asm</button>
+      <button class="btn small" data-sample="add">add.asm</button>
+    </div>
+    <div class="pass-status sig"></div>
+    <div class="asm-out"></div>
+    <div class="asm-syms"></div>
+  </div>
+
+  <p>本機實作：<code>nand2tetris/06/</code> 有 C++ 版 <code>asm.cpp</code>（<code>make</code> 後 <code>./asm add</code>）與 Python 版 <code>py/asm.py</code>；執行後可用 <code>./vm add.bin</code> 看逐指令追蹤，看到 A、D、PC 與記憶體怎麼變。</p>
+
+  <div data-quiz="ch06"></div>
+</section>
+
+<!-- ================= 07 ================= -->
+<section class="chapter prose" id="ch07">
+  <h2><span class="tag">07</span>虛擬機：堆疊與算術</h2>
+  <div class="goals">
+    <ul>
+      <li>理解為何要中間語言：讓「高階程式」與「硬體」解耦</li>
+      <li>學會 push / pop 與 8 種段（constant、local、argument、this、that、pointer、temp、static）</li>
+      <li>看懂 add 的標準翻譯（先讀、再算、SP 最後 -1）</li>
+    </ul>
+  </div>
+
+  <table>
+    <tr><th>段</th><th>底層位置</th><th>用途</th></tr>
+    <tr><td>constant</td><td>立即數</td><td>常數直接當值</td></tr>
+    <tr><td>local（LCL）</td><td>RAM[LCL+i]</td><td>函式區域變數</td></tr>
+    <tr><td>argument（ARG）</td><td>RAM[ARG+i]</td><td>函式參數</td></tr>
+    <tr><td>this / that</td><td>RAM[THIS+i] / RAM[THAT+i]</td><td>物件／陣列基底</td></tr>
+    <tr><td>pointer 0/1</td><td>RAM[3]/[4]</td><td>就是 THIS/THAT 本身</td></tr>
+    <tr><td>temp 0–7</td><td>RAM[5..12]</td><td>暫時變數</td></tr>
+    <tr><td>static</td><td>RAM[16..255]</td><td>全域（類別層級）變數</td></tr>
+    <tr><td>stack</td><td>以上</td><td>運算元與結果都在堆疊頂</td></tr>
+  </table>
+
+  <h3>互動 VM 模擬器</h3>
+  <p>Step 執行看「堆疊」與「各段」的變化；右邊同時顯示該指令翻譯成 Hack 組語的關鍵步驟。</p>
+
+  <div class="panel sim">
+    <div class="ptitle">VM → Hack 組語（堆疊視覺化）</div>
+    <div id="vm-samples" class="sigline"></div>
+    <div class="field">
+      <label>VM 程式</label>
+      <textarea id="vm-in" rows="8" spellcheck="false" style="width:100%;font-family:ui-monospace,Menlo,monospace;font-size:.85em;border:1px solid var(--line);border-radius:8px;padding:8px"></textarea>
+    </div>
+    <div class="sigline">
+      <button class="btn small" id="vm-reset">重新載入</button>
+      <button class="btn small primary" id="vm-step">Step</button>
+      <button class="btn small" id="vm-run">▶ 自動執行</button>
+    </div>
+    <table style="width:100%;border-collapse:collapse">
+      <tr>
+        <td style="width:45%;vertical-align:top;padding-right:10px">
+          <div class="sig sigline" id="vm-out"></div>
+        </td>
+        <td style="width:30%;vertical-align:top;padding-right:10px">
+          <div class="sig sigline" style="font-weight:700">虛擬堆疊（右端為頂）</div>
+          <div id="vm-stack" class="io"></div>
+          <div class="sig sigline" style="font-weight:700;margin-top:8px">各段內容</div>
+          <div id="vm-seg" class="io"></div>
+          <div id="vm-reg" class="sig"></div>
+        </td>
+        <td style="vertical-align:top">
+          <div class="sig sigline" style="font-weight:700">最近翻譯（節錄）</div>
+          <pre id="vm-asm" style="max-height:220px;overflow:auto;white-space:pre-wrap"></pre>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+  <div data-quiz="ch07"></div>
+</section>
+
+<!-- ================= 08 ================= -->
+<section class="chapter prose" id="ch08">
+  <h2><span class="tag">08</span>虛擬機進階：函式呼叫與控制流</h2>
+  <div class="goals">
+    <ul>
+      <li>看懂 function / call / return 三件套</li>
+      <li>理解「呼叫框架」：回傳位址 ＋ LCL/ARG/THIS/THAT ＋ 參數 ＋ 區域變數</li>
+      <li>掌握 ARG = SP−nArgs−5、return 時從 LCL−5 取回傳位址</li>
+    </ul>
+  </div>
+
+  <p>控制流（goto / if-goto）比對「ALSE/END 標籤」即可翻譯；函式呼叫則要善待一套<b>呼叫框架</b>：</p>
+  <pre>call Foo 2  的前置動作（由呼叫者做）：
+  ① 推 2 個參數                     → 堆疊 [arg0, arg1]
+  ② 推回傳位址（呼叫者下一條位址）
+  ③ 依序推舊 LCL、ARG、THIS、THAT
+  ④ ARG = SP − 2 − 5（指向 arg0）
+  ⑤ LCL = SP（框架起點）
+
+function Foo 1 的動作：
+  ⑥ 推 nArgs=1 個 0 當區域變數
+
+return 的動作（被呼叫者做）：
+  ⑦ 回傳值搬到 ARG 所指位置，SP = ARG + 1
+  ⑧ 依序回復 THAT/THIS/ARG/LCL，跳到回傳位址</pre>
+
+  <div class="panel sim" id="frame">
+    <div class="ptitle">呼叫框架動畫（Foo 取 2 個參數，有 1 個區域變數）</div>
+    <div class="sigline">
+      <button class="btn small" id="frame-prev">← 上一步</button>
+      <button class="btn small primary" id="frame-next">下一步 →</button>
+    </div>
+    <div class="sigline" id="frame-title" style="font-weight:700;color:var(--accent)"></div>
+    <div class="sigline note" id="frame-desc"></div>
+    <div class="io" id="frame-view"></div>
+    <div class="panel" style="box-shadow:none">
+      <code id="frame-regs"></code>
+    </div>
+  </div>
+
+  <div data-quiz="ch08"></div>
+</section>
+
+<!-- ================= 09 ================= -->
+<section class="chapter prose" id="ch09">
+  <h2><span class="tag">09</span>編譯器導覽：從 VM 到高階語言</h2>
+  <div class="goals">
+    <ul>
+      <li>理解「分析（前端）＋合成（後端）」的編譯器分工</li>
+      <li>用實驗專案 p0 → p0func 感受語法分析的層層演進</li>
+    </ul>
+  </div>
+
+  <p><code>nand2tetris/09/</code> 的本課程版本是一群「自足的迷你實驗」，每個目錄都有自己的一支 <code>compiler.py</code> 與 <code>vm.py</code>：</p>
+  <table>
+    <tr><th>目錄</th><th>實驗內容</th></tr>
+    <tr><td>01-anbn</td><td>aⁿbⁿ 文法：最簡單的上下文無關文法</td></tr>
+    <tr><td>02-exp</td><td>四則運算式求值</td></tr>
+    <tr><td>03-expParser</td><td>用遞迴下降剖析運算式，產出後序式/暫存器碼</td></tr>
+    <tr><td>04-p0ifwhile</td><td>加入 if / while 控制流</td></tr>
+    <tr><td>05-p0func</td><td>加入函式呼叫與回傳</td></tr>
+  </table>
+  <pre># 例：p0 前排樣
+python compiler.py p0/test1.p0 &gt; p0/test1.ir
+python vm.py p0/test1.ir</pre>
+  <p>引擎大致是「tokenizer → parser → 中間碼（IR）→ 模擬執行」；這正好預告第 11 章的完整 Jack 編譯器。</p>
+
+  <div data-quiz="ch09"></div>
+</section>
+
+<!-- ================= 11 ================= -->
+<section class="chapter prose" id="ch11">
+  <h2><span class="tag">11</span>Jack 語言與編譯器</h2>
+  <div class="goals">
+    <ul>
+      <li>認識 Jack 語法（class、function、var、let、do、if/while）</li>
+      <li>看懂全鏈路：.jack → .vm → .asm → .hack → 執行</li>
+      <li>熟悉本課程的兩套編譯器：Python（py/）與 C（c/）</li>
+    </ul>
+  </div>
+
+  <p>Jack 是刻意做得很小的「簡化 Java」：沒有 <code>for</code>、沒有 <code>switch</code>，迴圈只好用 <code>if…else / while…end</code> 兜出來。下面是最小的 Seven 程式：</p>
+  <pre>// Seven.jack（語料：nand2tetris/11/jack/Seven）
+class Main {
+  function void main() {
+    do Output.printInt(2 + 5);   // 印出 7
+    return;
+  }
+}</pre>
+
+  <p>編譯四階段的資料流，每一階都有對應的工具：</p>
+  <table>
+    <tr><th>階段</th><th>產物</th><th>工具</th></tr>
+    <tr><td>Jack → VM</td><td><code>.vm</code>（堆疊指令）</td><td><code>jack2vm</code>（C 或 Python 實作）</td></tr>
+    <tr><td>VM → 組語</td><td><code>.asm</code></td><td><code>vm2asm</code></td></tr>
+    <tr><td>組語 → 機器碼</td><td><code>.hack</code></td><td><code>hackasm</code>（現成組譯器）</td></tr>
+    <tr><td>執行</td><td>螢幕/鍵盤/CPU</td><td><code>hackemu</code> 或本頁 <a href="#ch04">ch04 組譯器</a>＋<a href="#ch05">ch05 解碼器</a></td></tr>
+  </table>
+
+  <pre># C 版編譯器（nand2tetris/11/c）
+bash build.sh
+bash all2vm.sh ../jack/Seven      # jack2vm 吃「目錄」，不吃單檔
+
+# Python 版（nand2tetris/11/py）
+python py/Compiler.py ../jack/Seven</pre>
+
+  <div class="note">語料有兩套：<code>11/jack</code>（教材程式、需 OS）與 <code>11/jackNoOs</code>（自帶 <code>Sys.jack</code> 的無 OS 版本）。hackeda 網頁端的 <code>jack.html</code> 會用常數對照表列出這些範例。</div>
+
+  <div data-quiz="ch11"></div>
+</section>
+
+<!-- ================= 12 ================= -->
+<section class="chapter prose" id="ch12">
+  <h2><span class="tag">12</span>作業系統（以 Jack 打造）</h2>
+  <div class="goals">
+    <ul>
+      <li>看懂 Sys.init 的初始化順序與中斷（halt）技巧</li>
+      <li>理解 Math 為何要「軟體做乘法」：位元掃描 + 重複加法</li>
+      <li>認識螢幕字元映射、鍵盤、字串與記憶體配置器</li>
+    </ul>
+  </div>
+
+  <h3>啟動流程</h3>
+  <pre>Sys.init()
+  ├── Math.init()      ← 建立 powers_of_two 陣列
+  ├── Output.init()    ← 初始化螢幕基底、游標、字元表
+  ├── Screen.init()    ← 初始化繪圖顏色
+  ├── Keyboard.init()  ← 初始化鍵盤記憶體位址
+  ├── Memory.init()    ← 初始化 free list 記憶體配置器
+  ├── Main.main()      ← 執行使用者主程式
+  └── Sys.halt()</pre>
+
+  <p>Hack 沒有 HALT 指令，<code>Sys.halt()</code> 靠 <code>while (true) {}</code>（配 <code>goto 自己</code>）達成「停機」。</p>
+
+  <h3>Math.multiply：沒有硬體乘法，就「位元掃描」</h3>
+  <p>把 y 逐步右移，若最低位是 1 就把「x 左移累加的結果」加上去，x 每步左移一倍。看互動示範：</p>
+
+  <div class="panel sim" id="mult">
+    <div class="ptitle">Math.multiply 逐步演算</div>
+    <div class="field"><label>x</label><input type="number" id="mult-x" value="13" min="0" style="width:80px"></div>
+    <div class="field"><label>y</label><input type="number" id="mult-y" value="11" min="0" style="width:80px"></div>
+    <div class="sigline">
+      <button class="btn small" id="mult-reset">重新計算</button>
+      <button class="btn small primary" id="mult-step">Step</button>
+      <button class="btn small" id="mult-run">▶ 自動</button>
+    </div>
+    <div id="mult-view"></div>
+  </div>
+
+  <div data-quiz="ch12"></div>
+</section>
+
+<!-- ================= 附錄 ================= -->
+<section class="chapter prose" id="chAp">
+  <h2><span class="tag">附</span>附錄：延伸閱讀與工具</h2>
+  <ul>
+    <li><b>本課程名詞索引</b>：<code>_more/wiki/</code>（數位邏輯、ALU、暫存器、CPU架構、記憶體、指令集架構、管線處理、虛擬記憶體、快取、CUDA 等）。</li>
+    <li><b>全書教材</b>：<code>_more/book/</code>（Nand2Tetris 講義、現代架構、GPU 與神經網路晶片）。</li>
+    <li><b>投影片</b>：<code>_more/pdf/</code>（20minNand2Tetris、EDA-HDL 到 CMOS、電腦設計與加速方法）。</li>
+    <li><b>原版資源</b>：<a href="https://www.nand2tetris.org/" rel="noopener">nand2tetris.org</a>（原始教材與工具，含 Hardware Simulator）。</li>
+    <li><b>hackeda 網頁模擬器</b>：<code>cargo build --release -p hackserve</code> 後開 <code>http://127.0.0.1:8080/</code>（asm 模擬器 / hdl.html / jack.html）。</li>
+    <li><b>Verilog 實作</b>：<code>verilog/</code>（hackcpu、mcu0，用 Icarus Verilog 模擬）。</li>
+  </ul>
+  <div class="note">本頁所有互動元件皆為課程教材用的小型示範（vanilla JS、無套件），與 hackeda 的 Rust 引擎彼此獨立；跑正式驗證請用 repository 內建的 <code>build.sh</code>/<code>make</code>/<code>cargo test</code>。</div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    計算機結構 · Nand2Tetris 互動教材 — 金門大學資訊工程系 陳鍾誠 · 115 學年上學期<br>
+    互動元件：邏輯閘／ALU／RAM8／PC／組譯器／指令解碼／VM 堆疊／呼叫框架／Math.multiply ／章節測驗
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
