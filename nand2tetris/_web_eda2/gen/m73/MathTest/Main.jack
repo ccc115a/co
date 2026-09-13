@@ -1,0 +1,26 @@
+class Main {
+    function void check(int got, int want, int slot) {
+        if (got = want) {
+            do Memory.poke(slot, 1);
+        } else {
+            do Memory.poke(slot, 0);
+        }
+        return;
+    }
+
+    function void main() {
+        do Main.check(Math.sqrt(4), 2, 100);
+        do Main.check(Math.sqrt(9), 3, 101);
+        do Main.check(Math.sqrt(16), 4, 102);
+        do Main.check(Math.sqrt(300), 17, 103);
+        do Main.check(Math.sqrt(10000), 100, 104);
+        do Main.check(Math.mod(12345, 97), 26, 105);
+        do Main.check(Math.divide(-21, 4), -5, 106);
+        do Main.check(Math.multiply(123, 45), 5535, 107);
+        do Main.check(Math.abs(-7), 7, 108);
+        do Main.check(Math.max(3, 9), 9, 109);
+        do Main.check(Math.min(3, 9), 3, 110);
+        while (true) {}
+        return;
+    }
+}

@@ -1,0 +1,74 @@
+function Main.check 0
+push argument 0
+push argument 1
+eq
+not
+if-goto IF_FALSE0
+push argument 2
+push constant 1
+call Memory.poke 2
+pop temp 0
+goto IF_END1
+label IF_FALSE0
+push argument 2
+push constant 0
+call Memory.poke 2
+pop temp 0
+label IF_END1
+push constant 0
+return
+function Main.main 3
+push constant 12
+call Array.new 1
+pop local 0
+push constant 8
+call Array.new 1
+pop local 1
+push local 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 12
+call Array.new 1
+pop local 2
+push local 2
+push local 0
+push constant 100
+call Main.check 3
+pop temp 0
+push local 2
+push local 1
+eq
+not
+if-goto IF_FALSE2
+push constant 301
+push constant 1
+call Memory.poke 2
+pop temp 0
+goto IF_END3
+label IF_FALSE2
+push constant 301
+push constant 0
+call Memory.poke 2
+pop temp 0
+label IF_END3
+push constant 2048
+call Memory.peek 1
+push constant 17
+push constant 102
+call Main.check 3
+pop temp 0
+push constant 2049
+call Memory.peek 1
+push constant 1
+push constant 103
+call Main.check 3
+pop temp 0
+label WHILE_EXP4
+push constant 0
+not
+not
+if-goto WHILE_END5
+goto WHILE_EXP4
+label WHILE_END5
+push constant 0
+return

@@ -1,0 +1,52 @@
+function Main.main 2
+push constant 3
+call Array.new 1
+pop local 0
+push local 0
+push constant 0
+add
+push constant 5
+pop temp 1
+pop pointer 1
+push temp 1
+pop that 0
+push local 0
+push constant 1
+add
+push constant 7
+pop temp 1
+pop pointer 1
+push temp 1
+pop that 0
+push local 0
+push constant 1
+add
+pop pointer 1
+push that 0
+push constant 3
+call Math.multiply 2
+pop local 1
+push local 1
+push constant 21
+eq
+not
+if-goto IF_FALSE0
+push constant 201
+push constant 777
+call Memory.poke 2
+pop temp 0
+label IF_FALSE0
+push constant 200
+push constant 1234
+call Memory.poke 2
+pop temp 0
+push constant 100
+push constant 50
+call Screen.drawPixel 2
+pop temp 0
+push constant 0
+push constant 200
+call Screen.drawPixel 2
+pop temp 0
+push constant 0
+return

@@ -1,0 +1,32 @@
+class Main {
+    function void check(int got, int want, int slot) {
+        if (got = want) {
+            do Memory.poke(slot, 1);
+        } else {
+            do Memory.poke(slot, 0);
+        }
+        return;
+    }
+
+    function void main() {
+        var Array a, b, a2;
+
+        let a = Array.new(12);
+        let b = Array.new(8);
+        do Memory.deAlloc(a);
+        let a2 = Array.new(12);
+
+        do Main.check(a2, a, 100);
+        if (a2 = b) {
+            do Memory.poke(301, 1);
+        } else {
+            do Memory.poke(301, 0);
+        }
+
+        do Main.check(Memory.peek(2048), 17, 102);
+        do Main.check(Memory.peek(2049), 1, 103);
+
+        while (true) {}
+        return;
+    }
+}

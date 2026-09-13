@@ -1,0 +1,103 @@
+function Main.check 0
+push argument 0
+push argument 1
+eq
+not
+if-goto IF_FALSE0
+push argument 2
+push constant 1
+call Memory.poke 2
+pop temp 0
+goto IF_END1
+label IF_FALSE0
+push argument 2
+push constant 0
+call Memory.poke 2
+pop temp 0
+label IF_END1
+push constant 0
+return
+function Main.main 0
+push constant 4
+call Math.sqrt 1
+push constant 2
+push constant 100
+call Main.check 3
+pop temp 0
+push constant 9
+call Math.sqrt 1
+push constant 3
+push constant 101
+call Main.check 3
+pop temp 0
+push constant 16
+call Math.sqrt 1
+push constant 4
+push constant 102
+call Main.check 3
+pop temp 0
+push constant 300
+call Math.sqrt 1
+push constant 17
+push constant 103
+call Main.check 3
+pop temp 0
+push constant 10000
+call Math.sqrt 1
+push constant 100
+push constant 104
+call Main.check 3
+pop temp 0
+push constant 12345
+push constant 97
+call Math.mod 2
+push constant 26
+push constant 105
+call Main.check 3
+pop temp 0
+push constant 21
+neg
+push constant 4
+call Math.divide 2
+push constant 5
+neg
+push constant 106
+call Main.check 3
+pop temp 0
+push constant 123
+push constant 45
+call Math.multiply 2
+push constant 5535
+push constant 107
+call Main.check 3
+pop temp 0
+push constant 7
+neg
+call Math.abs 1
+push constant 7
+push constant 108
+call Main.check 3
+pop temp 0
+push constant 3
+push constant 9
+call Math.max 2
+push constant 9
+push constant 109
+call Main.check 3
+pop temp 0
+push constant 3
+push constant 9
+call Math.min 2
+push constant 3
+push constant 110
+call Main.check 3
+pop temp 0
+label WHILE_EXP2
+push constant 0
+not
+not
+if-goto WHILE_END3
+goto WHILE_EXP2
+label WHILE_END3
+push constant 0
+return

@@ -1,0 +1,27 @@
+class Main {
+    function void check(int got, int want, int slot) {
+        if (got = want) {
+            do Memory.poke(slot, 1);
+        } else {
+            do Memory.poke(slot, 0);
+        }
+        return;
+    }
+
+    function void main() {
+        do Screen.clearScreen();
+        do Screen.setColor(true);
+        do Screen.drawLine(0, 200, 511, 200);
+        do Screen.drawLine(10, 210, 10, 240);
+        do Screen.drawCircle(100, 40, 20);
+
+        do Main.check(Memory.peek(16384 + (200 * 32) + 0), -1, 100);
+        do Main.check(Memory.peek(16384 + (230 * 32) + 0), 32, 101);
+        do Main.check(Memory.peek(16384 + (40 * 32) + 5), -1, 102);
+        do Main.check(Memory.peek(16384 + (40 * 32) + 6), -1, 103);
+        do Main.check(Memory.peek(16384 + (40 * 32) + 7), -128, 104);
+
+        while (true) {}
+        return;
+    }
+}

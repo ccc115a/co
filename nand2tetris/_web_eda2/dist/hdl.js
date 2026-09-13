@@ -156,11 +156,6 @@
         : el.tst.value;
       if (el.mode.value === 'chapter') {
         lib = fullLib();
-        // ccc:begin
-        const parsed = H.parseHdl(el.hdl.value);
-        const chip = Object.assign({}, parsed, { source: el.hdl.value });
-        lib = mergeLibs(lib, { [chip.name]: chip });
-        // ccc:end
         const tstPath = el.case.value;
         baseDir = dirname(tstPath);
         script = parseScript(tstText);
