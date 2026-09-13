@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.2 物件、陣列與指標的底層本質</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link active" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="9.1.html">⇦ 上一節</a></div>
+  <div class="title">9.2 物件、陣列與指標的底層本質</div>
+  <div class="nav-right"><a class="nav-btn" href="9.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch09.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="9-2-物件-陣列與指標的底層本質">9.2 物件、陣列與指標的底層本質</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>解釋物件在 Hack 記憶體（heap）中的實際布局</li>
+<li>說明 <code>field</code> 欄位如何被編譯器映射為記憶體偏移量</li>
+<li>理解 <code>this</code> 指標的本質：它就是物件在 heap 上的起始位址</li>
+<li>說明 Jack 陣列在底層如何用 <code>Array.new</code> 分配、用偏移量存取</li>
+<li>理解「指標運算」在 Jack 中如何被隱含地實現</li>
+<li>將任何 Jack 物件操作翻譯成對應的 VM 指令（push/pop this segment）</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>在 9.1 節中，你已經學會了 Jack 語言的語法。但作為一本「從 0 到 1 手寫電腦」的書，我們不滿足於「會用」——我們要知道<strong>每一行 Jack 程式在記憶體裡到底做了什麼</strong>。</p>
+<p>這才是計算機科學家的思维方式：當你寫下 <code>p.x = 5</code> 時，腦海中浮現的不應該是「設定物件 p 的 x 欄位」，而是「把數值 5 寫入以 p 的位址為基底、偏移量為 0 的記憶體位置」。</p>
+<p>本節揭開 Jack 語言的物件導向和陣列運算背後的<strong>記憶體真相</strong>。讀完後，你會發現：</p>
+<ul>
+<li><strong>物件 = heap 上的一段連續記憶體</strong></li>
+<li><strong><code>this</code> = 物件在 heap 上的起始位址</strong></li>
+<li><strong><code>field</code> 欄位 = 起始位址 + 偏移量</strong></li>
+<li><strong>陣列 = 也是物件，元素 = 起始位址 + 索引 × 2</strong></li>
+<li><strong>「指標」在 Jack 中並不存在，但陣列和物件已經提供了等價的能力</strong></li>
+</ul>
+<hr />
+<h2 id="1-物件在記憶體中的表示">1. 物件在記憶體中的表示</h2>
+<h3 id="1-1-heap-物件的家">1.1 Heap：物件的家</h3>
+<p>Jack 程式的記憶體分為幾個區域：</p>
+<pre><code>記憶體位址空間（16-bit，0 ~ 32767）
+┌───────────────┐ 0
+│  Registers     │ 0-15      (R0-R15)
+├───────────────┤ 16
+│  Stack          │ 256-2047  (VM stack)
+├───────────────┤ 2048
+│  Heap (動態)    │ 2048-16383 (物件 + 陣列)
+├───────────────┤ 16384
+│  Screen (映射)  │ 16384-24575 (螢幕記憶體)
+├───────────────┤ 24576
+│  Keyboard (映射) │ 24576    (鍵盤輸入)
+└───────────────┘
+</code></pre>
+<p>當你寫 <code>var Point p; let p = Point.new(3, 4);</code> 時：</p>
+<ol>
+<li><code>Point.new(3, 4)</code> 呼叫 constructor</li>
+<li>constructor 內部會呼叫 <code>Memory.alloc(2)</code>（兩個 <code>int</code> 欄位 × 每個 1 word）</li>
+<li><code>Memory.alloc</code> 從 heap 中找到足夠大的空位，回傳起始位址</li>
+<li>這個位址被存入 <code>p</code>（本質上，<code>p</code> 就是一個 16-bit 整數 = 位址）</li>
+</ol>
+<h3 id="1-2-物件的內部布局">1.2 物件的內部布局</h3>
+<p>假設 <code>Point</code> 類別有兩個 <code>int</code> 欄位：</p>
+<pre><code class="language-jack">class Point {
+    field int x;    // 偏移量 0
+    field int y;    // 偏移量 1
+}
+</code></pre>
+<p>當 <code>Point.new(3, 4)</code> 執行後，heap 中的記憶體狀態如下：</p>
+<pre><code>Heap 位址     內容         說明
+──────────────────────────────────
+2048          3           p.x（偏移 0）
+2049          4           p.y（偏移 1）
+</code></pre>
+<p>變數 <code>p</code> 的值是 <code>2048</code>（heap 起始位址）。</p>
+<h3 id="1-3-操作物件的底層翻譯">1.3 操作物件的底層翻譯</h3>
+<p>當你在 Jack 中寫：</p>
+<pre><code class="language-jack">let p.x = 5;
+</code></pre>
+<p>編譯器將它翻譯成：</p>
+<pre><code>// p.x = 5  →  把 p 的位址 push 進 stack，再把 5 push 進 stack，然後 pop
+push p       // 把 p 的值（2048）推入 stack
+push 5       // 把常數 5 推入 stack
+pop this 0   // 把 5 寫入 this[0]（即位址 2048 + 0 = 2048）
+</code></pre>
+<p>而方法呼叫 <code>p.move(1, 2)</code> 翻譯成：</p>
+<pre><code>// p.move(1, 2)
+push p       // 把 p（this）作為第一隱含參數推入
+push 1       // 參數 dx = 1
+push 2       // 參數 dy = 2
+call Point.move 3  // 呼叫方法（共 3 個參數 = 1 this + 2 顯式）
+</code></pre>
+<p>在 <code>Point.move</code> 方法內部，<code>this</code> segment 的映射是：</p>
+<pre><code>this 0 → p.x（偏移 0）
+this 1 → p.y（偏移 1）
+</code></pre>
+<p>所以 <code>let x = x + dx</code> 翻譯為：</p>
+<pre><code>push this 0    // 讀取 p.x
+push argument 1  // 讀取 dx
+add
+pop this 0     // 寫回 p.x
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：這就是為什麼 <code>method</code> 不能在 <code>function</code> 中呼叫——<code>method</code> 的第一參數隱含為 <code>this</code>（物件位址），如果沒有物件位址，<code>this</code> segment 的映射就是空的，記憶體存取會出錯。而 <code>constructor</code> 為什麼要 <code>return this</code>？因為呼叫者需要拿到新配到的位址，才能對它進行後續操作。</p>
+</blockquote>
+<hr />
+<h2 id="2-this-指標的概念">2. this 指標的概念</h2>
+<h3 id="2-1-this-是什麼">2.1 this 是什麼？</h3>
+<p>在 Jack 中，<code>this</code> 是一個<strong>關鍵字</strong>，代表當前正在執行的物件的位址。它在底層的實現非常直接：</p>
+<ul>
+<li>當一個 <code>method</code> 被呼叫時，編譯器確保 <code>this</code> segment 指向正確的物件位址</li>
+<li>當一個 <code>function</code> 執行時，<code>this</code> segment 的內容是<strong>未定義的</strong>（不該去讀它）</li>
+</ul>
+<p>這就像 C++ 語言中的 <code>this</code> 指針或 Python 中的 <code>self</code> 參數，只不過 Jack 把它完全交給編譯器和 VM 來管理。</p>
+<h3 id="2-2-this-的生命週期">2.2 this 的生命週期</h3>
+<pre><code class="language-jack">class Ball {
+    field int x;
+    field int y;
+
+    constructor Ball new(int ax, int ay) {
+        let x = ax;
+        let y = ay;
+        return this;        // this = 新配到的位址
+    }
+
+    method void setX(int nx) {
+        let x = nx;         // this 仍然指向同一個物件
+    }
+
+    function void staticMethod() {
+        // 這裡不能用 this！static 方法沒有 this
+    }
+}
+
+class Main {
+    function void main() {
+        var Ball b1;
+        var Ball b2;
+
+        let b1 = Ball.new(10, 20);   // this → b1 的 heap 位址
+        let b2 = Ball.new(30, 40);   // this → b2 的 heap 位址
+
+        do b1.setX(50);              // this 暫時指向 b1
+        do b2.setX(60);              // this 暫時指向 b2
+        // 注意：b1 和 b2 是兩個不同的物件，各有各的 this
+    }
+}
+</code></pre>
+<h3 id="2-3-用-c-語言類比理解">2.3 用 C 語言類比理解</h3>
+<p>如果你熟悉 C，可以這樣理解 Jack 的物件：</p>
+<pre><code class="language-c">// Jack: class Point { field int x; field int y; }
+// Jack: var Point p;
+
+// 等價的 C 概念：
+struct Point { int x; int y; };
+struct Point* p = malloc(sizeof(struct Point));  // → Memory.alloc(2)
+p-&gt;x = 5;    // → push p, push 5, pop this 0
+p-&gt;y = 10;   // → push p, push 10, pop this 1
+</code></pre>
+<p>唯一差別：C 讓你直接操作指標（<code>struct Point*</code>），Jack 則把指標隱藏在物件型別背後。但底層機制完全相同。</p>
+<hr />
+<h2 id="3-陣列在記憶體中的表示">3. 陣列在記憶體中的表示</h2>
+<h3 id="3-1-陣列就是物件">3.1 陣列就是物件</h3>
+<p>在 Jack 中，<code>Array</code> 是一個內建類別。当你寫：</p>
+<pre><code class="language-jack">var Array arr;
+let arr = Array.new(5);
+</code></pre>
+<p><code>Array.new(5)</code> 做了什麼？</p>
+<ol>
+<li>呼叫 <code>Memory.alloc(5)</code>，配到 5 個 word 的連續記憶體</li>
+<li>回傳起始位址（例如 3000）</li>
+</ol>
+<p>陣列在記憶體中的樣子：</p>
+<pre><code>Heap 位址     arr[i]     值
+──────────────────────────────
+3000          arr[0]     （未初始化）
+3001          arr[1]     （未初始化）
+3002          arr[2]     （未初始化）
+3003          arr[3]     （未初始化）
+3004          arr[4]     （未初始化）
+</code></pre>
+<p>變數 <code>arr</code> 本身的值是 <code>3000</code>——它就是一個<strong>指到位址 3000 的指標</strong>。</p>
+<h3 id="3-2-陣列元素的存取">3.2 陣列元素的存取</h3>
+<pre><code class="language-jack">let arr[2] = 42;
+</code></pre>
+<p>這在 VM 層被翻譯為：</p>
+<pre><code>push arr      // 把 arr 的值（3000）推入 stack
+push 2        // 把索引 2 推入 stack
+add           // 3000 + 2 = 3002（目標位址）
+push 42       // 把值 42 推入
+pop           // 寫入位址 3002
+</code></pre>
+<p><strong>關鍵洞察</strong>：<code>arr[i]</code> 在底層就是 <code>arr + i</code> 的位址運算。沒有任何特殊機制，純粹是算術。</p>
+<h3 id="3-3-為什麼-jack-只支援一維陣列">3.3 為什麼 Jack 只支援一維陣列？</h3>
+<p>因為底層已經自然支持多維：</p>
+<pre><code class="language-jack">// 模擬 3×4 的二維陣列
+var Array matrix;
+let matrix = Array.new(12);    // 3 * 4 = 12 個元素
+
+// 存取 matrix[row][col]：
+// matrix[(row * 4) + col]
+let matrix[(row * 4) + col] = value;
+</code></pre>
+<p>不需要語言特性的支援，<strong>數學就解決了</strong>。</p>
+<h3 id="3-4-陣列與物件的關係">3.4 陣列與物件的關係</h3>
+<p>仔細想想：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>物件</th>
+<th>陣列</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>建立</td>
+<td><code>Point.new()</code> → <code>Memory.alloc(2)</code></td>
+<td><code>Array.new(5)</code> → <code>Memory.alloc(5)</code></td>
+</tr>
+<tr>
+<td>存取</td>
+<td><code>p.x</code> → <code>push p, push 0, add, pop this</code></td>
+<td><code>arr[2]</code> → <code>push arr, push 2, add, pop</code></td>
+</tr>
+<tr>
+<td>位址</td>
+<td>物件起始位址 + 欄位偏移</td>
+<td>陣列起始位址 + 索引</td>
+</tr>
+</tbody>
+</table>
+<p><strong>物件和陣列在底層是同一種東西</strong>：heap 上的一段連續記憶體，透過起始位址和偏移量來存取。差別只在語意層面——物件有命名欄位，陣列用數字索引。</p>
+<blockquote>
+<p><strong>設計思路</strong>：這也是為什麼 Jack 把陣列叫做「物件」而非「原始型別」。<code>Array.new(5)</code> 和 <code>Point.new()</code> 都呼叫 <code>Memory.alloc</code>，都回傳一個位址。在 Hack 硬體眼中，它們完全相同——只是人為的語意區分。理解這一點，你就理解了「物件導向」的底層本質：<strong>物件導向 = 記憶體位址 + 偏移量查表</strong>。</p>
+</blockquote>
+<hr />
+<h2 id="4-指標運算的本質">4. 指標運算的本質</h2>
+<h3 id="4-1-jack-沒有明確的指標型別-但處處是指標">4.1 Jack 沒有明確的指標型別，但處處是指標</h3>
+<p>Jack 語言沒有像 C 那樣的 <code>*</code>（取值）和 <code>&amp;</code>（取址）運算符。但實際上，<strong>物件變數和陣列變數本身就是指標</strong>。</p>
+<pre><code class="language-jack">var Point p;     // p 是一個指標（位址），指向 heap 上的 Point 物件
+var Array arr;   // arr 是一個指標（位址），指向 heap 上的陣列
+</code></pre>
+<p>兩者都是 16-bit 整數，儲存的是 heap 位址。</p>
+<h3 id="4-2-指標運算-陣列存取">4.2 指標運算 = 陣列存取</h3>
+<p>在 C 中你會寫：</p>
+<pre><code class="language-c">int* p = malloc(10 * sizeof(int));
+p[3] = 42;        // 指標運算
+*(p + 3) = 42;    // 等價寫法
+</code></pre>
+<p>在 Jack 中完全等價：</p>
+<pre><code class="language-jack">var Array p;
+let p = Array.new(10);
+let p[3] = 42;    // 陣列存取 = 指標運算
+</code></pre>
+<p>底層 VM 碼完全相同：</p>
+<pre><code>push p          // 基底位址
+push 3          // 偏移量
+add             // 目標位址
+push 42         // 值
+pop             // 寫入
+</code></pre>
+<h3 id="4-3-物件型別的-指標加法">4.3 物件型別的「指標加法」</h3>
+<pre><code class="language-jack">// 假設有一個物件 p 在位址 2000，有三個 int 欄位
+// p.x = p[0]，p.y = p[1]，p.z = p[2]
+
+// 這在概念上等同於：
+// *(p + 0) = 5    → p.x = 5
+// *(p + 1) = 10   → p.y = 10
+// *(p + 2) = 15   → p.z = 15
+</code></pre>
+<h3 id="4-4-實際的-vm-指令翻譯對照">4.4 實際的 VM 指令翻譯對照</h3>
+<p>以下是 Jack 程式到 VM 指令的完整翻譯對照：</p>
+<pre><code class="language-jack">// Jack 原始碼              // VM 指令                    // 實際記憶體操作
+let p.x = 5;               // push p                     // 2000 → stack
+                           // push 5                     // 5 → stack
+                           // pop this 0                 // stack → M[2000]
+
+let arr[3] = 42;           // push arr                   // 3000 → stack
+                           // push 3                     // 3 → stack
+                           // add                        // 3003 → stack
+                           // push 42                    // 42 → stack
+                           // pop                        // stack → M[3003]
+
+let p.y = p.x + 1;        // push this 0                // M[2000] → stack
+                           // push 1                     // 1 → stack
+                           // add                        // 結果 → stack
+                           // pop this 1                 // stack → M[2001]
+</code></pre>
+<hr />
+<h2 id="5-底層記憶體配置的關係">5. 底層記憶體配置的關係</h2>
+<h3 id="5-1-memory-alloc-的角色">5.1 Memory.alloc 的角色</h3>
+<p>所有物件和陣列的記憶體配置都通過 <code>Memory.alloc</code> 函式（第 12 章會實作它）。它從 heap 中分配一塊連續空間，回傳起始位址。</p>
+<pre><code class="language-jack">// 這些呼叫在底層完全等價（都呼叫 Memory.alloc）
+Point.new()           → Memory.alloc(2)    // 2 個 field
+Ball.new()            → Memory.alloc(4)    // 4 個 field
+Array.new(10)         → Memory.alloc(10)   // 10 個元素
+</code></pre>
+<h3 id="5-2-物件大小的計算">5.2 物件大小的計算</h3>
+<p>編譯器在編譯時就能決定物件的大小：</p>
+<pre><code>物件大小 = 該類別的 field 數量（每個 field 佔 1 個 word）
+</code></pre>
+<p>例如：</p>
+<pre><code class="language-jack">class Player {
+    field int x;          // 偏移 0
+    field int y;          // 偏移 1
+    field int score;      // 偏移 2
+    field boolean alive;  // 偏移 3
+}
+// Player.new() → Memory.alloc(4)
+</code></pre>
+<h3 id="5-3-完整的記憶體地圖範例">5.3 完整的記憶體地圖範例</h3>
+<p>假設執行以下程式：</p>
+<pre><code class="language-jack">class Main {
+    static Array table;
+    field int x;
+    field int y;
+
+    constructor Main new(int ax, int ay) {
+        let x = ax;
+        let y = ay;
+        return this;
+    }
+
+    function void main() {
+        var Main m1;
+        var Main m2;
+        var Array arr;
+
+        let table = Array.new(3);
+        let m1 = Main.new(10, 20);
+        let m2 = Main.new(30, 40);
+        let arr = Array.new(5);
+        let arr[0] = 99;
+        let arr[1] = 88;
+        let m1.x = 50;
+        let m2.y = 60;
+    }
+}
+</code></pre>
+<p>記憶體狀態（假設 <code>table</code> 位址為 100，<code>m1</code> 為 200，<code>m2</code> 為 202，<code>arr</code> 為 300）：</p>
+<pre><code>位址   變數/欄位           值      說明
+─────────────────────────────────────────
+static: table            100     Array 在 heap 的起始位址
+100    table[0]          ???     （未初始化）
+101    table[1]          ???
+102    table[2]          ???
+
+static: m1               200     Main 物件在 heap 的起始位址
+static: m2               202     Main 物件在 heap 的起始位址
+200    m1.x              50
+201    m1.y              20
+202    m2.x              30
+203    m2.y              60
+
+static: arr              300     Array 在 heap 的起始位址
+300    arr[0]            99
+301    arr[1]            88
+302    arr[2]            ???
+303    arr[3]            ???
+304    arr[4]            ???
+</code></pre>
+<hr />
+<h2 id="6-常見陷阱與重要注意事項">6. 常見陷阱與重要注意事項</h2>
+<h3 id="6-1-未初始化的物件不能使用">6.1 未初始化的物件不能使用</h3>
+<pre><code class="language-jack">var Point p;
+// let p.x = 5;    ← 錯誤！p 還沒有指向任何物件
+let p = Point.new(0, 0);
+let p.x = 5;       // 正確
+</code></pre>
+<p>未初始化的物件變數儲存的值是隨機的（heap 中某個位置），對它進行存取會讀寫到不該碰的地方。</p>
+<h3 id="6-2-陣列的邊界不檢查">6.2 陣列的邊界不檢查</h3>
+<pre><code class="language-jack">var Array arr;
+let arr = Array.new(3);   // 只有 3 個元素（index 0, 1, 2）
+let arr[5] = 42;          // 不會報錯，但會寫到不屬於 arr 的記憶體！
+</code></pre>
+<p>這和 C 語言一樣——陣列邊界由你自己負責，語言和編譯器不保證安全。這是效率與安全的經典取捨。</p>
+<h3 id="6-3-所有物件大小相同嗎">6.3 所有物件大小相同嗎？</h3>
+<p>不。物件大小取決於該類別的 <code>field</code> 數量。每個 <code>field</code> 佔 1 個 word（16-bit）。<code>static</code> 變數不佔物件空間（它們在別的位址，由編譯器分配）。</p>
+<h3 id="6-4-物件可以被-gc-嗎">6.4 物件可以被 GC 嗎？</h3>
+<p>Jack 的標準 OS 實作中<strong>沒有 garbage collector</strong>。你分配了記憶體（<code>Memory.alloc</code>），就要自己釋放（<code>Memory.deAlloc</code>）。在實際的遊戲開發中，這需要謹慎管理——第 12 章的 Memory 模組會提供 <code>dealloc</code> 功能。</p>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>物件在記憶體中 = heap 上的一段連續記憶體</strong>，起始位址就是物件的「代表值」。</li>
+<li><strong><code>this</code> 指標的本質</strong>：就是物件在 heap 上的起始位址，由編譯器在方法呼叫時自動傳入 VM 的 <code>this</code> segment。</li>
+<li><strong><code>field</code> 欄位 = 起始位址 + 偏移量</strong>：編譯器在編譯時就確定了每個 field 的偏移量，產生對應的 <code>push this N</code> / <code>pop this N</code> 指令。</li>
+<li><strong>陣列 = 也是物件</strong>：<code>Array.new(N)</code> 呼叫 <code>Memory.alloc(N)</code>，回傳的位址就是陣列的「基底」，<code>arr[i]</code> 翻譯為「基底 + i」的記憶體運算。</li>
+<li><strong>指標運算的本質</strong>：Jack 沒有明確的指標型別，但物件變數和陣列變數本身就是指標（儲存 heap 位址），陣列存取 <code>arr[i]</code> 本質上就是指標 + 偏移量的運算。</li>
+<li><strong>物件大小由 field 數量決定</strong>：每個 field 佔 1 個 word（16-bit），編譯器在編譯時計算，傳給 <code>Memory.alloc</code>。</li>
+<li><strong>記憶體配置全部通過 <code>Memory.alloc</code></strong>：物件和陣列的底層機制完全相同，差別只在語意層。</li>
+</ul>
+<p>這些理解將在第 11 章的編譯器實作中至關重要——當你生成 VM 碼時，你必須知道每個 <code>field</code> 的偏移量、每個 <code>static</code> 的位址、每次 <code>new</code> 需要 <code>alloc</code> 多少空間。<strong>現在你懂了記憶體真相，寫編譯器時就不會心虛</strong>。</p>
+<p>在下一節 9.3 中，我們會用這些知識來做一件有趣的事——用 Jack 寫一個真正能跑的圖形化小遊戲。你會親眼看到物件操作如何變成螢幕上的像素變化。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="9.1.html">⇦ 上一節</a><a class="nav-btn" href="9.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

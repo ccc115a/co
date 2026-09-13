@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.4 硬體模擬器上的系統調試</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link active" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="5.3.html">⇦ 上一節</a></div>
+  <div class="title">5.4 硬體模擬器上的系統調試</div>
+  <div class="nav-right"><a class="nav-btn" href="6.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch05.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="5-4-硬體模擬器上的系統調試">5.4 硬體模擬器上的系統調試</h1>
+<h2 id="前言">前言</h2>
+<p>完成 CPU 和 Memory 的組合，並成功構建出 Computer 晶片後，最精彩的部分才正要開始：讓這台你在紙面上設計出來的電腦真正「動起來」。硬體模擬器（Hardware Simulator，HDL Simulator）是 Nand2Tetris 課程提供的重要工具，它讓我們不須購買任何真實硬體，就能載入程式、執行指令、觀察每一個內部訊號的變化。本節將完整介紹如何在硬體模擬器上進行系統層級的除錯。</p>
+<hr />
+<h2 id="如何在-hardware-simulator-中載入-computer-hdl-與-rom">如何在 Hardware Simulator 中載入 Computer.hdl 與 ROM</h2>
+<h3 id="準備工作">準備工作</h3>
+<p>在開始之前，請確認你已經具備以下檔案，並確認它們位於同一個目錄：</p>
+<pre><code>├── Computer.hdl       # 完整的電腦晶片
+├── CPU.hdl            # CPU 晶片
+├── Memory.hdl         # 記憶體晶片
+├── RAM16K.hdl         # 通用記憶體
+├── Screen.hdl         # 螢幕記憶體
+├── Keyboard.hdl       # 鍵盤介面
+├── ROM32K.hdl         # 程式唯讀記憶體
+└── xxx.hack           # 你的組合語言後製產物（機器碼）
+</code></pre>
+<h3 id="載入步驟">載入步驟</h3>
+<ol>
+<li>開啟硬體模擬器（Hardware Simulator）</li>
+<li>點擊 <code>File → Load Chip</code>，選擇載入 <code>Computer.hdl</code></li>
+<li>載入後，介面左側會顯示 Computer 晶片的接腳（只有 <code>reset</code> 一個輸入）</li>
+<li>若是尚未組合語言的部分，請先用 <code>nand2tetris/tools</code> 中的 Assembler 將 <code>.asm</code> 檔案轉換成 <code>.hack</code> 檔案</li>
+</ol>
+<h3 id="測試腳本範例">測試腳本範例</h3>
+<p>硬體模擬器支援 <code>.tst</code> 測試腳本，可以控制重設時序並驗證執行結果。以下是一個基本測試腳本：</p>
+<pre><code class="language-tcl">// 測試腳本範例：執行並顯示 PC
+load Computer.hdl,
+output-file Computer.out,
+compare-to Computer.cmp,
+output-list time%S0.4.0 reset%B2.1.3 ARegister[]%D1.7.1 DRegister[]%D1.7.1 PC[]%D0.4.0;
+
+// 啟動：reset=1，將 PC 重設為 0
+set reset 1,
+set RAM16K[0] 0,   // 設定初始記憶體內容
+output;
+
+// 釋放 reset，開始執行
+set reset 0,
+
+// 逐步查看前幾個週期的暫存器狀態
+tick, tock, output;
+tick, tock, output;
+tick, tock, output;
+</code></pre>
+<h2 id="撰寫自訂-hack-程式放入-rom">撰寫自訂 .hack 程式放入 ROM</h2>
+<h3 id="撰寫組合語言程式">撰寫組合語言程式</h3>
+<p>首先撰寫一個簡單的 <code>.asm</code> 組合語言程式。例如，一個將 RAM[0] 的內容加一後存回 RAM[0] 的程式：</p>
+<pre><code class="language-asm">// AddOne.asm
+// RAM[0] = RAM[0] + 1
+@0
+D=M
+D=D+1
+@0
+M=D
+@6
+0;JMP   // 無窮迴圈
+</code></pre>
+<h3 id="轉換成機器碼">轉換成機器碼</h3>
+<p>使用工具目錄中的組合器，將 <code>.asm</code> 轉換為 <code>.hack</code>：</p>
+<pre><code class="language-bash">cd nand2tetris/tools
+./Assembler.sh AddOne.asm
+</code></pre>
+<p>執行後會產生 <code>AddOne.hack</code> 檔案，內容類似：</p>
+<pre><code>0000000000000000
+1111110000010000
+1111110111010000
+0000000000000000
+1110001100001001
+0000000000000110
+1110101010000111
+</code></pre>
+<p>每一行都是一個 16-bit 的機器碼指令。<code>.hack</code> 檔案會被自動載入到 ROM32K 中，從位址 0 開始執行。</p>
+<h3 id="讓程式運行">讓程式運行</h3>
+<p>在硬體模擬器中：</p>
+<ol>
+<li>載入 <code>Computer.hdl</code></li>
+<li>確認同名目錄下有 <code>.hack</code> 檔案（模擬器會自動將同名的 <code>.hack</code> 載入 ROM32K）</li>
+<li>設定 <code>reset=1</code>，執行一個 <code>tick</code>/<code>tock</code>（或點擊一次快進）</li>
+<li>設定 <code>reset=0</code>，開始逐步執行</li>
+<li>觀察右側面板中 <code>PC</code>、<code>ARegister</code>、<code>DRegister</code> 的變化</li>
+</ol>
+<h2 id="逐步執行的除錯技巧">逐步執行的除錯技巧</h2>
+<h3 id="單步執行-single-step">單步執行（Single-step）</h3>
+<p>硬體模擬器提供 <code>tick</code> 與 <code>tock</code> 兩種步進指令：</p>
+<ul>
+<li><strong>tick（時脈前緣）</strong>：暫存器、PC、RAM 等在時脈邊緣更新前的穩定狀態</li>
+<li><strong>tock（時脈後緣）</strong>：時脈完成，暫存器內容已更新</li>
+</ul>
+<p>逐步執行技巧：</p>
+<ol>
+<li>在 CPU 的<strong>時脈邊緣</strong>前後分別觀察訊號，確認暫存器載入時機是否正確</li>
+<li>觀察 <code>instruction</code> 的位元內容，練習「肉眼解碼」：
+<ul>
+<li><code>instruction[15]=0</code> → A-指令</li>
+<li><code>instruction[15..13]=111</code> → C-指令</li>
+</ul>
+</li>
+<li>對照 <code>PC</code> 的變化，確認跳躍是否在正確的時機發生</li>
+</ol>
+<h3 id="觀察內部暫存器與記憶體">觀察內部暫存器與記憶體</h3>
+<p>硬體模擬器的貼心設計是「雙擊」功能：</p>
+<ol>
+<li>在 CPU 內部，雙擊 A 暫存器或 D 暫存器，可以檢視裡面的值</li>
+<li>在 Memory 內部，雙擊 RAM16K，可以看到完整 16K 的記憶體內容</li>
+<li>螢幕記憶體會即時反映為畫面上的視覺化輸出</li>
+<li>Keyboard 模擬器提供一個小鍵盤視窗，可以模擬按鍵輸入</li>
+</ol>
+<h3 id="使用-檢視內部-功能">使用「檢視內部」功能</h3>
+<p>若想檢視電腦內部各模組的詳細狀態，可以：</p>
+<ol>
+<li>點擊 <code>View → Chip view</code>，展開 Computer 內部的連線圖</li>
+<li>點擊其中任一模組（CPU、Memory、ROM32K）進入下一層</li>
+<li>逐步深入，直到看到最底層的 RAM 單元或邏輯閘</li>
+</ol>
+<p>這種多層次的檢視方式，讓你能像剝洋蔥一樣，從最高層的電腦一路看到最底層的邏輯閘訊號。</p>
+<h3 id="使用-暫存器監看-功能">使用「暫存器監看」功能</h3>
+<p>設定 <code>output</code> 指令，可以在輸出檔中持續追蹤特定訊號：</p>
+<pre><code class="language-tcl">output-list
+  RAM16K[0]%D2.6.1
+  RAM16K[1]%D2.6.1
+  PC[]%D0.4.0;
+</code></pre>
+<p>這樣每一行輸出都會記下 RAM[0]、RAM[1] 與 PC 的值，方便比對程式執行效果。</p>
+<h2 id="驗證功能的測試">驗證功能的測試</h2>
+<h3 id="使用-compare-功能作自動化驗證">使用 compare 功能作自動化驗證</h3>
+<p>硬體模擬器支援「比較驗證」功能：將模擬結果與預期的輸出檔比對。</p>
+<pre><code class="language-tcl">load Computer.hdl,
+output-file Computer.out,
+compare-to Computer.cmp,
+output-list RAM16K[0]%D2.6.1 RAM16K[1]%D2.6.1;
+
+set RAM16K[0] 5,   // 初始值：RAM[0]=5
+set RAM16K[1] 3,   // RAM[1]=3
+
+set reset 1, tick, tock;   // 開機
+set reset 0, tick, tock;   // 開始執行
+
+// 執行一段時間（例如執行若干週期）
+repeat 100 { tick, tock; }
+
+output;  // 比較輸出
+</code></pre>
+<h3 id="撰寫自己的-cmp-驗證檔">撰寫自己的 .cmp 驗證檔</h3>
+<p>建立 <code>Computer.cmp</code> 檔案，內容為期望的輸出：</p>
+<pre><code>|   RAM[0]   |   RAM[1]   |
+|      110   |        3   |
+</code></pre>
+<p>當模擬結果與 <code>.cmp</code> 內容不一致時，模擬器會明確指出差異，幫助你定位錯誤。</p>
+<h2 id="常見問題疑難排解">常見問題疑難排解</h2>
+<h3 id="問題-1-程式完全不動-pc-停留在-0">問題 1：程式完全不動，PC 停留在 0</h3>
+<table>
+<thead>
+<tr>
+<th>可能原因</th>
+<th>解決方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>reset</code> 一直為 1</td>
+<td>確認執行一段時間後將 <code>reset</code> 設為 0</td>
+</tr>
+<tr>
+<td>ROM32K 載入失敗</td>
+<td>確認 <code>.hack</code> 檔案與 <code>.hdl</code> 在同目錄、檔案名稱正確</td>
+</tr>
+<tr>
+<td>程式第一行就是死迴圈</td>
+<td>檢查 PC 遞增邏輯</td>
+</tr>
+</tbody>
+</table>
+<h3 id="問題-2-記憶體寫入無效">問題 2：記憶體寫入無效</h3>
+<table>
+<thead>
+<tr>
+<th>可能原因</th>
+<th>解決方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>writeM</code> 訊號錯誤</td>
+<td>檢查 CPU 中 d3 位元與 C-指令的解碼邏輯</td>
+</tr>
+<tr>
+<td><code>addressM</code> 超出範圍</td>
+<td>Hack 只有 15-bit 位址（0-32767），超過即無效</td>
+</tr>
+<tr>
+<td>RAM 區域誤寫入 Screen</td>
+<td>檢查 Memory 的位址解碼邏輯</td>
+</tr>
+</tbody>
+</table>
+<h3 id="問題-3-跳躍不正常">問題 3：跳躍不正常</h3>
+<table>
+<thead>
+<tr>
+<th>可能原因</th>
+<th>解決方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>旗標與 j 欄位邏輯錯誤</td>
+<td>檢查 <code>outGt</code>/<code>outEq</code>/<code>outLt</code> 的計算</td>
+</tr>
+<tr>
+<td>A 暫存器未先載入目標位址</td>
+<td>C-指令的跳躍目標是 A 暫存器的值，跳躍前必須先用 A-指令載入目標位址</td>
+</tr>
+<tr>
+<td>跳躍條件在 A-指令時誤觸發</td>
+<td>確認跳躍只在 C-指令時有效</td>
+</tr>
+</tbody>
+</table>
+<h3 id="問題-4-模擬器出現-輸出超範圍-或連線錯誤">問題 4：模擬器出現「輸出超範圍」或連線錯誤</h3>
+<table>
+<thead>
+<tr>
+<th>可能原因</th>
+<th>解決方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>參數名稱拼錯</td>
+<td>檢查各 CHIP 的 <code>IN</code>/<code>OUT</code> 宣告名稱</td>
+</tr>
+<tr>
+<td>位元寬度不匹配</td>
+<td>確認 15-bit 與 16-bit 訊號的切割正確（如 <code>[0..14]</code>）</td>
+</tr>
+<tr>
+<td>大量使用書中結構（如 <code>out=ARegister.out</code>）</td>
+<td>確認版本支援，必要時改用簡化命名如 <code>out=aOut</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="問題-5-screen-沒有正確顯示">問題 5：Screen 沒有正確顯示</h3>
+<table>
+<thead>
+<tr>
+<th>可能原因</th>
+<th>解決方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Screen 位址映射錯誤</td>
+<td>確認 Screen 基底位址為 16384（位址 <code>100000000000000</code>）</td>
+</tr>
+<tr>
+<td>寫入時 <code>load</code> 未被 AND 到 Screen</td>
+<td>檢查 Memory.hdl 中 <code>screenLoad</code> 的控制邏輯</td>
+</tr>
+<tr>
+<td>Screen 位址行數不足</td>
+<td>256×512 像素需 8K 個 16-bit 字，檢查位址切割</td>
+</tr>
+</tbody>
+</table>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li>硬體模擬器是驗證 Computer 晶片的最佳工具，結合 <code>tick/tock</code> 可以精確控制時序</li>
+<li><code>.asm</code> → <code>.hack</code> → ROM32K 的流程，讓程式執行與硬體架構無縫接軌</li>
+<li>逐步執行與內部檢視功能，是解決邏輯錯誤的不二法門</li>
+<li>自動化 <code>.tst</code> 測試腳本與 <code>.cmp</code> 比較驗證，確保硬體行為可重現</li>
+<li>常見問題多集中在位址解碼、跳躍條件與時序控制，掌握這些要點就能快速除錯</li>
+<li>當你的程式第一次在自製電腦上正確跑動起來的那一刻，你已真正「從 0 到 1」地走完建造電腦的全過程</li>
+</ul>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="5.3.html">⇦ 上一節</a><a class="nav-btn" href="6.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 8 章</span>VM 第二部：函式與控制流</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/8.1.md" title="電子書：第 8.1 節 控制流翻譯：條件與無條件跳躍（goto / if-goto）">§8.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/8.2.md" title="電子書：第 8.2 節 函數呼叫機制：call, function, return">§8.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/8.3.md" title="電子書：第 8.3 節 呼叫堆疊（Call Stack）與區域變數維護">§8.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/8.4.md" title="電子書：第 8.4 節 打造完整的 VM Translator">§8.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/8.1.html" title="電子書：第 8.1 節 控制流翻譯：條件與無條件跳躍（goto / if-goto）">§8.1</a>、<a class="pill" target="mdbook" href="../_md_book/8.2.html" title="電子書：第 8.2 節 函數呼叫機制：call, function, return">§8.2</a>、<a class="pill" target="mdbook" href="../_md_book/8.3.html" title="電子書：第 8.3 節 呼叫堆疊（Call Stack）與區域變數維護">§8.3</a>、<a class="pill" target="mdbook" href="../_md_book/8.4.html" title="電子書：第 8.4 節 打造完整的 VM Translator">§8.4</a>　(<a target="mdbook" href="../_md_book/README.html" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">在 ch07 的堆疊上再加三招：<code>label / goto / if-goto</code>（程式流程），
   以及 <code>function / call / return</code>（函式呼叫）。做完這章，Hack 就有了「子程式」能力。</p>
@@ -35,14 +35,14 @@
   </ul>
 
   <h2>示範：BasicLoop（label / goto / if-goto）</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/8.1.md" title="電子書：第 8.1 節 控制流翻譯：條件與無條件跳躍（goto / if-goto）">§8.1</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/8.1.html" title="電子書：第 8.1 節 控制流翻譯：條件與無條件跳躍（goto / if-goto）">§8.1</a></p>
   <p>課程標準 <code>ProgramFlow/BasicLoop/BasicLoop.vm</code>：計算 <code>1+…+n</code>。
   製造出一組初始環境（SP=256、LCL=2000 以免與堆疊相撞、argument[0]=4）後直接跑完，</p>
   <div data-widget="vm" data-src="#basicLoopVm" data-setup="0=256 1=2000 2=3 3=4" data-auto="true"
        data-hint="n=4：sum 累到 RAM[2000](local 0)=10；最後 push 到堆疊頂端 RAM[256]=10，SP(R0)=257"></div>
 
   <h2>示範：SimpleFunction（function / return）</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/8.2.md" title="電子書：第 8.2 節 函數呼叫機制：call, function, return">§8.2</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/8.2.html" title="電子書：第 8.2 節 函數呼叫機制：call, function, return">§8.2</a></p>
   <p>課程標準 <code>FunctionCalls/SimpleFunction/SimpleFunction.vm</code>——一支「純函式」：
   沒人呼叫它，但 <code>function</code> 仍會把 local 清成 0、<code>return</code> 仍會把結果放回 ARG[0]。</p>
   <div data-widget="vm" data-src="#simpleFnVm" data-setup="0=256 1=256 2=256 256=5 257=6" data-auto="true"

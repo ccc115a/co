@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link active" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="1.2.html">⇦ 上一節</a></div>
+  <div class="title">第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor</div>
+  <div class="nav-right"><a class="nav-btn" href="1.4.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch01.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第-1-3-節-構建基礎邏輯閘-not-and-or-xor">第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor</h1>
+<h2 id="前言-從一顆基石-煉出四種元素">前言：從一顆基石，煉出四種元素</h2>
+<p>1.2 節立下了全書的最高原則：<strong>世界上只有 Nand 是原廠供應的零件</strong>。現在，輪到我們大展身手——只用 Nand 這唯一的原料，煉出電腦文明最基本的四種元素：<strong>Not、And、Or 與 Xor</strong>。</p>
+<p>不要小看這一節。表面上看，我們只是在組裝四個小電路；骨子裡，我們正在完成一件意義深遠的事：<strong>把 1.2 節用真值表證明的「完備性」，轉化為可以直接執行的 HDL 程式碼</strong>。從這一節開始，你不再只是閱讀數學證明，而是真正地在寫硬體。</p>
+<p>每個邏輯閘，我們都將遵循相同的四段式配方：</p>
+<ol>
+<li><strong>真值表</strong> —— 先看清楚「要做什麼」。</li>
+<li><strong>布林代數式</strong> —— 用數學說出我們想要的函數。</li>
+<li><strong>以 Nand 建構的思路</strong> —— 把布林式翻譯成 Nand 的接法。</li>
+<li><strong>HDL 程式碼</strong> —— 把思路寫成模擬器能執行的藍圖。</li>
+</ol>
+<p>做完這四步，最後再想一遍「這些閘加起來能做什麼」——答案太令人興奮了：<strong>有了它們，你已經可以組出任何數位電路。</strong></p>
+<h2 id="1-3-1-只有一個積木的加法-用-nand-建構-not">1.3.1 只有一個積木的加法：用 Nand 建構 Not</h2>
+<h3 id="真值表">真值表</h3>
+<p>NOT 是最單純的函數：輸入為 1 則輸出 0，輸入為 0 則輸出 1。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">Not(x)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="布林代數式">布林代數式</h3>
+<div class="math-display">$$
+Not(x) = \bar{x}
+$$</div>
+<h3 id="設計思路">設計思路</h3>
+<p>關鍵觀察：Nand 的真值表對角線上，當兩個輸入相同（都是 0 或都是 1）時，輸出正是輸入的取反：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">x</th>
+<th style="text-align:center">Nand(x,x)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1 = Not(0)</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0 = Not(1)</td>
+</tr>
+</tbody>
+</table>
+<p>因此要得到 Not，<strong>只要把 Nand 的兩個輸入接在一起</strong>：</p>
+<div class="math-display">$$
+\boxed{Not(x) = Nand(x,\ x)}
+$$</div>
+<h3 id="hdl-程式碼">HDL 程式碼</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Not.tst&amp;run=1">習題模擬</a></p>
+<p>解讀這份 HDL：</p>
+<ul>
+<li><code>IN in;</code> —— 對外只暴露一個輸入。</li>
+<li><code>PART</code> 行引用了 Nand 元件，並把 <code>a</code>、<code>b</code> <strong>兩個接腳都接上 <code>in</code></strong>（寫法 <code>a=in, b=in</code>），輸出命名為 <code>out</code>。</li>
+<li><code>out=out</code> 的意思是「Nand 產生的那個內部訊號，就是本 chip 的對外輸出」。</li>
+</ul>
+<p>這裡也示範了 HDL 的第一個重要語法：<strong>內部接線</strong>。<code>a=in</code> 把 Nand 的接腳 <code>a</code> 接到本 chip 的輸入訊號 <code>in</code> 上，這相當於在電路圖上畫了一條導線。</p>
+<h2 id="1-3-2-從補丁到原物-用-nand-建構-and">1.3.2 從補丁到原物：用 Nand 建構 And</h2>
+<h3 id="真值表">真值表</h3>
+<p>AND 是「同時為真才為真」：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">y</th>
+<th style="text-align:center">And(x,y)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="布林代數式">布林代數式</h3>
+<div class="math-display">$$
+And(x,y) = x \cdot y
+$$</div>
+<h3 id="設計思路">設計思路</h3>
+<p>Nand 正好是 And 的補：<code>Nand(x,y) = ¬(x·y)</code>。只要把「Nand 的輸出」再取一次反，雙重否定還原，就得到 And。</p>
+<p>而「取反」我們在 1.3.1 剛剛學會——就是把一個 Nand 的兩個輸入接在一起。所以：</p>
+<div class="math-display">$$
+\boxed{And(x,y) = Nand\big(\, Nand(x,y),\ Nand(x,y) \,\big)}
+$$</div>
+<p>內部第一顆 Nand 產生 <code>t = ¬(x·y)</code>，第二顆 Nand 把兩個輸入都接上 <code>t</code>，輸出 <code>¬t = ¬¬(x·y) = x·y</code>。</p>
+<h3 id="hdl-程式碼">HDL 程式碼</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/And.tst&amp;run=1">習題模擬</a></p>
+<p>注意 HDL 中的一個細膩設計：內部訊號的命名。我們給第一顆 Nand 的輸出取名 <code>na</code>（not-and），它是<strong>本 chip 內部的暫存訊號</strong>，沒有對外介面。接著把它同時接到第二顆 Nand 的 <code>a</code> 與 <code>b</code>（<code>a=na, b=na</code>）——這就是「用相同訊號接兩個接腳」的標準做法。兩顆 Nand 串成鏈，邏輯上完全對應上面的布林式。</p>
+<h2 id="1-3-3-de-morgan-的勝利-用-nand-建構-or">1.3.3 De Morgan 的勝利：用 Nand 建構 Or</h2>
+<h3 id="真值表">真值表</h3>
+<p>OR 是「任一為真即為真」：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">y</th>
+<th style="text-align:center">Or(x,y)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="布林代數式">布林代數式</h3>
+<div class="math-display">$$
+Or(x,y) = x + y
+$$</div>
+<h3 id="設計思路">設計思路</h3>
+<p>直接硬幹行不通（Nand 不提供 OR 行為），但 De Morgan 定則（1.1.5 節）給我們金光大道：</p>
+<div class="math-display">$$
+x + y = \neg(\neg x \cdot \neg y)
+$$</div>
+<p>白話翻譯：<strong>先各自取反，再做 Nand。</strong> 拆解成三步：</p>
+<ol>
+<li>先對 x 取反：<code>nx = Not(x) = Nand(x,x)</code></li>
+<li>再對 y 取反：<code>ny = Not(y) = Nand(y,y)</code></li>
+<li>最後做 Nand：<code>out = Nand(nx, ny)</code></li>
+</ol>
+<p>把三行合併成一個布林式：</p>
+<div class="math-display">$$
+\boxed{Or(x,y) = Nand\big(\, Nand(x,x),\ Nand(y,y) \,\big)}
+$$</div>
+<h3 id="驗證-以關鍵列為例">驗證（以關鍵列為例）</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">y</th>
+<th style="text-align:center">nx=Nand(x,x)</th>
+<th style="text-align:center">ny=Nand(y,y)</th>
+<th style="text-align:center">Nand(nx,ny)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">Nand(1,1)=0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">Nand(1,0)=1</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">Nand(0,1)=1</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">Nand(0,0)=1</td>
+</tr>
+</tbody>
+</table>
+<p>最右欄完全符合 OR 的真值表。</p>
+<h3 id="hdl-程式碼">HDL 程式碼</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Or.tst&amp;run=1">習題模擬</a></p>
+<h3 id="另一個同等正確的-or-交叉印證">另一個同等正確的 Or（交叉印證）</h3>
+<p>有趣的是，Nand 的世界裡同一函數常有不同接法。既然 <code>Not(x)=Nand(x,x)</code>，而「AND 取反 = NAND」，下面這顆 Or 在邏輯上也完全正確（把 Not 當成兩個輸入相連的 Nand）：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Or.tst&amp;run=1">習題模擬</a></p>
+<p>這份版本直接引用了我們自己開發的 <code>Not</code> chip——<strong>層次化設計</strong>的第一次練習：先組出 Not，再用 Not 組 Or。兩種版本輸出一模一樣，模擬器會驗證它們的行為等價。</p>
+<h2 id="1-3-4-最難的一塊拼圖-用-nand-建構-xor">1.3.4 最難的一塊拼圖：用 Nand 建構 Xor</h2>
+<h3 id="真值表">真值表</h3>
+<p>XOR（互斥或）是「<strong>恰好一個為真</strong>」時才為真的運算：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">y</th>
+<th style="text-align:center">Xor(x,y)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+</tbody>
+</table>
+<p>XOR 如此重要，是因為它是<strong>加法器的細胞</strong>：二進位 1+1 的個位輸出，正是 XOR。第 2 章建構 HALF-ADDER 時，XOR 是核心零件。</p>
+<h3 id="布林代數式">布林代數式</h3>
+<p>從真值表用 1.1.3 節的「先抓 1 的列」方法，「輸出為 1」的兩列是 <code>(0,1)</code> 與 <code>(1,0)</code>，所以：</p>
+<div class="math-display">$$
+Xor(x,y) = \bar{x} \cdot y + x \cdot \bar{y}
+$$</div>
+<p>這個式子本身就是一個答案。但我們想更進一步，找到一個<strong>更適合「只用 Nand」實現</strong>的形式。經由 De Morgan 與分配律變形：</p>
+<div class="math-display">$$
+Xor(x,y) = (x + y) \cdot (\bar{x} + \bar{y})
+$$</div>
+<p>這仍然是對的（讀者可用真值表自行驗證，兩者是同一個函數、四列一致）。第二種形式的好處是它只用到 <code>+</code> 與 <code>·</code> 與 <code>¬</code>，而我們已經把所有運算都煉成了 Nand。這裡我們採第一種最直觀的形式來實作，見下。</p>
+<h3 id="設計思路">設計思路</h3>
+<p>第一種形式 <code>Xor = (¬x)·y + x·(¬y)</code> 可以拆成四塊積木：</p>
+<ol>
+<li><code>nx = Not(x)</code> —— 1.3.1 的成果。</li>
+<li><code>ny = Not(y)</code> —— 同上。</li>
+<li><code>t1 = And(nx, y)</code> —— 用 Nand 做「Nand 再取反」。</li>
+<li><code>t2 = And(x, ny)</code>。</li>
+<li><code>out = Or(t1, t2)</code> —— 用 De Morgan 版 Nand 建構的 Or。</li>
+</ol>
+<p>把這些「子電路」全部展開成 Nand 平面，得到純 Nand 版：</p>
+<div class="math-display">$$
+\boxed{\begin{aligned}
+Xor(x,y) &amp;= Or\Big(And\big(Not(x),\ y\big),\ And\big(x,\ Not(y)\big)\Big) \\
+&amp;= Nand\Big(\;
+        Nand\big(\,Nand(Nand(x,x),\ y),\ Nand(Nand(x,x),\ y)\,\big),\\
+        &amp;\quad\; Nand\big(\,Nand(x,\ Nand(y,y)),\ Nand(x,\ Nand(y,y))\,\big)
+    \;\Big)
+\end{aligned}}
+$$</div>
+<p>（關於公式的閱讀：上式雖然「維度很大」，但每一層都是前面已經建立的 Nand 圖案——<code>Nand(u,u)</code> 是 Not，<code>Nand(Nand(u,v),Nand(u,v))</code> 是 And，外層再一層 Nand 就是 Or 的 De Morgan 版。硬體設計的藝術，正是把這些圖案深深烙印在眼中。）</p>
+<h3 id="hdl-程式碼">HDL 程式碼</h3>
+<p><strong>第一版：組合式（用已有的 Not/And/Or，最清晰）</strong></p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Xor.tst&amp;run=1">習題模擬</a></p>
+<p><strong>第二版：純 Nand（把 Not/And/Or 全部手寫展開）</strong></p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Xor.tst&amp;run=1">習題模擬</a></p>
+<p>兩份檔案在模擬器中的行為完全一致。<strong>建議初學者先讀組合式</strong>，理解「Xor 是什麼」；再看純 Nand 版，理解「這些積木從何而來」。最終的信念是：<strong>Xor 也完完全全建立在 Nand 上。</strong></p>
+<h2 id="1-3-5-設計思路回顧-四個閘的關係圖">1.3.5 設計思路回顧：四個閘的關係圖</h2>
+<p>把本節四顆閘與 Nand 的親子關係畫成一棵樹：</p>
+<pre><code></code></pre>
+<p>推動整個架構的正是 1.1.5 節的 <strong>De Morgan 定則</strong>和 <strong>雙重否定</strong>。每次你設計一個新電路時，都先問自己三個問題：</p>
+<ol>
+<li>這個函數想要的真值表長什麼樣？</li>
+<li>哪個布林恆等式能把它化簡/轉形？（多數時候是 De Morgan 與分配律）</li>
+<li>轉形後是否能直接對應到我已擁有的 Nand 圖案？</li>
+</ol>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>Not</strong> = <code>Nand(x,x)</code>：把 Nand 兩輸入接在一起——最簡單的一行 HDL。</li>
+<li><strong>And</strong> = <code>Nand(Nand(a,b), Nand(a,b))</code>：內層 Nand + 外層當 NOT，雙重否定還原。</li>
+<li><strong>Or</strong> = <code>Nand(Not(a), Not(b))</code>：De Morgan 定則的具體化，先取反再 Nand。</li>
+<li><strong>Xor</strong> = <code>(¬a)·b + a·(¬b)</code> = <code>Or(And(Not(a),b), And(a,Not(b)))</code>：由前三顆積木組裝而成，是全加器與 A 類運算的細胞。</li>
+<li>全程貫徹「<strong>只用 Nand</strong>」的最高原則，並練習了「先組合式清晰實作、再展開為純 Nand 等價電路」的兩種寫法。</li>
+<li>透過「分層組裝」（Not → And/Or → Xor），我們第一次嘗到了<strong>層次化硬體設計</strong>的滋味——這個模式將在 1.4 節的 Mux/Demux 與 16-bit 閘上繼續發揚光大。</li>
+</ul>
+<p>下一節，我們把這些單一 bit 的閘，接成多路復用器（能「選擇」訊號流向的交通警察），並一口氣擴展成 16-bit 與多路版本——讓這些原始積木開始學會「聽從指揮」。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="1.2.html">⇦ 上一節</a><a class="nav-btn" href="1.4.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.3 構建完整電腦：Computer 晶片與執行循環</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link active" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="5.2.html">⇦ 上一節</a></div>
+  <div class="title">5.3 構建完整電腦：Computer 晶片與執行循環</div>
+  <div class="nav-right"><a class="nav-btn" href="5.4.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch05.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="5-3-構建完整電腦-computer-晶片與執行循環">5.3 構建完整電腦：Computer 晶片與執行循環</h1>
+<h2 id="前言">前言</h2>
+<p>恭喜你！經過前面所有章節的學習與實作，我們已經分別完成了 CPU、記憶體、ROM 等關鍵模組。現在，是時候將這些零件組裝成一台完整的電腦了。<code>Computer</code> 晶片是整個 Hack 架構的最高層模組，它將 CPU、記憶體和 ROM 三大元件透過匯流排連接在一起，形成一個可以自我運作的完整系統。這不僅僅是一個晶片——它就是一台電腦。</p>
+<hr />
+<h2 id="computer-晶片的三大組成部分">Computer 晶片的三大組成部分</h2>
+<p>Computer 晶片由三個核心模組構成：</p>
+<h3 id="1-rom32k-唯讀記憶體">1. ROM32K（唯讀記憶體）</h3>
+<ul>
+<li>容量：32K 個 16-bit 字</li>
+<li>功能：儲存要執行的程式（機器碼）</li>
+<li>特性：程式運行期間只能讀取，不能寫入</li>
+<li>當前指令透過 <code>instruction</code> 訊號輸出給 CPU</li>
+</ul>
+<h3 id="2-cpu-中央處理器">2. CPU（中央處理器）</h3>
+<ul>
+<li>功能：解碼指令、執行運算、控制資料流動</li>
+<li>輸入：<code>instruction</code>（來自 ROM）、<code>inM</code>（來自 Memory）、<code>reset</code></li>
+<li>輸出：<code>outM</code>、<code>writeM</code>、<code>addressM</code>（連接 Memory）、<code>pc</code>（連接 ROM）</li>
+</ul>
+<h3 id="3-memory-記憶體系統">3. Memory（記憶體系統）</h3>
+<ul>
+<li>功能：儲存程式運行時的資料，提供螢幕與鍵盤介面</li>
+<li>輸入：<code>in</code>（來自 CPU 的 outM）、<code>load</code>（來自 CPU 的 writeM）、<code>address</code>（來自 CPU 的 addressM）</li>
+<li>輸出：<code>out</code>（連接 CPU 的 inM）</li>
+</ul>
+<hr />
+<h2 id="取指-解碼-執行循環-fetch-decode-execute">取指-解碼-執行循環（Fetch-Decode-Execute）</h2>
+<p>這是所有電腦運作的基本節奏，也是理解 Computer 晶片最重要的概念：</p>
+<h3 id="循環的三個階段">循環的三個階段</h3>
+<pre><code></code></pre>
+<h3 id="每個時脈週期的動作">每個時脈週期的動作</h3>
+<p>在 Hack 電腦中，每個時脈週期（tick）會完成一次完整的循環：</p>
+<ol>
+<li><strong>ROM 輸出指令</strong>：ROM 根據 PC 當前值輸出 16-bit 指令</li>
+<li><strong>CPU 解碼執行</strong>：CPU 分析指令，產生控制信號，驅動 ALU</li>
+<li><strong>記憶體讀寫</strong>：若 C-指令的 d3=1，CPU 將結果寫入 Memory</li>
+<li><strong>PC 更新</strong>：CPU 根據跳躍條件決定 PC 是遞增還是跳轉</li>
+</ol>
+<p>這個循環以時脈頻率不斷重複，從程式第一條指令一直執行到程式結束或被重設。</p>
+<hr />
+<h2 id="rom-輸入即指令匯流排">rom 輸入即指令匯流排</h2>
+<p>Computer 晶片有一個特殊的輸入：<code>rom32k[16]</code>。這個輸入代表從外部 ROM 載入的指令資料。在實際運作中：</p>
+<ul>
+<li>ROM32K 在時脈邊緣根據 PC 值採樣，輸出對應位置的 16-bit 指令</li>
+<li>這個指令透過 <code>instruction</code> 訊號傳遞給 CPU</li>
+<li>CPU 根據指令內容決定下一步動作</li>
+</ul>
+<p>這種設計使得 Computer 晶片可以透過替換 ROM 中的程式來執行不同的任務，而不需要改變硬體結構。</p>
+<hr />
+<h2 id="computer-hdl-實作">Computer HDL 實作</h2>
+<p>以下是完整的 <code>Computer.hdl</code> 實作：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20projects%2F04%2Fmult%2FMult.asm%EF%BC%88%E5%8A%A0%E8%A8%BB%E8%A7%A3%E7%89%88%EF%BC%8C%E8%88%87%E8%AA%B2%E6%9C%AC%E8%A1%8C%E7%82%BA%E4%B8%80%E8%87%B4%EF%BC%89%0A%0A%2F%2F%20int%20main()%20%7B%0A%2F%2F%20%20%20%20int%20R0%20%3D%203%3B%0A%2F%2F%20%20%20%20int%20R1%20%3D%205%3B%0A%2F%2F%20%3D%3E%20%20%20%20int%20R2%20%3D%200%3B%0A%402%0AM%3D0%0A%2F%2F%20%20%20%20while%20(R0%20%3E%200)%20%7B%20%20%3D%3E%20loop%3A%0A(loop)%0A%2F%2F%20%3D%3E%20%20%20%20if%20(R0%20%3C%3D%200)%20goto%20exit1%3B%0A%400%0AD%3DM%0A%40exit1%0AD%3BJLE%0A%0A%2F%2F%20%3D%3E%20%20R2%20%3D%20R2%20%2B%20R1%3B%0A%401%0AD%3DM%0A%402%0AM%3DD%2BM%0A%0A%2F%2F%20%3D%3E%20%20R0%20%3D%20R0%20-%201%3B%0A%400%0AM%3DM-1%0A%0A%2F%2F%20%3D%3E%20%20goto%20loop%3B%0A%40loop%0A0%3BJMP%0A%0A%2F%2F%20%3D%3E%20exit1%3A%0A(exit1)%0A%40exit1%0A0%3BJMP%0A%2F%2F%20%7D&amp;ram=2:6,3:7">習題模擬</a></p>
+<h3 id="設計思路與實作步驟">設計思路與實作步驟</h3>
+<ol>
+<li><strong>先建立記憶體迴路</strong>：CPU 的 <code>addressM</code> 和 <code>outM</code> 連接到 Memory，Memory 的 <code>out</code> 連回 CPU 的 <code>inM</code></li>
+<li><strong>加入程式儲存</strong>：ROM32K 的輸出連接到 CPU 的 <code>instruction</code> 輸入</li>
+<li><strong>形成完整迴路</strong>：CPU 的 <code>pc</code> 連接到 ROM32K 的位址輸入，形成取指迴路</li>
+<li><strong>加入重設</strong>：<code>reset</code> 訊號連接到 CPU，讓程式可以從位址 0 重新開始</li>
+</ol>
+<h3 id="時序與執行流程">時序與執行流程</h3>
+<pre><code></code></pre>
+<h3 id="為什麼這代表-一台電腦">為什麼這代表「一台電腦」</h3>
+<p>Computer 晶片之所以代表一台完整的電腦，是因為它具備了計算機的所有本質特徵：</p>
+<ol>
+<li><strong>儲存程式（Stored Program）</strong>：程式與資料都儲存在記憶體中，可以被修改</li>
+<li><strong>自動執行</strong>：一旦啟動，電腦會自動取指、解碼、執行，不需要人工干預</li>
+<li><strong>通用性</strong>：透過改變 ROM 中的程式，同一台硬體可以執行任何任務</li>
+<li><strong>輸入輸出</strong>：透過 Memory 的 Screen 和 Keyboard 與外部世界互動</li>
+<li><strong>條件控制</strong>：支援條件跳躍，使程式可以做出決策</li>
+</ol>
+<p>這正是 John von Neumann 在 1945 年提出的儲存程式電腦概念的完整實現。從 NAND 閘到這裡，我們用了不到十個步驟，就建造出了一台功能完整的電腦——這正是 Nand2Tetris 課程的魅力所在。</p>
+<h3 id="本章小結">本章小結</h3>
+<ul>
+<li>Computer 晶片是 Hack 系統的最高層模組，整合了 CPU、Memory 和 ROM32K</li>
+<li>三大模組透過三組訊號形成迴路：指令迴路（ROM→CPU）、資料迴路（CPU↔Memory）、位址迴路（CPU→ROM/Memory）</li>
+<li>取指-解碼-執行循環是電腦運作的核心節奏</li>
+<li><code>reset</code> 訊號讓電腦可以從位址 0 重新開始執行</li>
+<li>這台 Computer 完整實現了 von Neumann 儲存程式電腦的概念</li>
+<li>從 NAND 閘到完整的電腦，整個建構過程體現了計算機科學的深層優雅</li>
+</ul>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="5.2.html">⇦ 上一節</a><a class="nav-btn" href="5.4.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

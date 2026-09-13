@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.4 打造完整的 VM Translator</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link active" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="8.3.html">⇦ 上一節</a></div>
+  <div class="title">8.4 打造完整的 VM Translator</div>
+  <div class="nav-right"><a class="nav-btn" href="9.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch08.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="8-4-打造完整的-vm-translator">8.4 打造完整的 VM Translator</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明 VM Translator 的整體架構與「Parser + CodeWriter」的管線分工</li>
+<li>說明如何把多個 <code>.vm</code> 檔案整合成單一 <code>.asm</code> 輸出</li>
+<li>說出 bootstrap code 在何處產生、為何要產生</li>
+<li>看懂並自行修改一支完整可執行的 Python VM Translator</li>
+<li>用 VM 模擬器 / CPU 模擬器驗證翻譯結果</li>
+<li>診斷常見錯誤（指標未初始化、label 撞名、local 未歸零等）</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>第 7、8.1、8.2、8.3 節，我們把 VM 指令的每一種翻譯規則都講清楚了：算術、記憶體段、控制流、函式呼叫、bootstrap。但它們一直像一張張散落的樂譜——現在，是時候把它們指揮成一支交響樂。</p>
+<p>本節把散落的規則<strong>組裝成一支完整、可執行的 VM Translator</strong>：輸入 <code>.vm</code> 檔（甚至一整個目錄的多個 <code>.vm</code> 檔），輸出可以被 6.3 節組譯器吃掉的 <code>.asm</code> 檔案。我們會沿用本書的老方法：<strong>先用清楚的架構圖與職責分工規劃，再寫一支簡潔、可讀的 Python 程式</strong>。</p>
+<hr />
+<h2 id="1-vm-translator-的整體架構與管線">1. VM Translator 的整體架構與管線</h2>
+<h3 id="1-1-抽象階層-vm-是-第二種機器語言">1.1 抽象階層：VM 是「第二種機器語言」</h3>
+<p>回顧整條編譯鏈：</p>
+<pre><code>Jack（高階語言）
+   │  第 10–11 章：編譯器
+   ▼
+VM（虛擬機中間碼）──────┐
+   │                      │
+   │  第 8 章：VM Translator│
+   ▼                      │
+Hack 組合語言 (.asm)       │
+   │  第 6 章：組譯器        │
+   ▼                      │
+Hack 機器碼 (.hack)        │
+   │                      │
+   ▼                      ▼
+Hack 硬體（第 5 章）   不同平台的 VM Translator（其他硬體）
+</code></pre>
+<p>VM 之所以叫「虛擬機」，正因為它抽象化了「堆疊機＋八個記憶體段的機器」。<strong>同一個 VM 程式，只要換一個平台的 VM Translator，就能跑在完全不同的硬體上</strong>——這就是「可移植性」的由來。</p>
+<h3 id="1-2-管線總覽">1.2 管線總覽</h3>
+<p>整套流程可以畫成五段：</p>
+<pre><code>① 收集 .vm 檔      （單一檔案，或整個目錄的 .vm）
+      │
+      ▼
+② 產生 bootstrap   （初始化 SP，呼叫 Sys.init）
+      │
+      ▼
+③ 逐檔解析         （Parser 讀取每條 VM 指令）
+      │
+      ▼
+④ 逐指令翻譯       （CodeWriter 依指令類型寫出 Hack 組合語言）
+      │
+      ▼
+⑤ 寫出 .asm       （組譯器吃掉 → .hack → 硬體執行）
+</code></pre>
+<center>核心對象只有兩個：**Parser** 與 **CodeWriter**。</center>
+<hr />
+<h2 id="2-劃分粗細-parser-codewriter">2. 劃分粗細：Parser + CodeWriter</h2>
+<p>Nand2Tetris 的官方 Java 版，以及本節的 Python 版，都把 Translator 切成兩個清晰的責任區：</p>
+<table>
+<thead>
+<tr>
+<th>對象</th>
+<th>職責</th>
+<th>不知道的事</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Parser</strong></td>
+<td>讀檔、去除註解與空白、把一行 VM 指令拆成「指令類型與參數」</td>
+<td>不知道怎麼翻譯成 Hack</td>
+</tr>
+<tr>
+<td><strong>CodeWriter</strong></td>
+<td>依指令類型，寫出對應的 Hack 組合語言行</td>
+<td>不在乎指令來自哪個檔案</td>
+</tr>
+</tbody>
+</table>
+<p>這種「<strong>讀取/解析</strong>」與「<strong>產生/輸出</strong>」的分離，是編譯器設計的核心原則——它讓你可以各自獨立測試、獨立替換。</p>
+<h3 id="2-1-parser-的職責">2.1 Parser 的職責</h3>
+<p>Parser 需要提供：</p>
+<ul>
+<li>一次只「注視」一條指令（<code>hasMoreCommands()</code> / <code>advance()</code>）；</li>
+<li>判斷當前指令的類型（<code>commandType()</code>）：
+<ul>
+<li><code>C_ARITHMETIC</code>：add、sub、neg、eq、gt、lt、and、or、not；</li>
+<li><code>C_PUSH</code>：<code>push &lt;segment&gt; &lt;i&gt;</code>；</li>
+<li><code>C_POP</code>：<code>pop &lt;segment&gt; &lt;i&gt;</code>；</li>
+<li><code>C_LABEL</code>、<code>C_GOTO</code>、<code>C_IF</code>：<code>label / goto / if-goto &lt;symbol&gt;</code>；</li>
+<li><code>C_FUNCTION</code>、<code>C_CALL</code>、<code>C_RETURN</code>：<code>function / call / return</code>。</li>
+</ul>
+</li>
+<li>對 <code>push/pop</code> 給出 <code>arg1</code>（segment）與 <code>arg2</code>（index）；</li>
+<li>對 <code>label/goto/if-goto/function/call</code> 給出 <code>arg1</code>（symbol/name）；</li>
+<li>對算術指令，<code>arg1</code> 就是指令本身。</li>
+</ul>
+<h3 id="2-2-codewriter-的職責">2.2 CodeWriter 的職責</h3>
+<p>CodeWriter 需要維護：</p>
+<ul>
+<li><strong>目前的輸出檔案</strong>（一個 <code>.asm</code>，可能串接多個 <code>.vm</code>）；</li>
+<li><strong>目前的函式名</strong> <code>self.function</code>（供 label/goto 加前綴）；</li>
+<li><strong>今天的函式連結</strong>：<code>label</code> 計數器「目前目錄的 label 計數」。</li>
+</ul>
+<p>它的方法一一對應指令類型：</p>
+<pre><code class="language-python">writeArithmetic(cmd)     # add, sub, eq, ...
+writePushPop(cmd, seg, i)
+writeLabel(label)
+writeGoto(label)
+writeIf(label)
+writeFunction(name, nLocals)
+writeCall(name, nArgs)
+writeReturn()
+writeInit()              # bootstrap
+setFileName(name)
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：劃分粗細的另一個好處——<strong>CodeWriter 可以跨檔案跨指令重用</strong>。第 7 章的算術/記憶體段翻譯、8.1 的控制流、8.2 的函式呼叫，全都匯聚在 CodeWriter 的各個 <code>write*</code> 方法裡，Parser 不須知道細節，只需「分派」。</p>
+</blockquote>
+<hr />
+<h2 id="3-處理多個-vm-檔案的整合">3. 處理多個 .vm 檔案的整合</h2>
+<p>真實專案的 VM 常散在數個 <code>.vm</code> 檔（例如 <code>Main.vm</code>、<code>Sys.vm</code>、<code>Math.vm</code>）。Translator 的整合策略：</p>
+<h3 id="3-1-輸出一個-asm">3.1 輸出一個 .asm</h3>
+<p>VM Translator 對<strong>一個輸入程式</strong>（一個目錄或一個檔案）只會產生<strong>一個 <code>.asm</code></strong>。它會：</p>
+<ol>
+<li>把所有 <code>.vm</code> 檔依序處理；</li>
+<li>每個 <code>.vm</code> 檔的內容依序翻譯；</li>
+<li>全部寫進同一個 <code>.asm</code>。</li>
+</ol>
+<h3 id="3-2-各檔案標籤命名">3.2 各檔案標籤命名</h3>
+<p>因為 Hack 標籤必須全域唯一，而聚合後來自不同檔案的 label 可能同名，所以在「目前檔名」與「目前函式名」之外，我們還需要<strong>目前目錄的標籤計數器</strong>。</p>
+<p>慣例的完整命名規則：</p>
+<table>
+<thead>
+<tr>
+<th>元素</th>
+<th>規則</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>函式內部 label / goto / if-goto</td>
+<td><code>目前函式名$VM標籤</code></td>
+</tr>
+<tr>
+<td>call 產生的返回位址</td>
+<td><code>目前函式名$ret.&lt;全域計數器&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-3-檔案命名約定">3.3 檔案命名約定</h3>
+<p>輸出 <code>.asm</code> 的名稱，依輸入而定：</p>
+<ul>
+<li><strong>輸入是一個目錄</strong>時：輸出名 = 目錄名 + <code>.asm</code>（例如 <code>Program</code> 目錄 → <code>Program.asm</code>）；</li>
+<li><strong>輸入是單一 <code>.vm</code> 檔</strong>時：輸出名 = 該檔名（去掉 <code>.vm</code>）+ <code>.asm</code>（例如 <code>Foo.vm</code> → <code>Foo.asm</code>）。</li>
+</ul>
+<hr />
+<h2 id="4-bootstrap-code-的產生">4. bootstrap code 的產生</h2>
+<p>在任何 <code>.vm</code> 檔的內容之前，Translator 要先寫入 <strong>bootstrap code</strong>（見 8.2 節第 5 節）：</p>
+<pre><code>@256
+D=A
+@SP
+M=D              // SP = 256
+// call Sys.init 0
+...（call 的完整序列）...
+(Sys.init$ret.0)
+</code></pre>
+<p>為何要放在開頭？</p>
+<ul>
+<li>若它是第一個寫出的內容，則 <code>Sys.init</code> 將是<strong>整個程式的第一條指令</strong>；</li>
+<li>這保證 VM 程式「從 Sys.init 執行」，完全不需要作業系統或 loader 來「先執行哪支函式」；</li>
+<li>SP 設 256 則避開了暫存器區（0–15）與可供裝載器使用的記憶體區（16–255）。</li>
+</ul>
+<p>產生順序：<code>writeInit()</code> 先被呼叫一次，接著才逐檔處理各 <code>.vm</code>。</p>
+<pre><code class="language-python"># 主流程中的 bootstrap
+writer.writeInit()            # ① bootstrap
+for path in vm_files:         # ② 逐檔
+    writer.setFileName(path)
+    parser = Parser(path)
+    while parser.hasMoreCommands():
+        ... translate ...
+writer.close()                # ③ 關檔
+</code></pre>
+<hr />
+<h2 id="5-完整可執行的-vmtranslator">5. 完整可執行的 VMTranslator</h2>
+<p>以下是把 7、8 章所有規則落成的一支完整 Python Translator。它沿用 6.3 節組譯器「單一檔案、直接可跑」的風格。為求清楚，程式依「CodeWriter → Parser → 主流程」順序撰寫。</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;
+VMTranslator.py —— 將 VM 語言 (.vm) 翻譯為 Hack 組合語言 (.asm)
+
+用法：
+    python3 VMTranslator.py Foo.vm        → Foo.asm
+    python3 VMTranslator.py ProgDir       → ProgDir.asm（處理目錄內所有 .vm）
+
+架構：Parser（解析單一 .vm）＋ CodeWriter（產生 Hack 組合語言）
+&quot;&quot;&quot;
+import sys, os
+
+
+# ================= CodeWriter =================
+
+class CodeWriter:
+    def __init__(self, output_path):
+        self.f = open(output_path, 'w', encoding='utf-8')
+        self.filename = None       # 目前 .vm 檔名（不加副檔名）
+        self.function = 'Sys.init' # 目前函式名（bootstrap 前暫用）
+        self.label_count = 0       # 全域 call 返回位址計數器（每檔平移）
+        self.seg_base = {
+            'local': 'LCL', 'argument': 'ARG', 'this': 'THIS',
+            'that': 'THAT', 'pointer': 'THIS', 'temp': '5',
+        }
+
+    def setFileName(self, path):
+        self.filename = os.path.basename(path).replace('.vm', '')
+
+    def _out(self, line):
+        self.f.write(line + '\n')
+
+    # ---------- 堆疊基本動作 ----------
+    def _stack_push_D(self):
+        &quot;&quot;&quot;把 D 暫存子的值推上堆疊&quot;&quot;&quot;
+        self._out('@SP'); self._out('A=M'); self._out('M=D')
+        self._out('@SP'); self._out('M=M+1')
+
+    def _fetch_segment_addr(self, seg, i):
+        &quot;&quot;&quot;把「seg 第 i 個元素的位址」算進 D 暫存子&quot;&quot;&quot;
+        if seg in ('local', 'argument', 'this', 'that'):
+            base = self.seg_base[seg]
+            self._out(f'@{base}'); self._out('D=M')
+            self._out(f'@{i}');     self._out('D=D+A')
+        elif seg == 'pointer':
+            self._out(f'@{i}'); self._out('D=A')
+            self._out(f'@{self.seg_base[seg]}'); self._out('D=A+D')
+        elif seg == 'temp':
+            self._out(f'@{i}'); self._out('D=A')
+            self._out(f'@{self.seg_base[seg]}'); self._out('D=A+D')
+        elif seg == 'static':
+            self._out(f'@{self.filename}.{i}'); self._out('D=A')
+        elif seg == 'constant':
+            self._out(f'@{i}'); self._out('D=A')
+
+    # ---------- 算術 / 邏輯 ----------
+    def writeArithmetic(self, cmd):
+        # 先完成二元的「把 RAM[SP-2] 的舊值放進 D」的取用
+        if cmd in ('add', 'sub', 'and', 'or'):
+            self._out('@SP'); self._out('AM=M-1')
+            self._out('D=M')               # D = y
+            self._out('A=A-1')             # A 指到 x
+            m = {'add': 'M=D+M', 'sub': 'M=M-D',
+                 'and': 'M=D&amp;M', 'or': 'M=D|M'}[cmd]
+            self._out(m)                    # x op y 存回
+        elif cmd in ('eq', 'gt', 'lt'):
+            self._out('@SP'); self._out('AM=M-1')
+            self._out('D=M'); self._out('A=A-1')
+            self._out('D=M-D')             # D = x - y
+            label_true = f'{self.function}.${self.label_count}'
+            self.label_count += 1
+            label_end = f'{self.function}.${self.label_count}'
+            self.label_count += 1
+            jump = {'eq': 'JEQ', 'gt': 'JGT', 'lt': 'JLT'}[cmd]
+            self._out(f'@{label_true}'); self._out(f'D;{jump}')
+            self._out('@SP'); self._out('A=M-1'); self._out('M=0')
+            self._out(f'@{label_end}'); self._out('0;JMP')
+            self._out(f'({label_true})')
+            self._out('@SP'); self._out('A=M-1'); self._out('M=-1')
+            self._out(f'({label_end})')
+        elif cmd == 'neg':
+            self._out('@SP'); self._out('A=M-1')
+            self._out('M=-M')
+        elif cmd == 'not':
+            self._out('@SP'); self._out('A=M-1')
+            self._out('M=!M')
+
+    # ---------- 記憶體段 ----------
+    def writePushPop(self, command, seg, index):
+        if command == 'push':
+            if seg == 'constant':
+                self._out(f'@{index}'); self._out('D=A')
+            elif seg in ('local', 'argument', 'this', 'that', 'pointer', 'temp'):
+                self._fetch_segment_addr(seg, index)
+                self._out('A=D'); self._out('D=M')
+            elif seg == 'static':
+                self._out(f'@{self.filename}.{index}')
+                self._out('D=M')
+            self._stack_push_D()
+        else:  # pop
+            # 先算目標位址存 R13
+            if seg in ('local', 'argument', 'this', 'that', 'pointer', 'temp', 'static'):
+                self._fetch_segment_addr(seg, index)
+                self._out('@R13'); self._out('M=D')
+                self._out('@SP'); self._out('AM=M-1'); self._out('D=M')
+                self._out('@R13'); self._out('A=M'); self._out('M=D')
+
+    # ---------- 控制流（8.1） ----------
+    def writeLabel(self, label):
+        self._out(f'({self.function}${label})')
+
+    def writeGoto(self, label):
+        self._out(f'@{self.function}${label}')
+        self._out('0;JMP')
+
+    def writeIf(self, label):
+        self._out('@SP'); self._out('AM=M-1'); self._out('D=M')
+        self._out(f'@{self.function}${label}')
+        self._out('D;JNE')
+
+    # ---------- 函式呼叫（8.2） ----------
+    def writeFunction(self, name, nLocals):
+        self.function = name
+        self._out(f'({name})')
+        for _ in range(nLocals):
+            self._out('@0'); self._out('D=A')
+            self._stack_push_D()
+
+    def writeCall(self, name, nArgs):
+        ret = f'{self.function}$ret.{self.label_count}'
+        self.label_count += 1
+        self._out(f'@{ret}'); self._out('D=A'); self._stack_push_D()   # retAddr
+        for base in ('LCL', 'ARG', 'THIS', 'THAT'):                     # frame
+            self._out(f'@{base}'); self._out('D=M'); self._stack_push_D()
+        self._out('@SP'); self._out('D=M')                              # ARG
+        self._out(f'@{5 + nArgs}'); self._out('D=D-A')
+        self._out('@ARG'); self._out('M=D')
+        self._out('@SP'); self._out('D=M'); self._out('@LCL'); self._out('M=D')
+        self._out(f'@{name}'); self._out('0;JMP')                       # 跳進
+        self._out(f'({ret})')                                           # 返回位址
+
+    def writeReturn(self):
+        self._out('@LCL'); self._out('D=M'); self._out('@R13'); self._out('M=D')  # frame
+        self._out('@R13'); self._out('D=M'); self._out('@5'); self._out('A=D-A')
+        self._out('D=M'); self._out('@R14'); self._out('M=D')          # retAddr
+        self._out('@SP'); self._out('AM=M-1'); self._out('D=M')        # 回傳值
+        self._out('@ARG'); self._out('A=M'); self._out('M=D')          # *ARG = 回傳值
+        self._out('@ARG'); self._out('D=M+1'); self._out('@SP'); self._out('M=D')
+        for off, reg in ((1, 'THAT'), (2, 'THIS'), (3, 'ARG'), (4, 'LCL')):
+            self._out('@R13'); self._out('D=M')
+            self._out(f'@{off}'); self._out('A=D-A'); self._out('D=M')
+            self._out(f'@{reg}'); self._out('M=D')
+        self._out('@R14'); self._out('A=M'); self._out('0;JMP')
+
+    def writeInit(self):
+        self._out('@256'); self._out('D=A'); self._out('@SP'); self._out('M=D')
+        self.writeCall('Sys.init', 0)
+
+    def close(self):
+        self.f.close()
+
+
+# ================= Parser =================
+
+ARITHMETIC = {'add', 'sub', 'neg', 'eq', 'gt', 'lt', 'and', 'or', 'not'}
+
+class Parser:
+    def __init__(self, path):
+        self.lines = []
+        with open(path, 'r', encoding='utf-8') as f:
+            for raw in f:
+                line = raw.split('//')[0].strip()
+                if line:
+                    self.lines.append(line)
+        self.idx = 0
+        self.current = None
+
+    def hasMoreCommands(self):
+        return self.idx &lt; len(self.lines)
+
+    def advance(self):
+        self.current = self.lines[self.idx]
+        self.idx += 1
+
+    def commandType(self):
+        first = self.current.split()[0]
+        if first in ARITHMETIC:
+            return 'C_ARITHMETIC'
+        if first == 'push':
+            return 'C_PUSH'
+        if first == 'pop':
+            return 'C_POP'
+        if first == 'label':
+            return 'C_LABEL'
+        if first == 'goto':
+            return 'C_GOTO'
+        if first == 'if-goto':
+            return 'C_IF'
+        if first == 'function':
+            return 'C_FUNCTION'
+        if first == 'call':
+            return 'C_CALL'
+        if first == 'return':
+            return 'C_RETURN'
+        raise ValueError(f'未知指令：{self.current}')
+
+    def arg1(self):
+        if self.commandType() == 'C_RETURN':
+            return None
+        parts = self.current.split()
+        return parts[1] if len(parts) &gt; 1 else parts[0]
+
+    def arg2(self):
+        return int(self.current.split()[2])
+
+
+# ================= 主流程 =================
+
+def translate(input_path, writer):
+    if os.path.isdir(input_path):
+        vm_list = sorted(
+            os.path.join(input_path, f) for f in os.listdir(input_path)
+            if f.endswith('.vm'))
+        base = os.path.basename(os.path.abspath(input_path))
+        out = os.path.join(input_path, base + '.asm')
+    else:
+        vm_list = [input_path]
+        out = input_path.replace('.vm', '.asm')
+    writer = CodeWriter(out)
+    writer.writeInit()                     # bootstrap 在最前面
+    for vm in vm_list:
+        writer.setFileName(vm)
+        parser = Parser(vm)
+        while parser.hasMoreCommands():
+            parser.advance()
+            t = parser.commandType()
+            if t == 'C_ARITHMETIC':
+                writer.writeArithmetic(parser.current)
+            elif t in ('C_PUSH', 'C_POP'):
+                command = parser.commandType()
+                writer.writePushPop(
+                    'push' if t == 'C_PUSH' else 'pop',
+                    parser.arg1(), parser.arg2())
+            elif t == 'C_LABEL':
+                writer.writeLabel(parser.arg1())
+            elif t == 'C_GOTO':
+                writer.writeGoto(parser.arg1())
+            elif t == 'C_IF':
+                writer.writeIf(parser.arg1())
+            elif t == 'C_FUNCTION':
+                writer.writeFunction(parser.arg1(), parser.arg2())
+            elif t == 'C_CALL':
+                writer.writeCall(parser.arg1(), parser.arg2())
+            elif t == 'C_RETURN':
+                writer.writeReturn()
+    writer.close()
+    print(f'{len(vm_list)} 個 .vm → {out}')
+    return out
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('用法：python3 VMTranslator.py &lt;Foo.vm 或 目錄&gt;')
+        sys.exit(1)
+    translate(sys.argv[1], None)
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：請特別注意 <code>label_count</code> 如何被「算術比較」與「call 返回位址」共用——它是一個全域遞增計數器，保證任何生成的唯一標籤都不會撞名。比較（eq/gt/lt）用它產生 <code>foo$.0</code>、<code>foo$.1</code> 這類暫時標籤，call 用它產生 <code>foo$ret.2</code> 等，通通落在同一個「不會與任何標籤/變數衝突」的命名空間。</p>
+</blockquote>
+<hr />
+<h2 id="6-如何用-vm-模擬器測試">6. 如何用 VM 模擬器測試</h2>
+<p>有了 Translator，接下來要證明它「真的會跑」。</p>
+<h3 id="6-1-測試用的-vm-程式">6.1 測試用的 VM 程式</h3>
+<p>我們用一支<strong>結果可心算</strong>的程式當測試樣本，沿用第 6.4 節的「已知答案」哲學。寫一個會用函式呼叫與迴圈的 <code>Main.vm</code>：計算一個函式 <code>square(x) = x * x</code>，並呼叫多次：</p>
+<pre><code class="language-vm">// Main.vm
+function Main.main 1        // 1 個 local：sum
+push constant 0
+pop local 0                 // sum = 0
+label LOOP
+push constant 4
+call Main.square 1          // square(4)
+pop local 0                 // sum = square(4) = 16
+push constant 0
+return
+function Main.square 0      // 參數 0 = x
+push argument 0
+push argument 0
+call Math.multiply 2        // x * x
+return                      // 回傳值在堆疊頂
+</code></pre>
+<h3 id="6-2-執行-translator-並檢查輸出">6.2 執行 Translator 並檢查輸出</h3>
+<pre><code class="language-bash">$ python3 VMTranslator.py Main.vm
+1 個 .vm → Main.asm
+</code></pre>
+<p><code>Main.asm</code> 的開頭應是 bootstrap：</p>
+<pre><code class="language-asm">@256
+D=A
+@SP
+M=D
+@Sys.init$ret.0
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+@LCL
+...
+@Sys.init
+0;JMP
+(Sys.init$ret.0)
+...
+</code></pre>
+<h3 id="6-3-三種驗證工具">6.3 三種驗證工具</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>VM Emulator（官方）</strong></td>
+<td>直接載入 <code>.vm</code> 檔，逐步觀察堆疊與 frame，最適合「除 VM 程式邏輯」</td>
+</tr>
+<tr>
+<td><strong>CPU Emulator（官方）</strong></td>
+<td>載入「組譯後的 <code>.asm / .hack</code>」，驗證「我們的 Translator＋Assembler」整條鏈</td>
+</tr>
+<tr>
+<td><strong>你寫的 Python 模擬器</strong></td>
+<td>自動化快速驗證（本書 6.4 節的 <code>hacksim.py</code>）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>完整鏈路的順序</strong>：</p>
+<pre><code>Main.vm ──VMTranslator──▶ Main.asm ──HackAssembler──▶ Main.hack ──CPU模擬器──▶ 結果
+</code></pre>
+<p>執行到最後，觀察 RAM：<code>sum = 16</code>（<code>4 × 4</code>），符合人類數學。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼不直接信 VM Emulator？因為它會「偷偷」幫你跑 VM，跳過了對你 Translator 的考驗。<strong>要驗證的是你的翻譯，就必須走完整條 .vm → .asm → .hack → CPU 模擬器的鏈路</strong>。VM Emulator 只拿來「對照組」——兩者跑出相同結果，才敢說 Translator 對。</p>
+</blockquote>
+<hr />
+<h2 id="7-常見錯誤與除錯">7. 常見錯誤與除錯</h2>
+<p>無論架構多漂亮，第一次跑幾乎都會撞牆。以下是最高頻的錯誤與解法。</p>
+<h3 id="7-1-錯誤一-frame-指標沒初始化-最常見">7.1 錯誤一：frame / 指標沒初始化（最常見）</h3>
+<p><strong>症狀</strong>：空指標、奇異的 loop、<code>Sys.init</code> 沒被呼叫就亂跑。
+<strong>根源</strong>：忘了 <code>writeInit()</code>，或 SP 沒有設 256。
+<strong>除錯法</strong>：檢查 <code>.asm</code> 前幾行是否為 <code>@256 / D=A / @SP / M=D</code>。任何 <code>push</code> 之前都必須已定義 SP、LCL、ARG、THIS、THAT。</p>
+<h3 id="7-2-錯誤二-local-段沒歸零">7.2 錯誤二：local 段沒歸零</h3>
+<p><strong>症狀</strong>：函式的 local 值「莫名其妙有舊資料」。
+<strong>根源</strong>：<code>writeFunction</code> 忘了把 nLocal 個 0 推上堆疊。
+<strong>除錯法</strong>：找 <code>(foo)</code> 標籤之後，應緊跟 <code>nLocal</code> 組「<code>@0 / D=A / @SP / A=M / M=D / @SP / M=M+1</code>」。</p>
+<h3 id="7-3-錯誤三-return-順序錯-回傳值搬移與-sp-設定">7.3 錯誤三：return 順序錯（回傳值搬移與 SP 設定）</h3>
+<p><strong>症狀</strong>：回傳值不見、或返回後 SP 錯位。
+<strong>根源</strong>：在「還原 SP」<strong>之後</strong>才搬回傳值（次序顛倒），或忘了 <code>M=D</code>。
+<strong>除錯法</strong>：對照 8.3 節第 3.3 節——「先 <code>*ARG=pop()</code>，後 <code>SP=ARG+1</code>」，順序不可顛倒。</p>
+<h3 id="7-4-錯誤四-frame-元素還原錯偏移">7.4 錯誤四：frame 元素還原錯偏移</h3>
+<p><strong>症狀</strong>：這個函式返回後，caller 的 THIS/THAT/ARG 亂掉。
+<strong>根源</strong>：還原時偏移算錯（例如把 THAT 讀成 THIS）。frame 由下而上：<code>frame-1=THAT</code>、<code>frame-2=THIS</code>、<code>frame-3=ARG</code>、<code>frame-4=LCL</code>。
+<strong>除錯法</strong>：把 8.3 節的 frame 佈局表貼在眼前，逐一對照 <code>A=D-A</code> 與目標暫存器。</p>
+<h3 id="7-5-錯誤五-label-撞名">7.5 錯誤五：label 撞名</h3>
+<p><strong>症狀</strong>：不同函式的同名 label 跳到同一處。
+<strong>根源</strong>：翻譯 label/goto/if-goto 時沒加函式名前綴。
+<strong>除錯法</strong>：確認 <code>writeLabel/writeGoto/writeIf</code> 都使用 <code>self.function$...</code>。</p>
+<h3 id="7-6-錯誤六-算術比較-eq-gt-lt-用錯跳躍">7.6 錯誤六：算術比較（eq/gt/lt）用錯跳躍</h3>
+<p><strong>症狀</strong>：eq/gt/lt 結果永遠為 0 或 -1。
+<strong>根源</strong>：<code>D;JEQ</code> 等條件寫反，或 <code>-1</code>（真）與 <code>0</code>（假）的「true/false」約定沒遵守。Nand2Tetris 的約定是 <strong>真 = -1（所有位元為 1）、假 = 0</strong>。
+<strong>除錯法</strong>：驗證 <code>push constant 3; push constant 3; eq</code> 應得 -1（且堆疊剩一個元素）。</p>
+<h3 id="7-7-除錯心法總表">7.7 除錯心法總表</h3>
+<table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>優先懷疑</th>
+<th>快查方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>開頭就亂跑</td>
+<td>無 bootstrap / SP 未設</td>
+<td>看 .asm 前幾行</td>
+</tr>
+<tr>
+<td>local 有舊值</td>
+<td>function 沒歸零</td>
+<td>看 <code>(foo)</code> 後幾行</td>
+</tr>
+<tr>
+<td>回傳值消失</td>
+<td>return 搬移順序</td>
+<td>檢查 <code>*ARG=pop</code> 與 <code>SP=ARG+1</code> 次序</td>
+</tr>
+<tr>
+<td>THIS/THAT 亂</td>
+<td>frame 偏移錯</td>
+<td>對照 frame 佈局表</td>
+</tr>
+<tr>
+<td>跳錯地方</td>
+<td>label 沒加前綴</td>
+<td>搜 <code>$</code> 是否出現在每個 label</td>
+</tr>
+<tr>
+<td>相等比較錯</td>
+<td>true/false 約定</td>
+<td>測 eq→ -1、ne→ 0</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-本章小結">8. 本章小結</h2>
+<ul>
+<li>VM Translator 的架構是 <strong>Parser + CodeWriter</strong>：Parser 解析 <code>.vm</code>，CodeWriter 依指令種類生成 Hack 組合語言。</li>
+<li>多個 <code>.vm</code> 檔會被整合成<strong>單一 <code>.asm</code></strong>，輸出名取決於輸入是目錄還是檔案。</li>
+<li><strong>bootstrap code</strong> 永遠放在最前：初始化 <code>SP=256</code> 並 <code>call Sys.init 0</code>，這是整個程式的起點。</li>
+<li>完整可執行的 Python VMTranslator 約 250 行即可完成整條管線：算術、記憶體段、控制流、函式呼叫、bootstrap。</li>
+<li>唯一標籤由「函式名 + <code>$</code> + 全域計數器」產生，一次性解決 label 與 call 返回位址的撞名問題。</li>
+<li>測試要走完整鏈路：<code>.vm → .asm → .hack → CPU 模擬器</code>，用「結果可心算」的程式當樣本，VM Emulator 只當對照組。</li>
+<li>常見六大類錯誤：指標未初始化、local 未歸零、return 順序、frame 偏移、label 撞名、真值約定——各有對應快查法。</li>
+</ul>
+<p>到這裡，<strong>第 8 章「虛擬機進階：程序與控制流」全篇完成</strong>：8.1 控制流翻譯、8.2 函式呼叫機制、8.3 呼叫堆疊、8.4 完整 VM Translator。你現在擁有一支能把 VM 語言編譯成 Hack 組合語言的真正工具。下一章我們順流而上，進入第 9 章——<strong>高階程式語言 Jack</strong>，用更接近人類思維的語言，指揮這台你親手打造的虛擬機。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="8.3.html">⇦ 上一節</a><a class="nav-btn" href="9.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

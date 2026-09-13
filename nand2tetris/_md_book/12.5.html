@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12.5 系統基礎：String, Array, Sys</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link active" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="12.4.html">⇦ 上一節</a></div>
+  <div class="title">12.5 系統基礎：String, Array, Sys</div>
+  <div class="nav-right"><a class="nav-btn" href="13.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch12.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="12-5-系統基礎-string-array-sys">12.5 系統基礎：String, Array, Sys</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明 <code>String</code> 類別：字串在記憶體中如何表示、有哪些操作（<code>length</code>、<code>charAt</code>、<code>setCharAt</code>、<code>appendChar</code>、<code>eraseLastChar</code>、<code>intValue</code>、<code>setInt</code>）</li>
+<li>說明整數與字串的互轉（<code>intValue</code>、<code>setInt</code>）如何用除法實作</li>
+<li>說明字串連接（append）的原理，以及與 <code>Output</code> 的關係</li>
+<li>說明 <code>Array</code> 類別：<code>Array.new</code> 建立陣列、陣列的生命週期與 <code>Array.dispose</code></li>
+<li>說明 <code>Sys</code> 類別：<code>Sys.init</code>、<code>Sys.halt</code>、<code>Sys.wait</code>、<code>Sys.error</code></li>
+<li>說明 <code>Sys.wait</code> 如何用迴圈延遲（busy-wait）</li>
+<li>說明整個作業系統的<strong>啟動流程</strong>與各類別的初始化順序</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>到目前為止，我們寫了 <code>Math</code>（數學）、<code>Memory</code>（記憶體）、<code>Screen</code>（繪圖）、<code>Output</code>（文字）、<code>Keyboard</code>（輸入）。但還有三樣「系統地基」沒搞定：</p>
+<ol>
+<li><strong><code>String</code></strong>：Jack 程式中無處不在的字串，究竟在記憶體裡怎麼存放？怎麼連結、怎麼跟數字互換？</li>
+<li><strong><code>Array</code></strong>：Jack 的陣列——<code>Array.new(n)</code> 到底是怎麼「生出」一段連續記憶體的？用完要怎麼還？</li>
+<li><strong><code>Sys</code></strong>：整個系統的主控者——電腦開機從哪裡執行？如何停止？如何「等一秒」？</li>
+</ol>
+<p>本節我們把它們一次補齊。寫完這三個類別，加上前四節的 <code>Math</code>、<code>Memory</code>、<code>Screen</code>、<code>Output</code>、<code>Keyboard</code>，整個 Nand2Tetris 的作業系統就<strong>完工</strong>了。屆時「從邏輯閘到能玩 Tetris 的完整電腦系統」的最後一塊拼圖——作業系統——就位。</p>
+<hr />
+<h2 id="1-string-類別-字串的表示與操作">1. String 類別：字串的表示與操作</h2>
+<h3 id="1-1-字串在記憶體中怎麼表示">1.1 字串在記憶體中怎麼表示</h3>
+<p>在 Jack 中，一個 <code>String</code> 物件的本質是：</p>
+<ul>
+<li>一段<strong>連續記憶體緩衝區</strong>（用來存字元）；</li>
+<li>加上幾個「控制欄位」：字串目前<strong>長度（length）</strong>、緩衝區<strong>容量（maxLength）</strong>。</li>
+</ul>
+<p>以作業系統實作的角度看，<code>String</code> 物件內部用一個 <code>Array</code> 存放字元（每個字元是一個 0..127 的整數，即 ASCII），再加上長度與容量兩個欄位。示意：</p>
+<pre><code>String 物件（配置在 heap 記憶體）：
+┌─────────────┬─────────────┬──────────────────────────┐
+│ 長度 length  │ 容量 maxLen  │ 字元緩衝區 data[]          │
+│ (欄位)       │ (欄位)       │ data[0..length-1]         │
+└─────────────┴─────────────┴──────────────────────────┘
+</code></pre>
+<p>每當「append 一個字元」且尚未超過 <code>maxLen</code>，就寫入 <code>data[length]</code> 並把 <code>length</code> 加 1。超過容量則忽略或截斷。</p>
+<h3 id="1-2-string-api">1.2 String API</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>簽名</th>
+<th>功能說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>new</code></td>
+<td><code>String.new(int maxLen) → String</code></td>
+<td>建立一個容量為 <code>maxLen</code> 的空字串</td>
+</tr>
+<tr>
+<td><code>length</code></td>
+<td><code>String.length() → int</code></td>
+<td>回傳目前字元數</td>
+</tr>
+<tr>
+<td><code>charAt</code></td>
+<td><code>String.charAt(int j) → char</code></td>
+<td>回傳第 <code>j</code> 個字元</td>
+</tr>
+<tr>
+<td><code>setCharAt</code></td>
+<td><code>String.setCharAt(int j, char c)</code></td>
+<td>把第 <code>j</code> 個字元設為 <code>c</code></td>
+</tr>
+<tr>
+<td><code>appendChar</code></td>
+<td><code>String.appendChar(char c) → String</code></td>
+<td>在字串尾端添加字元 <code>c</code>，回傳自己</td>
+</tr>
+<tr>
+<td><code>eraseLastChar</code></td>
+<td><code>String.eraseLastChar() → String</code></td>
+<td>刪除最後一個字元，回傳自己</td>
+</tr>
+<tr>
+<td><code>intValue</code></td>
+<td><code>String.intValue() → int</code></td>
+<td>把字串解析成整數（如 <code>&quot;-42&quot;</code> → -42）</td>
+</tr>
+<tr>
+<td><code>setInt</code></td>
+<td><code>String.setInt(int n)</code></td>
+<td>把整數 <code>n</code> 轉成其十進位字串存入自己</td>
+</tr>
+<tr>
+<td><code>dispose</code></td>
+<td><code>String.dispose()</code></td>
+<td>釋放字串佔用的記憶體</td>
+</tr>
+</tbody>
+</table>
+<h3 id="1-3-string-與-output-的關係">1.3 String 與 Output 的關係</h3>
+<p><code>Output.printString(s)</code> 就是「逐一 <code>charAt</code> 每個字元、再 <code>printChar</code> 印出」。<code>Keyboard.readLine</code> 則把讀到的字元<strong>一一 <code>appendChar</code></strong> 組成字串。所以：</p>
+<blockquote>
+<p><code>String</code> 是「在記憶體中存放文字的容器」，<code>Output</code> 是「把 String 顯示到螢幕的通道」，<code>Keyboard</code> 是「把鍵盤輸入累積成 String 的來源」。三者合作，完成「文字的儲存、顯示與輸入」。</p>
+</blockquote>
+<h3 id="1-4-完整-string-jack">1.4 完整 String.jack</h3>
+<p>下面是一個可運作的 <code>String.jack</code>。它使用 <code>Array.new</code>（見下節）存放字元緩衝區，並用欄位 <code>str</code>（緩衝區陣列）、<code>maxLength</code>、<code>length</code> 管理。</p>
+<pre><code>// String.jack —— 字串類別
+class String {
+
+    field Array str;        // 字元緩衝區
+    field int maxLength;    // 容量上限
+    field int length;       // 目前字元數
+
+    // 建構子：建立容量 maxLen 的空字串
+    constructor String new(int maxLen) {
+        let maxLength = maxLen;
+        let length = 0;
+        let str = Array.new(maxLen);
+        return this;
+    }
+
+    // 回傳目前長度
+    method int length() {
+        return length;
+    }
+
+    // 回傳第 j 個字元
+    method char charAt(int j) {
+        return str[j];
+    }
+
+    // 設定第 j 個字元
+    method void setCharAt(int j, char c) {
+        let str[j] = c;
+        return;
+    }
+
+    // 在尾端添加字元
+    method String appendChar(char c) {
+        if (length &lt; maxLength) {
+            let str[length] = c;
+            let length = length + 1;
+        }
+        return this;
+    }
+
+    // 刪除最後一個字元
+    method String eraseLastChar() {
+        if (length &gt; 0) {
+            let length = length - 1;
+        }
+        return this;
+    }
+
+    // 把字串解析成整數
+    method int intValue() {
+        var int i, n, val;
+        var boolean neg;
+        let i = 0;
+        let n = 0;
+        let val = 0;
+        let neg = false;
+        if (length &gt; 0) {
+            if (str[0] = 45) {        // '-'
+                let neg = true;
+                let i = 1;
+            }
+            while (i &lt; length) {
+                let n = str[i] - 48;      // 字元減 '0'
+                let val = val * 10 + n;
+                let i = i + 1;
+            }
+            if (neg) { let val = -val; }
+        }
+        return val;
+    }
+
+    // 把整數寫成字串（十進位）
+    method void setInt(int n) {
+        var int i, digit, pow;
+        var boolean neg;
+
+        let neg = false;
+        if (n &lt; 0) {
+            let neg = true;
+            // 避免最小值取負溢位，此處先以一般情況示範
+            let n = -n;
+        }
+
+        // 求得最高位權重
+        let pow = 1;
+        let i = n;
+        while (i &gt;= 10) {
+            let pow = pow * 10;
+            let i = i / 10;
+        }
+
+        // 先清空目前字串（length 歸 0；保留緩衝區）
+        let length = 0;
+        if (neg) {
+            let str[length] = 45;     // '-'
+            let length = length + 1;
+        }
+
+        // 逐位轉字元存入
+        while (pow &gt; 0) {
+            let digit = n / pow;
+            let str[length] = digit + 48;
+            let length = length + 1;
+            let n = n - digit * pow;
+            let pow = pow / 10;
+        }
+        return;
+    }
+
+    // 釋放記憶體
+    method void dispose() {
+        do str.dispose();
+        do Memory.dealloc(this);
+        return;
+    }
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>setInt</code> / <code>intValue</code> 是一對「互逆」的轉換。<code>intValue</code> 讀「字元→數字→累加（×10）」，<code>setInt</code> 用除法逐位把數字的十進位寫成字元（+48）。兩者都依賴 <code>Math</code> 的除法 (<code>/</code>)，再次體現 OS 內部的依賴鏈。</p>
+</blockquote>
+<hr />
+<h2 id="2-array-類別-陣列的建立與生命週期">2. Array 類別：陣列的建立與生命週期</h2>
+<h3 id="2-1-array-是什麼">2.1 Array 是什麼</h3>
+<p>Jack 的 <code>Array</code> 本質上就是一塊<strong>連續記憶體</strong>，透過 <code>Pointer</code>/<code>THIS</code> 機制間接定址。<code>Array.new(size)</code> 就是向 <code>Memory.alloc</code> 取得一塊 <code>size</code> 字的連續空間，並回傳它的起始位址。</p>
+<p>Jack 語言規定：<code>Array.new</code> 與 <code>Array.dispose</code> 是 OS 必須提供的、與語言綁定的特殊函式。Jack 編譯器知道「<code>new Array(n)</code>」應該翻譯成「呼叫 <code>Array.new(n)</code>」。</p>
+<h3 id="2-2-陣列的生命週期">2.2 陣列的生命週期</h3>
+<pre><code>new(建立)          ──►  使用中           ──►  dispose(釋放)
+Array.new(n)           arr[0..n-1] 讀寫       arr.dispose()
+</code></pre>
+<ul>
+<li><strong>建立</strong>：<code>let arr = Array.new(n);</code> 向 heap 要 <code>n</code> 個字。</li>
+<li><strong>使用</strong>：<code>arr[i]</code> 讀寫第 i 個元素（越界時語言未定義，程式要自己負責範圍）。</li>
+<li><strong>釋放</strong>：<code>do arr.dispose();</code> 把記憶體還給 <code>Memory</code>（<code>dealloc</code>）。</li>
+</ul>
+<p><code>Array.dispose</code> 會呼叫 <code>Memory.dealloc(this)</code>，把這塊空間還回 free list，之後可被合併重用。</p>
+<h3 id="2-3-完整-array-jack">2.3 完整 Array.jack</h3>
+<pre><code>// Array.jack —— 陣列類別
+class Array {
+
+    // 建立大小為 size 的陣列，回傳其起始位址
+    function Array new(int size) {
+        var Array a;
+        let a = Memory.alloc(size);
+        return a;
+    }
+
+    // 釋放陣列記憶體
+    method void dispose() {
+        do Memory.dealloc(this);
+        return;
+    }
+}
+</code></pre>
+<p>就這麼短！<code>Array</code> 本身幾乎是「薄封裝」——真正的魔法在 <code>Memory.alloc</code>。<code>Array.new</code> 回傳的是記憶體位址，而 Jack 編譯器會把 <code>arr[i]</code> 編譯成「從該位址偏移 i 的讀寫」。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼要單獨一個 <code>Array</code> 類別，而不用 <code>Memory.alloc</code> 就好？因為 Jack 語言規格把「陣列支援」鎖定在 <code>Array.new</code> / <code>Array.dispose</code> 這兩個特定函式上，編譯器會自動呼叫它們。OS 提供這兩個「語言內建掛鉤」，Jack 程式才能正常使用陣列語法。</p>
+</blockquote>
+<hr />
+<h2 id="3-sys-類別-系統主控">3. Sys 類別：系統主控</h2>
+<h3 id="3-1-sys-api">3.1 Sys API</h3>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>簽名</th>
+<th>功能說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>init</code></td>
+<td><code>Sys.init()</code></td>
+<td>初始化所有 OS 類別，然後呼叫使用者的 <code>Main.main()</code></td>
+</tr>
+<tr>
+<td><code>halt</code></td>
+<td><code>Sys.halt()</code></td>
+<td>終止程式執行（進入無窮迴圈）</td>
+</tr>
+<tr>
+<td><code>wait</code></td>
+<td><code>Sys.wait(int duration)</code></td>
+<td>等待 <code>duration</code> 毫秒（用忙迴圈延遲）</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>Sys.error(int errorCode)</code></td>
+<td>印出錯誤並終止程式</td>
+</tr>
+</tbody>
+</table>
+<h3 id="3-2-sys-init-作業系統的啟動流程">3.2 Sys.init：作業系統的啟動流程</h3>
+<p>開機後，<code>Sys.init</code> 是所有程式的<strong>真正起點</strong>。它做兩件事：</p>
+<ol>
+<li><strong>初始化 OS 類別</strong>：依賴順序呼叫各類別的 <code>init()</code>。</li>
+<li><strong>呼叫使用者的 <code>Main.main()</code></strong>：把控制權交給平台的主程式。</li>
+</ol>
+<p>各類別的初始化順序很重要，因為有依賴關係：</p>
+<pre><code>Sys.init()
+   │
+   ├─► Memory.init()      // 其他類別都用 peek/poke/alloc
+   ├─► Math.init()        // (若需要) 若無靜態初始化可省略
+   ├─► Screen.init()      // 依賴 Memory
+   ├─► Output.init()      // 依賴 Memory, Screen, (Math)
+   ├─► Keyboard.init()    // 依賴 Memory
+   ├─► ...（String 等構造式類別無需全域 init）
+   │
+   └─► Main.main()        // 進入使用者主程式
+</code></pre>
+<p><code>Sys.init</code> 的示意：</p>
+<pre><code>function void init() {
+    do Memory.init();
+    do Math.init();       // 若無需可留空或省略
+    do Screen.init();
+    do Output.init();
+    do Keyboard.init();
+    // 進入使用者主程式
+    do Main.main();
+    do Sys.halt();
+    return;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>Sys.init</code> 扮演「啟動載入器（boot loader）」的角色。在 Nand2Tetris 的工具鏈中，Jack 編譯器產生的 VM 程式第一條就是呼叫 <code>Sys.init</code>。它確定了「OS 先就位、Main 後接手」的順序——這就是整個系統的開機流程。</p>
+</blockquote>
+<h3 id="3-3-sys-halt-停止">3.3 Sys.halt：停止</h3>
+<p><code>halt</code> 進入一個「永不結束的無窮迴圈」，讓 CPU 卡在這裡（因為 Hack 沒有「停止」指令，只能用死迴圈讓它不再做有意義的事）：</p>
+<pre><code>function void halt() {
+    while (true) { }     // 無窮迴圈
+    return;
+}
+</code></pre>
+<h3 id="3-4-sys-wait-用迴圈延遲">3.4 Sys.wait：用迴圈延遲</h3>
+<p>Hack 沒有硬體計時器、沒有「睡」系統呼叫。要「等一陣子」，唯一方法是<strong>忙迴圈（busy-wait）</strong>：反覆執行空操作，直到消耗夠多的週期。</p>
+<p>官方 <code>Sys.wait(duration)</code> 用「大約每一毫秒跑一個固定次數的迴圈」來近似。因為 Hack 的執行速度是確定的（每條指令固定週期數），可以估算。</p>
+<p>官方延遲的實作（利用「每次遞增一個變數到目標值」的迴圈）：</p>
+<pre><code>function void wait(int duration) {
+    var int i, j;
+    // duration 是毫秒數；對應的「內部迴圈次數」是固定的
+    let i = 0;
+    while (i &lt; duration) {
+        // 內層迴圈約消耗 1 毫秒
+        let j = 0;
+        while (j &lt; 50) {        // 數值依 CPU 速度與模擬器調整
+            let j = j + 1;
+        }
+        let i = i + 1;
+    }
+    return;
+}
+</code></pre>
+<p>服務外層迴圈每跑一次等於過了大約 1 毫秒，因此 <code>Sys.wait(1000)</code> 約等於等 1 秒。</p>
+<blockquote>
+<p><strong>設計思路</strong>：這種「忙迴圈計時」不精確（依賴模擬器/CPU 的速度），但在 Nand2Tetris 的模擬環境中，只要把內層常數調到「讓每次外層迭代約 1ms」，對遊戲類程式已足夠。真實作業系統不會這樣浪費 CPU 等時間，但懂了運作原理後，你就理解「沒有中斷與計時器的古老電腦如何『感覺時間流逝』」。</p>
+</blockquote>
+<h3 id="3-5-sys-error-錯誤處理">3.5 Sys.error：錯誤處理</h3>
+<p><code>error(errorCode)</code> 印出錯誤訊息（或錯誤碼）後，呼叫 <code>halt</code> 停止：</p>
+<pre><code>function void error(int errorCode) {
+    do Output.printString(&quot;ERR&quot;);
+    do Output.printInt(errorCode);
+    do Output.println();
+    do halt();
+    return;
+}
+</code></pre>
+<p>當某個 OS 函式偵測到錯誤（如記憶體不足）時，可呼叫 <code>Sys.error(code)</code>，將錯誤碼顯示給使用者並中止程式。</p>
+<hr />
+<h2 id="4-整體作業系統的啟動流程與整合">4. 整體作業系統的啟動流程與整合</h2>
+<p>現在我們可以畫出整個作業系統的<strong>完整開機與運作流程</strong>：</p>
+<pre><code>┌───────────────────────────────────────────────────────────────┐
+│ 上電 / 重設                                                   │
+│      │                                                        │
+│      ▼                                                        │
+│ ROM 開機碼：呼叫 Sys.init()                                    │
+│      │                                                        │
+│      ▼                                                        │
+│ Sys.init()：初始化所有 OS 類別                                  │
+│   ├─ Memory.init()    建 free list（整個 heap）                │
+│   ├─ Math.*           （無全域狀態）                            │
+│   ├─ Screen.init()    清螢幕、設顏色                            │
+│   ├─ Output.init()    載入字型表、清螢幕、游標歸位              │
+│   ├─ Keyboard.init()  （無全域狀態）                            │
+│   └─ ...                                                      │
+│      │                                                        │
+│      ▼                                                        │
+│ Main.main()：使用者主程式執行                                    │
+│   ├─ 用 Math 計算                                              │
+│   ├─ 用 Memory 配置物件/陣列                                    │
+│   ├─ 用 Screen 繪圖                                            │
+│   ├─ 用 Output 顯示文字                                        │
+│   ├─ 用 Keyboard 讀輸入                                        │
+│   ├─ 用 String 存文字                                          │
+│   └─ 用 Sys.wait 控制節奏                                      │
+│      │                                                        │
+│   （Main 結束或呼叫 Sys.halt）                                 │
+│      ▼                                                        │
+│ Sys.halt()：無窮迴圈，程式結束                                  │
+└───────────────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="4-1-類別間依賴圖">4.1 類別間依賴圖</h3>
+<p>把所有 OS 類別畫成依賴圖，就能看到「誰依賴誰」：</p>
+<pre><code>      Sys
+       │
+       ├─────► Main.main()
+       │
+       ├─────► Memory ────────┐
+       │                       │
+       ├─────► Math ◄─────────┤
+       │                       │
+       ├─────► Screen ──► Memory, Math
+       │                       │
+       ├─────► Output ──► Screen, Memory, Math
+       │                       │
+       └─────► Keyboard ──► Memory, Output, String
+                                │
+       String ─────► Array ────► Memory
+       Array  ─────► Memory
+</code></pre>
+<p>可以看出：</p>
+<ul>
+<li><strong><code>Memory</code></strong> 與 <strong><code>Math</code></strong> 是底層基石（依賴最少者）。</li>
+<li><strong><code>String</code></strong> 與 <strong><code>Array</code></strong> 依賴 <code>Memory</code>。</li>
+<li><strong><code>Screen</code>、<code>Output</code>、<code>Keyboard</code></strong> 建立在這些基石之上。</li>
+<li><strong><code>Sys</code></strong> 位於最頂層，負責把一切初始化並啟動 <code>Main</code>。</li>
+</ul>
+<blockquote>
+<p><strong>設計思路</strong>：這種「分層依賴」不是偶然，而是工程設計的必然結果——<strong>先寫不依賴別人的，再寫依賴少數人的，最後寫指揮全局的</strong>。它能讓每一層都能獨立測試，也讓「作業系統」整個變成一個可管理、可除錯的整體。</p>
+</blockquote>
+<hr />
+<h2 id="5-設計思路與實作步驟">5. 設計思路與實作步驟</h2>
+<h3 id="5-1-實作步驟">5.1 實作步驟</h3>
+<ol>
+<li><strong><code>Array</code></strong>：最簡單，<code>new</code> 直接 <code>Memory.alloc</code>，<code>dispose</code> 直接 <code>Memory.dealloc</code>。先寫它，因為 <code>String</code> 與 <code>Output</code> 都用得到。</li>
+<li><strong><code>String</code></strong>：建構子用 <code>Array.new</code> 配置緩衝區；實作 <code>length</code>、<code>charAt</code>、<code>setCharAt</code>、<code>appendChar</code>、<code>eraseLastChar</code>；接著是 <code>intValue</code> / <code>setInt</code>（依賴除法）。</li>
+<li><strong><code>Sys</code></strong>：最後寫。<code>init</code> 依序初始化各類別並呼叫 <code>Main.main</code>；實作 <code>halt</code>、<code>wait</code>（忙迴圈）、<code>error</code>。</li>
+<li>寫一支 <code>Main.jack</code> 整合測試所有類別。</li>
+</ol>
+<h3 id="5-2-整合驗證策略">5.2 整合驗證策略</h3>
+<p>建立一個「總驗收程式」<code>Main.jack</code> 來驗證整個 OS 整合運作：</p>
+<pre><code>// Main.jack —— 整合測試
+class Main {
+    function void main() {
+        var String s;
+        var Array arr;
+        var int i, sum;
+
+        // 1) Math
+        do Output.printString(&quot;7*6=&quot;);
+        do Output.printInt(Math.multiply(7, 6));    // 42
+        do Output.println();
+
+        // 2) Screen
+        do Screen.drawCircle(256, 128, 60);
+        do Sys.wait(500);
+
+        // 3) String
+        let s = String.new(20);
+        do s.setInt(12345);
+        do Output.printString(s);                    // 12345
+        do Output.println();
+
+        // 4) Array
+        let arr = Array.new(10);
+        let i = 0;
+        while (i &lt; 10) {
+            let arr[i] = i * i;
+            let i = i + 1;
+        }
+        // 印出 arr[4] = 16
+        do Output.printInt(arr[4]);
+        do Output.println();
+        do arr.dispose();
+
+        // 5) Keyboard
+        do Keyboard.readInt(&quot;輸入一個整數：&quot;);
+
+        do Sys.halt();          // 結束
+        return;
+    }
+}
+</code></pre>
+<p>在 CPU Emulator 上執行，確認：</p>
+<ul>
+<li>螢幕印出正確的數學結果與字串；</li>
+<li>圓形正常繪製；</li>
+<li>陣列正確讀寫；</li>
+<li>鍵盤輸入能讀回；</li>
+<li>程式最終停在 <code>Sys.halt</code>。</li>
+</ul>
+<hr />
+<h2 id="6-本章小結">6. 本章小結</h2>
+<ul>
+<li><strong><code>String</code></strong> 用「緩衝區 + 長度 + 容量」表示：<code>Array.new</code> 配置字元緩衝；<code>appendChar</code> 添加、<code>eraseLastChar</code> 刪除、<code>charAt</code>/<code>setCharAt</code> 定址存取；<code>intValue</code>（字串→整數）與 <code>setInt</code>（整數→字串）一對互逆，都依賴除法。</li>
+<li><strong><code>Array</code></strong> 是最簡類別：<code>Array.new</code> = <code>Memory.alloc</code>（取得連續記憶體位址），<code>dispose</code> = <code>Memory.dealloc</code>（還回 free list）。它是 Jack 語言的「內建掛鉤」。</li>
+<li><strong><code>Sys</code></strong> 是系統主控：<code>init</code> 依序初始化各 OS 類別並呼叫 <code>Main.main</code>；<code>halt</code> 以無窮迴圈終止程式；<code>wait</code> 用<strong>忙迴圈</strong>近似延遲（因 Hack 無硬體計時器）；<code>error</code> 印出錯誤碼並停止。</li>
+<li>整個 OS 的啟動流程是：<strong>開機 → <code>Sys.init</code>（初始化 Memory、Math、Screen、Output、Keyboard）→ <code>Main.main()</code> → （結束時）<code>Sys.halt()</code></strong>。</li>
+<li>類別間呈<strong>分層依賴</strong>：<code>Memory</code> / <code>Math</code> 是基石，<code>String</code> / <code>Array</code> 依賴 <code>Memory</code>，<code>Screen</code> / <code>Output</code> / <code>Keyboard</code> 建立在基石上，<code>Sys</code> 在最頂層指揮全局。</li>
+</ul>
+<p>至此，Nand2Tetris 作業系統的五大類別全部完工。加上前面的硬體（邏輯閘 → CPU → 記憶體映射）與軟體（組譯器 → VM → 編譯器），我們已經擁有了一台「可以自己跑遊戲」的完整電腦。下一章，我們將見證最高潮——讓這台機器執行真正的經典遊戲 <strong>Tetris</strong>！</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="12.4.html">⇦ 上一節</a><a class="nav-btn" href="13.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

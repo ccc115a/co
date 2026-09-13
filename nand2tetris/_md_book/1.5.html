@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1.5 節 實作與測試：使用 Hardware Description Language (HDL)</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link active" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="1.4.html">⇦ 上一節</a></div>
+  <div class="title">第 1.5 節 實作與測試：使用 Hardware Description La</div>
+  <div class="nav-right"><a class="nav-btn" href="2.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch01.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第-1-5-節-實作與測試-使用-hardware-description-language-hdl">第 1.5 節 實作與測試：使用 Hardware Description Language (HDL)</h1>
+<h2 id="前言-藍圖要先能跑起來">前言：藍圖要先能跑起來</h2>
+<p>到目前為止，我們寫了很多漂亮的 HDL——Nand、Not、And、Or、Xor、Mux 家族——但這些只是「藍圖」。在真實的硬體世界裡，藍圖必須被<strong>製造</strong>並<strong>驗證</strong>；在 Nand2Tetris 的世界裡，我們用 <strong>Hardware Simulator（硬體模擬器）</strong> 扮演那個精密的工廠與測試實驗室：它讀取你的 <code>.hdl</code> 藍圖，依照你的 <code>.tst</code> 測試腳本，逐一檢查每一組輸入對應的輸出是否吻合你的期待。</p>
+<p>本節是本章的「手把手實戰篇」。我們將以一個具體例子——把 1.3 節的 And 閘餵進模擬器——完整走一遍「載入 → 測試 → debug → 通過」的流程。同時深入解析 HDL 的每一項語法細節，把 1.2~1.4 節裡默默使用過的語法一次講透，並整理常見錯誤與除錯心法。學完本節之後，你不再只是「看過」這些設計，而是能<strong>親自跑起來</strong>。</p>
+<h2 id="1-5-1-hdl-語法總覽-一份晶片的完整解剖">1.5.1 HDL 語法總覽：一份晶片的完整解剖</h2>
+<p>一份標準的 Nand2Tetris HDL 檔案具備以下骨架：</p>
+<pre><code class="language-hdl">// ============================================================
+// 檔名：&lt;ChipName&gt;.hdl
+// 說明：____的硬體描述
+// ============================================================
+
+CHIP ChipName {
+    IN    輸入匯流排與接腳；
+    OUT   輸出匯流排與接腳；
+
+    PARTS:
+        // 元件實例與接線指令
+        PartName(...);
+    // （可選）BUILTIN / CLOCKED 宣告
+}
+
+</code></pre>
+<h3 id="chip-關鍵字">CHIP 關鍵字</h3>
+<p><code>CHIP &lt;名稱&gt; { ... }</code> 宣告了一個晶片的藍圖。<strong>檔案名稱必須與晶片名稱完全一致</strong>（大小寫也必須一致），例如 <code>And.hdl</code> 內必須是 <code>CHIP And</code>。這條規則確保模擬器（與未來的我們自己）能一見到文件名就猜出內容。名稱通常慣用 PascalCase（每個單字首字大寫）。</p>
+<h3 id="in-out-介面宣告">IN / OUT 介面宣告</h3>
+<p>介面描述了晶片的「插座」——對外暴露的接腳：</p>
+<pre><code class="language-hdl">CHIP Example {
+    IN    a, b[16], sel;      // 輸入：單一 bit 的 a、16-bit 匯流排 b、單 bit 的 sel
+    OUT   out[16];            // 輸出：16-bit 匯流排
+    ...
+}
+</code></pre>
+<p>語法重點：</p>
+<ul>
+<li>以逗號分隔多個介面，以分號 <code>;</code> 結束。</li>
+<li><code>x[16]</code> 表示 <strong>16-bit 的 bus（匯流排）</strong>；沒有方括號就是單一位元。</li>
+<li>bus 的 index 慣例：<code>bus[0]</code> 為最低有效位元（LSB），<code>bus[15]</code> 為最高（MSB）。</li>
+<li>介面名稱只能使用字母、數字、下劃線，且不得以數字開頭（如 <code>2nd</code> 不合法）。</li>
+</ul>
+<h3 id="parts-區域-元件實例與接線">PARTS 區域：元件實例與接線</h3>
+<p><code>PARTS:</code> 之後的每一行都是「<strong>實例化一個零件，並把它的接腳接到本晶片的訊號網（net）</strong>」。接線語法的形式：</p>
+<pre><code class="language-hdl">PartName(pin1=wire1, pin2=wire2, out=internalWire, ...);
+</code></pre>
+<ul>
+<li><code>pin=wire</code>：把零件接腳 <code>pin</code> 接到本晶片某條導線 <code>wire</code> 上。<code>wire</code> 可以是本晶片的 IN/OUT 名稱，也可以是先前其他零件 <code>out=</code> 建立的內部導線。</li>
+<li><code>out=name</code>：為這個零件實例的輸出接腳命名。<strong>同一個名稱可以被多個零件共享</strong>——這表示它們的輸出「短路連在一起」送到同一個網；若命名與本晶片的 OUT 同名，表示直接餵給外部。</li>
+<li>bus 可以同時整體接（<code>a=a</code>，需雙方寬度相等），也可接單一或片段（<code>out=out[0]</code>、<code>in=in[4..7]</code>）。</li>
+<li>每個零件實例的每支介面接腳都<strong>必須</strong>接上某條線，否則編譯報錯。</li>
+</ul>
+<h3 id="builtin-與-clocked">BUILTIN 與 CLOCKED</h3>
+<ul>
+<li><strong>BUILTIN</strong>：宣告該晶片行為「內建於模擬器」，內部不再有 PARTS。全書只有 <code>Nand</code> 屬於此類（1.2 節）。</li>
+<li><strong>CLOCKED</strong>：宣告該晶片有時序行為（受時脈控制）。本章的組合電路都用不到，第 3 章的 <code>DFF</code>、<code>Register</code>、<code>RAM</code>、<code>PC</code> 才會看到它。</li>
+</ul>
+<blockquote>
+<p>一個晶片要嘛是 <strong>BUILTIN</strong>、要嘛有 <strong>PARTS</strong>，二選一，不能同時出現——因為「行為如何產生」只能有一條途徑。</p>
+</blockquote>
+<h2 id="1-5-2-註解-為藍圖寫說明書">1.5.2 註解：為藍圖寫說明書</h2>
+<p>HDL 支援兩種註解，和前幾節看到的一模一樣：</p>
+<pre><code class="language-hdl">// 單行註解：斜線兩條，到行尾為止。
+
+/* 區塊註解（較少用）：
+   包在 /星號 與 星號/ 之間，
+   可以跨越多行。 */
+</code></pre>
+<p>註解雖不影響功能（模擬器忽略它們），但在硬體團隊中是<strong>不可或缺</strong>的：</p>
+<ul>
+<li>標註設計意圖（「這裡為什麼選 sel[1] 先分流」）。</li>
+<li>標註布林式或真值表對照（如 <code>// out = (¬sel·a)+(sel·b)</code>），讓讀者一眼對上公式。</li>
+</ul>
+<p>我們在前幾節的程式碼裡都精心加了這類註解，請養成同樣的習慣。</p>
+<h3 id="常見註解陷阱">常見註解陷阱</h3>
+<ul>
+<li>註解內出現 <code>//</code> 沒關係，但註解不能「中途吃掉」程式碼。例如行尾 <code>And(...); // 進行 AND</code> 是合法的；但把註解寫進接線參數中間（<code>And(a=a /* 註解 */, b=b)</code>）在某些版本解析器下會出錯——<strong>註解請放在整行之首或整行之尾</strong>，最安全。</li>
+</ul>
+<h2 id="1-5-3-把檔案餵給模擬器-載入與設定">1.5.3 把檔案餵給模擬器：載入與設定</h2>
+<p>在動手之前，先建立工作資料夾的慣例。Nand2Tetris 官方工具發布包結構如下（依你的版本略有出入）：</p>
+<pre><code>nand2tetris/
+├── projects/
+│   └── 01/                    ← 第 1 章專案資料夾
+│       ├── And.hdl
+│       ├── And.tst           ← 測試腳本
+│       ├── And.cmp           ← 期望輸出比對檔
+│       └── And.out           ← 模擬器執行後自動產生的實際輸出
+├── tools/
+│   ├── HardwareSimulator.sh  ── macOS/Linux
+│   ├── HardwareSimulator.bat ── Windows
+│   └── ...
+└── ...
+</code></pre>
+<h3 id="啟動模擬器">啟動模擬器</h3>
+<ul>
+<li><strong>Windows</strong>：雙擊 <code>tools/HardwareSimulator.bat</code>。</li>
+<li><strong>macOS / Linux</strong>：於終端機執行 <code>./tools/HardwareSimulator.sh</code>（首次需 <code>chmod +x</code> 授權）。</li>
+<li>出現的主視窗分為：<strong>上方的晶片程式碼編輯區</strong>、<strong>左側的輸入/輸出腳位表</strong>、<strong>下方的執行控制面板</strong>（Step、Run、Reset、單步時脈等）。</li>
+</ul>
+<h3 id="載入我們自己的晶片">載入我們自己的晶片</h3>
+<ol>
+<li>從選單選 <code>File ▸ Load Chip</code>，瀏覽到 <code>projects/01/And.hdl</code>。</li>
+<li>載入後，模擬器右側會列出 <code>a</code>、<code>b</code>（IN）與 <code>out</code>（OUT）腳位。</li>
+<li>若你的 <code>.hdl</code> 有語法錯誤，編輯區下方會出現紅字錯誤訊息——這是你的第一個除錯戰場。</li>
+</ol>
+<h3 id="手動試機-不寫測試腳本也行">手動試機（不寫測試腳本也行）</h3>
+<p>模擬器左側可以直接點擊修改 <code>a</code>、<code>b</code> 的數值，再按 <strong>Step</strong>（單步）觀察 <code>out</code>。這是快速「聞一下」電路對不對的手動方式，適合語法剛改完時：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">a</th>
+<th style="text-align:center">b</th>
+<th style="text-align:center">預期 out</th>
+<th style="text-align:center">實際觀察</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">And: 0 ✓</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">And: 0 ✓</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">And: 0 ✓</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">And: 1 ✓</td>
+</tr>
+</tbody>
+</table>
+<p>但手動測試無法重複、也容易漏測。真正的工程實務是用<strong>測試腳本</strong>把檢查自動化——接下來就是重頭戲。</p>
+<h2 id="1-5-4-撰寫-tst-測試腳本與-cmp-比較檔">1.5.4 撰寫 .tst 測試腳本與 .cmp 比較檔</h2>
+<p>一份標準測試由<strong>兩個檔案</strong>構成：</p>
+<ul>
+<li><strong><code>ChipName.tst</code></strong>：告訴模擬器「要我怎麼跑」——設定腳位、推進時脈、決定輸出哪些欄位。</li>
+<li><strong><code>ChipName.cmp</code></strong>：告訴模擬器「結果應該是什麼」——每一行是該步期望的輸出欄位值。</li>
+</ul>
+<h3 id="範例-and-tst">範例：And.tst</h3>
+<pre><code class="language-bash">// And.tst
+// 測試 And 晶片：遍歷全部 4 組輸入組合
+// 檔案：projects/01/And.tst
+
+load And.hdl,          // 載入要測的晶片（注意 load 檔案在專案資料夾內）
+output-file And.out,   // 指定實際輸出檔（模擬器自動產生）
+compare-to And.cmp,    // 指定比對對象
+output-list a%B1.3.1 b%B3.1.3 out%B1.1.3;
+
+// 設定初始腳位
+set a 0,
+    b 0,
+    eval,
+    output;
+
+set a 0,
+    b 1,
+    eval,
+    output;
+
+set a 1,
+    b 0,
+    eval,
+    output;
+
+set a 1,
+    b 1,
+    eval,
+    output;
+</code></pre>
+<p>逐句解說這個腳本：</p>
+<table>
+<thead>
+<tr>
+<th>語法</th>
+<th>意義</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>load And.hdl</code></td>
+<td>載入受測晶片。</td>
+</tr>
+<tr>
+<td><code>output-file And.out</code></td>
+<td>實際輸出寫到 <code>And.out</code>。</td>
+</tr>
+<tr>
+<td><code>compare-to And.cmp</code></td>
+<td>拿 <code>And.out</code> 與 <code>And.cmp</code> 逐行比對。</td>
+</tr>
+<tr>
+<td><code>output-list a%B1.3.1 b%B3.1.3 out%B1.1.3</code></td>
+<td>指定「該顯示什麼欄位、怎麼格式化」。格式是 <code>name%B&lt;width&gt;.&lt;radix&gt;.&lt;offset&gt;</code>，稍後詳解。</td>
+</tr>
+<tr>
+<td><code>set a 0</code></td>
+<td>把腳位 a 設為 0（之後 a 值是常量）。</td>
+</tr>
+<tr>
+<td><code>eval</code></td>
+<td>讓模擬器重新計算所有輸出（等於按一次 Step）。</td>
+</tr>
+<tr>
+<td><code>output</code></td>
+<td>把目前所有腳位值寫入 <code>And.out</code> 一行。</td>
+</tr>
+<tr>
+<td><code>b</code>（選用）</td>
+<td>推進時脈。本章組合電路用不到；第 3 章 <code>tick/tock</code> 才是主角。</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>注意 <code>set</code> 與 <code>eval</code>、<code>output</code> 之間的逗號：一行可以包含多個指令，以逗號分隔、以分號結尾。這是 .tst 的慣例語法。</p>
+</blockquote>
+<h3 id="output-list-格式詳解-b3-1-3">output-list 格式詳解：<code>%B3.1.3</code></h3>
+<p><code>output-list 欄位%B格式</code> 的格式為 <code>B&lt;width&gt;.&lt;radix&gt;.&lt;offset&gt;</code>：</p>
+<ul>
+<li><code>%B</code> 表示這一欄是<strong>二進位顯示</strong>（<code>%D</code> 為十進位、<code>%X</code> 為十六進位）。</li>
+<li><strong>width</strong>：此欄總共佔幾個字元寬（含小數點）。</li>
+<li><strong>radix</strong>：印出幾個 bit 位元。</li>
+<li><strong>offset</strong>：從第幾個 bit 開始印。</li>
+<li>例：<code>a%B3.1.3</code> → 印 a，寬 3、取 1 個 bit（即 <code>a[0]</code>）。</li>
+<li>例：<code>b%B3.1.3</code> → 印 b 的 bit[0]（因為 b 只有 1 bit）。</li>
+<li>例：<code>out%B1.1.3</code> → 印 out 的 bit[0]。</li>
+</ul>
+<p>（單 bit 訊號欄位如 <code>a%B1.1.0 out%B1.1.0</code> 每個版本寫法略有不同；上面把 offset 設為 3 只是為了示範語法——<strong>最通用的寫法是直接在腳本中對齊欄位寬度即可</strong>。實務上直接抄官方範例的 <code>output-list</code> 最省心。）</p>
+<h3 id="與之比對的-and-cmp">與之比對的 And.cmp</h3>
+<pre><code class="language-bash">// And.cmp
+// And 的期望輸出，與 And.tst 的每一步一一對應
+
+|  a  |  b  | out |
+|  0  |  0  |  0  |
+|  0  |  1  |  0  |
+|  1  |  0  |  0  |
+|  1  |  1  |  1  |
+</code></pre>
+<p><code>.cmp</code> 的每一行對應 <code>.tst</code> 的每一次 <code>output</code>。只要實際的 <code>And.out</code> 有任一行與 <code>.cmp</code> 不一致，模擬器就會在<strong>比對清單</strong>中標出哪一步失敗與期望值。</p>
+<p>在 <code>projects/01</code> 中官方附上了 <strong>And、Not、Or、Xor、Mux 等每一顆晶片的 .tst 與 .cmp</strong>——請務必親手「全部跑一遍」，這比讀書更有用。</p>
+<h2 id="1-5-5-執行測試-完整流程示範">1.5.5 執行測試：完整流程示範</h2>
+<p>這裡我們以自己實作的一顆晶片 <code>And</code> 為例，走完「寫檔 → 執行 → 驗證」全程：</p>
+<p><strong>步驟 1：準備檔案</strong>（三個檔案放入 <code>projects/01/</code>）</p>
+<pre><code class="language-hdl">// And.hdl
+CHIP And {
+    IN  a, b;
+    OUT out;
+    PARTS:
+    Nand(a=a, b=b, out=na);
+    Nand(a=na, b=na, out=out);
+}
+</code></pre>
+<p>加上上一小節的 <code>And.tst</code> 與 <code>And.cmp</code>。</p>
+<p><strong>步驟 2：在模擬器中載入測試</strong></p>
+<p>選單 <code>File ▸ Load Script</code>（或直接拖曳 <code>And.tst</code> 進視窗）。模擬器會自動依照腳本第一行 <code>load And.hdl</code> 把晶片載好。</p>
+<p><strong>步驟 3：一鍵跑到底</strong></p>
+<p>按下 <strong>Run</strong>（黃色播放鍵）：模擬器依序執行每一組 <code>set → eval → output</code>，把結果寫進 <code>And.out</code>，並與 <code>And.cmp</code> 比對。</p>
+<p><strong>步驟 4：解讀結果</strong></p>
+<ul>
+<li>若全部比對成功：會彈出 <strong>「Comparison ended successfully」</strong> 的綠色訊息——恭喜，這顆晶片合格了！</li>
+<li>若有失敗：比對面板會指出<strong>第幾個步驟</strong>、<strong>哪一行 .cmp</strong>、實際值與期望值分別是多少。依照失敗的輸入組合，回到真值表再推敲一次設計。</li>
+</ul>
+<p><strong>步驟 5：可視化除錯</strong></p>
+<p>除了文字比對，模擬器左側的腳位表會即時顯示每一步的 <code>a b out</code>；你可以切到 <strong>Step</strong>（單步）一組一組檢查邏輯，或以滑鼠點選腳位逐個驗證。高解析度的教學影片上常出現的「拉 pin、看燈」就是這個流程。</p>
+<p>一個常見的實作任務：<strong>先寫 .cmp 建立「目標」，再寫 .hdl 朝目標逼近，最後用 .tst 檢驗</strong>——這是「測試先行」的硬體工程思維，在後續章節會一再重演。</p>
+<h2 id="1-5-6-常見錯誤與除錯技巧">1.5.6 常見錯誤與除錯技巧</h2>
+<h3 id="a-語法層面的高頻地雷">A. 語法層面的高頻地雷</h3>
+<table>
+<thead>
+<tr>
+<th>錯誤</th>
+<th>症狀</th>
+<th>解法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>檔名/晶片名不一致</td>
+<td><code>CHIP And</code> 的預期名稱與檔名不符</td>
+<td>檔名與 <code>CHIP</code> 名稱一字不差。</td>
+</tr>
+<tr>
+<td>結尾少分號</td>
+<td>解析到一半報錯</td>
+<td><code>IN a, b;</code>、<code>OUT out;</code>、每條 <code>PART</code> 都要 <code>;</code>。</td>
+</tr>
+<tr>
+<td>忘了 <code>PARTS:</code> 冒號</td>
+<td>「找不到 PARTS」</td>
+<td>記得 <code>PARTS:</code> 後面是冒號不是分號。</td>
+</tr>
+<tr>
+<td>未使用的零件接腳</td>
+<td>報「pin is not connected」</td>
+<td>每個零件每支 pin 都要接到某條線。</td>
+</tr>
+<tr>
+<td>接上不存在的訊號</td>
+<td>報「input is not a signal」</td>
+<td>檢查名稱拼字；內部線名只能來自 <code>out=name</code> 或 <code>IN</code>。</td>
+</tr>
+<tr>
+<td>bus 寬度不符</td>
+<td>報匯流排寬度錯誤</td>
+<td><code>a=a</code> 須兩邊位元數相等，或改用切片 <code>a[4..7]</code>。</td>
+</tr>
+<tr>
+<td>先輸出後接線</td>
+<td>報「multiple drivers」/順序問題</td>
+<td>先進來的 <code>out=</code> 才能被後面的行當輸入；HDL 是順序描述。</td>
+</tr>
+</tbody>
+</table>
+<p>其中「<strong>把 out 接到 b 再接到 b 的同一條 as 輸入</strong>」之類的環路，模擬器會阻止——組合電路中不允許無脈動的循環。</p>
+<h3 id="b-邏輯層面的除錯軍規">B. 邏輯層面的除錯軍規</h3>
+<ol>
+<li><strong>拉真值表</strong>：設計前先畫出目標真值表，再寫布林式，最後寫 HDL。真值表是唯一裁決官。</li>
+<li><strong>分而使勝</strong>：大晶片（如 Mux8Way16）先測小零件（先證明 Mux16 正確，再組大樹）；出錯時先把樹砍一半，換另一半試。</li>
+<li><strong>看中間線</strong>：設法把內部訊號（如 <code>na</code>、<code>t1</code>）用 <code>output-list</code> 印出來，或用「多插一根觀察線」的暫時版本，確認每一段分離電路的行為。</li>
+<li><strong>善用 .cmp 製造「最小失敗案例」</strong>：把 .tst 改成只跑失敗的那一組輸入，縮小戰場。</li>
+<li><strong>保持對稱美感</strong>：如果某個電路接線「歪歪扭扭不規則」，往往藏著 bug——樹狀 Mux、逐位元 And16 都應該乾淨對稱。</li>
+<li><strong>第一步先驗證 BUILTIN 為真</strong>：若你的晶片全錯，先確認最底層 Nand 本身行為正常（內建，永遠是對的），再往上一層層找。</li>
+</ol>
+<h3 id="c-除錯心法-二分法">C. 除錯心法：二分法</h3>
+<p>以下流程圖是任何硬體除錯的基本盤：</p>
+<pre><code>症狀：某組輸入的實際輸出 ≠ 期望值
+   │
+   ▼
+真值表對過了嗎？ ──否──▶ 回到 1.1 節重新推導
+   │是
+   ▼
+HDL 接線與布林式對得上嗎？ ──否──▶ 逐行比對 pin 接線
+   │是
+   ▼
+把電路切半，各餵已知的簡單輸入
+   │
+   ├─ 前半正常 ▶ 縮小到後半（或反之）
+   └─ 後半正常 ▶ 縮小到前半
+   │
+   ▼
+重複直到找出那「一顆錯誤的閘或一條錯接的線」
+</code></pre>
+<h2 id="1-5-7-實戰延伸-把整套-01-專案跑完">1.5.7 實戰延伸：把整套 01 專案跑完</h2>
+<p>本章的完整「專案 01」（<code>projects/01</code>）包含下方清單——請逐一實作並通過官方 .tst/.cmp：</p>
+<pre><code class="language-text">Not, And, Or, Xor,            // 1.3 節：四元素
+Mux, DMux,                    // 1.4 節：轉轍員與分流器
+Not16, And16, Or16, Mux16,    // 1.4 節：16-bit 並行版
+Or8Way,                       // 1.4 節：多輸入偵測
+Mux4Way16, Mux8Way16,         // 1.4 節：多路選擇樹
+DMux4Way, DMux8Way            // 1.4 節：多路分流樹
+</code></pre>
+<p>驗收標準：<strong>每一顆晶片都被 <code>Run</code> 一次、報出「Comparison ended successfully」</strong>。建議自訂練習：先不抄官方 .tst，自己寫一份 .tst/.cmp 後再對比官方版——你會對語法與閘的行為同時上手。</p>
+<p>當你把這 15 顆晶片全部跑綠燈時，恭喜——你已親手「煉」出通往 ALU 與 CPU 的全部基礎積木，而且每一塊都經過雙重驗證（你的推導 + 模擬器比對）！</p>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>HDL 骨架</strong>：<code>CHIP</code> + <code>IN</code>/<code>OUT</code> 介面 + <code>PARTS</code>（內部零件與接線），組合電路「一顆 BUILTIN，其餘 PARTS」。</li>
+<li><strong>匯流排</strong>：<code>x[16]</code> 宣告 16-bit 介面，可整體接、可切片 <code>x[4..7]</code>、可取單 bit <code>x[3]</code>。</li>
+<li><strong>註解</strong>：<code>//</code> 單行、<code>/* */</code> 區塊；不影響功能，卻決定藍圖的「可讀性與可信度」。</li>
+<li><strong>測試三兄弟</strong>：<code>.hdl</code>（藍圖）、<code>.tst</code>（指令）、<code>.cmp</code>（期望值）——<code>load/output-file/compare-to</code> 三行宣告 + <code>set/eval/output</code> 循環構成最小測試單元。</li>
+<li><strong>執行流程</strong>：Load Script → Run → 檢視「Comparison ended successfully」或紅字失敗。</li>
+<li><strong>除錯軍規</strong>：真值表對照、二分切半、輸出內部中間線、最小失敗案例；常見地雷如檔名不符、缺分號、bus 寬度不合、接線環路。</li>
+</ul>
+<p>至此，第一章完結。我們已經從布林代數的公理（1.1）、唯一基石 Nand（1.2）、四元素閘（1.3）、多路與多通道閘（1.4），一路實作並測試（1.5）了完整的基礎邏輯閘庫。第二章，讓我們把這批積木組裝成能真正「算數」的單元——<strong>Half Adder、Full Adder、Inc16、Add16</strong>，一步步向 Hack 電腦的運算核心 <strong>ALU</strong> 推進！</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="1.4.html">⇦ 上一節</a><a class="nav-btn" href="2.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

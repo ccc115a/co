@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 13 章（續）　從 Jack 編譯到 Hardware 執行的完整流轉</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link active" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="13.1.html">⇦ 上一節</a></div>
+  <div class="title">第 13 章（續）　從 Jack 編譯到 Hardware 執行的完整流轉</div>
+  <div class="nav-right"><a class="nav-btn" href="13.3.html">下一節 ⇨</a></div>
+</div>
+<article id="content">
+<h1 id="第-13-章-續-從-jack-編譯到-hardware-執行的完整流轉">第 13 章（續）　從 Jack 編譯到 Hardware 執行的完整流轉</h1>
+<h2 id="前言">前言</h2>
+<p>上一節我們從巨觀角度審視了整條工具鏈。本節將以一個具體的 Jack 程式為例，逐步追蹤它在每一層的轉變，讓讀者親眼看到「抽象」如何一層一層被展開，最終化為硬體線路上的電壓變化。我們也將說明如何讓完整的 Tetris 遊戲在 Hack 平台上運行。</p>
+<h2 id="13-2-1-範例程式-一個簡單的互動常式">13.2.1　範例程式：一個簡單的互動常式</h2>
+<p>以下是一個小型的 Jack 程式——按下任意鍵時在螢幕上畫一個像素：</p>
+<pre><code class="language-jack">class PixelDrawer {
+    function void main() {
+        var int x, y, key;
+        let x = 0;
+        let y = 0;
+        while (y &lt; 256) {
+            let x = 0;
+            while (x &lt; 512) {
+                let key = Keyboard.readKey();
+                if (key &gt; 0) {
+                    do Screen.drawPixel(x, y);
+                }
+                let x = x + 1;
+            }
+            let y = y + 1;
+        }
+        return;
+    }
+}
+</code></pre>
+<p>這個程式雖然簡短，但已經涵蓋了變數、迴圈、條件判斷、系統呼叫（<code>Keyboard.readKey</code>、<code>Screen.drawPixel</code>）等核心概念，足以展示全棧流轉。</p>
+<h2 id="13-2-2-第一層轉換-jack-compiler-source-vm-code">13.2.2　第一層轉換：Jack Compiler（Source → VM Code）</h2>
+<p>編譯器接收 <code>.jack</code> 源碼，進行詞彙分析、語法分析、語意分析，最終產生 <code>.vm</code> 檔案。以下列舉關鍵轉換：</p>
+<p><strong>函式定義的轉換：</strong></p>
+<pre><code class="language-jack">function void main() {
+</code></pre>
+<p>被轉換為：</p>
+<pre><code class="language-vm">function Main.main 3   // 3 個局部變數: x, y, key
+</code></pre>
+<p><strong><code>let</code> 賦值的轉換：</strong></p>
+<pre><code class="language-jack">let x = 0;
+</code></pre>
+<p>被轉換為：</p>
+<pre><code class="language-vm">push constant 0
+pop local 0       // x 的欄位索引為 0
+</code></pre>
+<p><strong><code>while</code> 迴圈的轉換：</strong></p>
+<pre><code class="language-vm">// while (y &lt; 256) 的條件檢查
+label LOOP_START
+push local 1       // y
+push constant 256
+lt
+if-goto LOOP_END
+
+// 迴圈本體
+...
+goto LOOP_START
+label LOOP_END
+</code></pre>
+<p><strong>方法呼叫的轉換：</strong></p>
+<pre><code class="language-jack">do Screen.drawPixel(x, y);
+</code></pre>
+<p>被轉換為：</p>
+<pre><code class="language-vm">push local 0       // x
+push local 1       // y
+call Screen.drawPixel 2
+pop temp 0          // 丢棄回傳值
+</code></pre>
+<p><strong>編譯器的輸出</strong>（完整的 <code>Main.vm</code>）大致如下：</p>
+<pre><code class="language-vm">function Main.main 3
+push constant 0
+pop local 0
+push constant 0
+pop local 1
+label WHILE_START0
+push local 1
+push constant 256
+lt
+not
+if-goto WHILE_END0
+push constant 0
+pop local 0
+label WHILE_START1
+push local 0
+push constant 512
+lt
+not
+if-goto WHILE_END1
+call Keyboard.readKey 0
+pop local 2
+push local 2
+push constant 0
+gt
+not
+if-goto IF_END0
+push local 0
+push local 1
+call Screen.drawPixel 2
+pop temp 0
+label IF_END0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_START1
+label WHILE_END1
+push local 1
+push constant 1
+add
+pop local 1
+goto WHILE_START0
+label WHILE_END0
+push constant 0
+return
+</code></pre>
+<p><strong>設計思路</strong>：編譯器在這一層已經把所有的高階結構（<code>while</code>、<code>if</code>、方法呼叫）攤平為純粹的堆疊操作與標籤跳轉。這種「攤平」就是抽象層轉換的核心——消除語法糖，留下可機械執行的基本動作。</p>
+<h2 id="13-2-3-第二層轉換-vm-translator-vm-code-assembly">13.2.3　第二層轉換：VM Translator（VM Code → Assembly）</h2>
+<p>VM Translator 接收 <code>.vm</code> 碼，將每一條虛擬機指令翻譯為 Hack 組合語言。以下展示幾個關鍵映射：</p>
+<p><strong><code>push constant 0</code>：</strong></p>
+<pre><code class="language-asm">@0
+D=A          // D = 0
+@SP
+A=M          // A = SP 指向的位址
+M=D          // RAM[SP] = 0
+@SP
+M=M+1        // SP++
+</code></pre>
+<p><strong><code>pop local 0</code>：</strong></p>
+<pre><code class="language-asm">// 計算目標位址: LCL + 0
+@LCL
+D=M          // D = LCL
+@0
+D=D+A        // D = LCL + 0
+@R13
+M=D          // 暫存到 R13
+
+@SP
+AM=M-1       // SP--
+D=M          // D = 彈出的值
+
+@R13
+A=M          // A = 目標位址
+M=D          // 寫入
+</code></pre>
+<p><strong><code>add</code>：</strong></p>
+<pre><code class="language-asm">@SP
+AM=M-1       // SP--
+D=M          // D = 第二個運算元
+@SP
+AM=M-1       // SP--
+M=D+M        // RAM[SP] = D + RAM[SP]
+@SP
+M=M+1        // SP++
+</code></pre>
+<p><strong><code>label</code>、<code>goto</code>、<code>if-goto</code>：</strong></p>
+<pre><code class="language-asm">// label WHILE_START0
+(WHILE_START0)
+
+// goto WHILE_START0
+@WHILE_START0
+0;JMP
+
+// if-goto WHILE_END0
+@SP
+AM=M-1       // SP--
+D=M          // D = 條件值
+@WHILE_END0
+D;JNE        // 若 D ≠ 0 則跳轉
+</code></pre>
+<p><strong><code>call</code>：</strong> 這是最複雜的指令之一，需要保存呼叫端狀態：</p>
+<pre><code class="language-asm">// call Screen.drawPixel 2
+@RETURN_42   // 回傳位址的標籤
+D=A
+@SP
+A=M
+M=D          // 推入回傳位址
+@SP
+M=M+1
+@LCL
+D=M
+@SP
+A=M
+M=D          // 推入 LCL
+@SP
+M=M+1
+// ... 同樣推入 ARG, THIS, THEN
+// 重定位 ARG = SP - 5 - 2
+// 重定位 LCL = SP
+// goto Screen.drawPixel
+</code></pre>
+<p><strong>設計思路</strong>：VM Translator 的挑戰在於為 <code>call</code> 和 <code>function</code> 正確生成「棧框」（stack frame）的保存與恢復。每一個 VM 指令對應的組語指令數量不同，但翻譯是機械式的、無狀態的（除了標籤生成），這使得它比編譯器容易實作。</p>
+<h2 id="13-2-4-第三層轉換-assembler-assembly-binary">13.2.4　第三層轉換：Assembler（Assembly → Binary）</h2>
+<p>Assembler 將組語轉為 16-bit 二進位碼。整個過程分為兩趟掃描：</p>
+<p><strong>第一趟：建立符號表</strong></p>
+<p>掃描所有 <code>(LABEL)</code> 定式的標籤，記錄其對應的 ROM 位址。例如 <code>(WHILE_START0)</code> 可能對應位址 <code>15</code>。</p>
+<p><strong>第二趟：產生機器碼</strong></p>
+<p>逐行翻譯：</p>
+<pre><code class="language-asm">@0          → 0000000000000000   // A 指令：A = 0
+D=A         → 1110110000010000   // C 指令：dest=D, comp=A, jump=null
+@SP         → 0000000000010000   // A = 16 (SP 的位址)
+A=M         → 1111110000010000   // A = RAM[A]
+M=D         → 1110001100001000   // RAM[A] = D
+</code></pre>
+<p>Hack 的 A 指令格式為 <code>0xxxxxxxxxxxxxxx</code>（15 個位元表示常數或位址），C 指令格式為 <code>111accccccdddjjj</code>（comp + dest + jump 三個欄位）。</p>
+<p><strong>設計思路</strong>：Assembler 的設計非常簡潔——A 指令和 C 指令各自有固定的位元佈局，翻譯完全是查表與拼接。唯一需要額外處理的是符號解析（變數自動分配位址從 <code>16</code> 開始）。</p>
+<h2 id="13-2-5-第四層-cpu-執行-binary-硬體行為">13.2.5　第四層：CPU 執行（Binary → 硬體行為）</h2>
+<p>CPU 模擬器（或真實的 Hack 硬體）收到 <code>.hack</code> 後，將其載入 ROM。每個時脈週期，CPU：</p>
+<ol>
+<li><strong>Fetch</strong>：讀取 ROM[PC] 取得當前指令。</li>
+<li><strong>Decode</strong>：根據 bit 15 判斷是 A 指令或 C 指令。</li>
+<li><strong>Execute</strong>：
+<ul>
+<li>A 指令：將 bit 0–14 的值寫入 A 暫存器。</li>
+<li>C 指令：ALU 根據 comp 欄位運算，結果依 dest 欄位寫入目標暫存器，最後根據 jump 欄位決定是否跳轉。</li>
+</ul>
+</li>
+<li><strong>Write-back</strong>：ALU 輸出寫入 DRegister、ARegister 或記憶體。</li>
+<li><strong>PC 更新</strong>：根據跳轉條件更新程式計數器。</li>
+</ol>
+<pre><code class="language-hdl">// CPU.hdl 的核心邏輯（簡化）
+Mux16(a=AOut, b=instruction, sel=isC, out=aluX);       // 運算元 X
+Mux16(a=DRegister, b=ARegister, sel=instruction[12], out=aluY); // 運算元 Y
+ALU(x=aluX, y=aluY, ... , out=aluOut, out=outM);
+
+// 根據 dest 欄位寫入
+Mux16(a=ARegister, b=aluOut, sel=instruction[5], out=aNext);  // dest a
+Mux16(a=DRegister, b=aluOut, sel=instruction[4], out=dNext);  // dest d
+</code></pre>
+<p><strong>從機器碼到螢幕像素</strong>——最終，<code>call Screen.drawPixel 2</code> 經過層層翻譯後，會在某個時脈週期把一個值寫入 RAM 位址 <code>16384</code> 到 <code>24575</code> 之間的某個位置，這個位置對應到 Screen Memory Map 的某個位元，Hardware Simulator 再將該位元渲染為螢幕上的一個亮點。</p>
+<h2 id="13-2-6-讓-tetris-實際運行">13.2.6　讓 Tetris 實際運行</h2>
+<p>nand2tetris 課程提供了一個完整的 <code>Tetris.jack</code> 專案，包含多個類別：</p>
+<pre><code>Tetris.jack/          // 專案目錄
+├── Main.jack         // 程式入口
+├── Game.jack         // 遊戲邏輯
+├── Board.jack        // 棋盤管理
+├── Piece.jack        // 方塊物件
+├── Screen.jack       // 螢幕繪圖（覆寫 OS 版本）
+├── Keyboard.jack     // 鍵盤處理
+└── ... 其他輔助類別
+</code></pre>
+<h3 id="執行步驟">執行步驟</h3>
+<pre><code class="language-bash"># 1. 編譯所有 .jack 檔案
+java -cp JackCompiler.jar JackCompiler Tetris.jack/
+
+# 2. 確認產生了多個 .vm 檔案
+ls Tetris.jack/*.vm
+# Main.vm, Game.vm, Board.vm, Piece.vm, Screen.vm, Keyboard.vm, ...
+
+# 3. 翻譯所有 VM 檔案為組語
+java -cp VMTranslator.jar VMTranslator Tetris.jack/
+
+# 4. 組譯為機器碼
+java -cp Assembler.jar Assembler Tetris.jack/Tetris.asm
+
+# 5. 在 CPU Emulator 中執行
+#    載入 Computer.hdl，選擇 Tetris.hack 作為 ROM
+#    按 Yes 重置，再按 Run
+</code></pre>
+<h3 id="注意事項">注意事項</h3>
+<ul>
+<li><strong>OS 模組的處理</strong>：Tetris 使用了 OS 的 <code>Math</code>、<code>Screen</code>、<code>Keyboard</code> 等模組。這些 OS 模組需要先編譯成 <code>Math.vm</code>、<code>Screen.vm</code> 等，與遊戲的 VM 檔案一起送入 VM Translator。或者，使用提供的預編譯 OS（<code>OS.hex</code> 或 <code>OS.tst</code>）。</li>
+<li><strong>自訂 Screen 模組</strong>：Tetris 專案可能包含自己的 <code>Screen.jack</code>，用更高效的方式直接操作 Screen Memory Map，覆寫 OS 預設的繪圖函式。</li>
+<li><strong>鍵盤輸入</strong>：在 CPU Emulator 中，可以用滑鼠點擊鍵盤區域模擬按鍵。</li>
+</ul>
+<h2 id="13-2-7-全棧流轉的觀察">13.2.7　全棧流轉的觀察</h2>
+<p>追蹤完整個流程後，我們可以觀察到幾個重要的模式：</p>
+<ol>
+<li>
+<p><strong>資訊量守恆</strong>：每一層的轉換都不會丟失原始程式的語意資訊，只是換了一種表達方式。Jack 的 <code>while</code> 迴圈在 VM 層變成標籤跳轉，在組語層變成 <code>@LABEL</code> + <code>0;JMP</code>，在機器碼層變成一串 16 個位元——但做的事完全一樣。</p>
+</li>
+<li>
+<p><strong>抽象逐層消融</strong>：越高階的結構（物件、方法、迴圈）在越低階的表示中被攤平。到 CPU 層，只剩下「讀記憶體、做運算、寫記憶體、更新程式計數器」這四個動作。</p>
+</li>
+<li>
+<p><strong>複雜度的轉移</strong>：編譯器承受了最大的複雜度（語法分析、語意分析、程式碼生成），而硬體則極度簡化（只有 A 指令和 C 指令兩種）。這是刻意的設計——把複雜度往上推，讓硬體保持簡單。</p>
+</li>
+</ol>
+<h2 id="本章小結">本章小結</h2>
+<p>本節以一個具體的 Jack 程式為例，完整追蹤了從原始碼到硬體執行的每一層轉換。我們看到了編譯器如何把高階語法攤平為堆疊操作，VM Translator 如何把虛擬碼翻譯為組語，Assembler 如何把組語編碼為 16-bit 機器碼，以及 CPU 如何在時脈驅動下逐步執行這些指令。最後，我們說明了如何讓 nand2tetris 提供的 Tetris 遊戲在 Hack 平台上實際運行。整個過程的核心啟示是：<strong>計算機系統的每一層都是上一層的「翻譯」，而所有翻譯都保持相同的計算語意</strong>。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="13.1.html">⇦ 上一節</a><a class="nav-btn" href="13.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

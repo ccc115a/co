@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.3 兩階段掃描（Two-Pass）組譯器實作</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link active" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="6.2.html">⇦ 上一節</a></div>
+  <div class="title">6.3 兩階段掃描（Two-Pass）組譯器實作</div>
+  <div class="nav-right"><a class="nav-btn" href="6.4.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch06.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="6-3-兩階段掃描-two-pass-組譯器實作">6.3 兩階段掃描（Two-Pass）組譯器實作</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說出「為什麼標號不能只掃描一遍」的根本原因</li>
+<li>說明第一遍掃描的任務（收集標號位址、計算指令行號）</li>
+<li>說明第二遍掃描的任務（翻譯 A-指令與 C-指令、分配變數）</li>
+<li>說出白空格、註解、常量等邊緣細節的正確處理方式</li>
+<li>看懂並自行修改一支完整、可執行的 Python 組譯器</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>6.1 給了你編碼規則，6.2 給了你符號表。現在把它們合體——本節要寫出<strong>一支真正能用的組譯器</strong>，它會把 <code>.asm</code> 讀進來，產出 <code>.hack</code> 檔。</p>
+<p>關鍵設計難題在於標號與變數的「時間差」：</p>
+<ul>
+<li>程式可能「先跳後宣告」——<code>@LOOP</code> 寫在前面，<code>(LOOP)</code> 宣告在後面；</li>
+<li>標號的位址＝指令行號，而指令行號只有「從頭掃一遍」才數得出來。</li>
+</ul>
+<p>如果組譯器只掃描一次，碰到前面的 <code>@LOOP</code> 時根本不知道後面的 <code>(LOOP)</code> 在哪，就會把 <code>LOOP</code> 誤判成變數、配給位址 16，全盤皆錯。解法很古典、也很乾脆：<strong>組譯器對程式掃描兩次</strong>。</p>
+<p>這，就是本節的標題：<strong>兩階段掃描（Two-Pass）組譯器</strong>。</p>
+<hr />
+<h2 id="1-為什麼需要兩次掃描">1. 為什麼需要兩次掃描？</h2>
+<h3 id="1-1-一次掃描的致命錯誤示範">1.1 一次掃描的致命錯誤示範</h3>
+<p>假設只有一趟，遇到這種程式：</p>
+<pre><code class="language-asm"></code></pre>
+<p>單趟掃描自左到右，走到 <code>@LOOP</code> 時：</p>
+<ul>
+<li>查符號表 → 找不到 <code>LOOP</code>；</li>
+<li>依 6.2 規則，當作變數 → 配位址 <strong>16</strong>；</li>
+<li>等走到 <code>(LOOP)</code> 時——才發現 LOOP 其實是標號，應該等於行號 3！</li>
+</ul>
+<p>結果：跳躍目標完全錯了。這就像在別人告訴你目的地之前，就把計程車往錯誤方向開出去。</p>
+<h3 id="1-2-兩次的完美分工">1.2 兩次的完美分工</h3>
+<table>
+<thead>
+<tr>
+<th>掃描</th>
+<th>任務</th>
+<th>依賴資訊</th>
+<th>產出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>第一遍</strong></td>
+<td>只收集 <code>(標號)</code> → 位址</td>
+<td>指令行號（數指令）</td>
+<td>裝滿標號的符號表</td>
+</tr>
+<tr>
+<td><strong>第二遍</strong></td>
+<td>翻譯每一條指令</td>
+<td>符號表 + 編碼表</td>
+<td><code>.hack</code> 位元串</td>
+</tr>
+</tbody>
+</table>
+<p>第一遍結束時，<strong>所有標號都已定位</strong>，第二遍無論哪一行遇到 <code>@LOOP</code> 都能查到正確位址。變數則安心留在第二遍處理：反正 <code>@i</code> 這種陣仗，遇到再用 <code>next_address</code> 發號碼也不遲。</p>
+<h3 id="1-3-概括成一句話">1.3 概括成一句話</h3>
+<blockquote>
+<p><strong>第一遍：先讓所有「未來不在眼前的標號」變成已知數，第二遍：再從頭到尾無後顧之憂地翻譯。</strong></p>
+</blockquote>
+<hr />
+<h2 id="2-第一遍掃描-收集標號位址">2. 第一遍掃描：收集標號位址</h2>
+<p>第一遍的邏輯極簡。偽代碼：</p>
+<pre><code></code></pre>
+<p>注意：<strong>只有真正的指令才會讓 <code>pc + 1</code></strong>。標號行、空行、註解都不算。這正是 6.1 節尾聲強調的「清理先行、再數位址」。</p>
+<p>實作（Python）：</p>
+<pre><code class="language-python"></code></pre>
+<p>讓我們跑一遍上一節的例子來驗證：</p>
+<pre><code></code></pre>
+<p>（註：實際程式中 <code>(LOOP)</code> 之後的 <code>D=M</code> 也在清單尾部待處理。）</p>
+<p>走訪過程：</p>
+<table>
+<thead>
+<tr>
+<th>行內容</th>
+<th>動作</th>
+<th>pc</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@i</code></td>
+<td>pc += 1</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>M=1</code></td>
+<td>pc += 1</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>@LOOP</code></td>
+<td>pc += 1</td>
+<td>3</td>
+</tr>
+<tr>
+<td><code>0;JMP</code></td>
+<td>pc += 1</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>(LOOP)</code></td>
+<td>st.add('LOOP', 4)</td>
+<td>4</td>
+</tr>
+</tbody>
+</table>
+<p>所以 <code>LOOP = 4</code>。完全符合「標號位址＝緊接其後指令行號」的規則。</p>
+<hr />
+<h2 id="3-第二遍掃描-翻譯完整程式">3. 第二遍掃描：翻譯完整程式</h2>
+<p>第二遍帶著<strong>已經裝滿標號的符號表</strong>，重新掃過同一份清理後的清單，這回對每一條指令動手：</p>
+<pre><code></code></pre>
+<p>解析 <code>@value</code> 的四大分支：</p>
+<pre><code class="language-python"></code></pre>
+<p>翻譯 C-指令的查表邏輯在 6.1 節已有 <code>encode_c</code>，這裡直接接上。其中「<code>=</code> 與 <code>;</code> 都可選」的拆解，是唯一的文字處理技巧：</p>
+<pre><code class="language-python"></code></pre>
+<p>注意 <code>dest</code> 與 <code>jump</code> 的預設值都是空字串 <code>&#x27;&#x27;</code>，正好對應編碼表 <code>DEST[&#x27;&#x27;] = &#x27;000&#x27;</code>、<code>JUMP[&#x27;&#x27;] = &#x27;000&#x27;</code>——<strong>空欄位就是「不寫入 / 不跳躍」的合法狀態</strong>，所以拆法再這樣「盡量拆」就對了。</p>
+<hr />
+<h2 id="4-在兩遍之間如何維護符號表">4. 在兩遍之間如何維護符號表</h2>
+<p>兩遍掃描共用<strong>同一張符號表</strong>，這是全案的關鍵脈絡：</p>
+<pre><code></code></pre>
+<p>具體的生命週期：</p>
+<ol>
+<li><strong>建立</strong>：<code>SymbolTable()</code> 載入 SP/LCL/.../KBD 全部預定義符號；</li>
+<li><strong>第一遍</strong>：只 <code>add(label, pc)</code>，不動 <code>pc</code> 以外的任何東西；</li>
+<li><strong>第二遍</strong>：遇到不認識的 <code>@sym</code> 時 <code>add(sym, next_address)</code> 並遞增號碼機；</li>
+<li><strong>結束</strong>：表同時含有預定義符號＋標號＋變數，但第二遍結束後就沒有用了。</li>
+</ol>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼變數要在第二遍配位址、而不是第一遍一起配？其實兩種做法都能讓符號表「最終完整」，但「變數放在第二遍」是教材的標準做法，好處是<strong>第二遍的分配順序與翻譯順序完全一致</strong>，方便對照 <code>.hack</code> 輸出一格一格除錯。若你日後改寫成一次掃描，就必須小心「後宣告標號」的地雷。</p>
+</blockquote>
+<p>還要強調一個容易忽略的原則：<strong>同一支變數在呼叫 <code>parse_a</code> 多次時，只會配一次位址</strong>。因為第二次查 <code>st.contains</code> 就成立，直接回傳舊位址。這個「查得到就用舊的」保證了程式一致性。</p>
+<hr />
+<h2 id="5-必須處理的細節-白空格-註解-常數">5. 必須處理的細節：白空格、註解、常數</h2>
+<p>組譯器很容易寫錯的地方，往往不是編碼，而是<strong>文字前的清理</strong>。以下三件事必須處理：</p>
+<h3 id="5-1-白空格-whitespace">5.1 白空格（Whitespace）</h3>
+<p><code>.asm</code> 檔案來源百百種，可能有縮排、行尾空格、甚至全形空白。正規做法是 <code>strip()</code> 剝掉頭尾空白，但要小心：<strong>Hack 語法不允許指令中間出現空白</strong>（例如 <code>D=A ; JGT</code> 是錯的），所以我們只需頭尾清理即可：</p>
+<pre><code class="language-python"></code></pre>
+<h3 id="5-2-註解">5.2 註解</h3>
+<p>Hack 只認一種註解：<code>//</code> 到行尾。因此「先切掉 <code>//</code> 以後的所有字元，再做空白清理」就是完整的註解處理：</p>
+<pre><code class="language-python"></code></pre>
+<p>把「空行也回傳 <code>None</code>」很重要，這讓後續程式一律 <code>if line is not None</code> 跳過，不用重複判斷。</p>
+<h3 id="5-3-常數-這條最容易錯">5.3 常數（這條最容易錯！）</h3>
+<p><code>@42</code> 這種數字要特別注意，有兩個規格限制：</p>
+<ol>
+<li><strong>必須是無號十進位</strong>：Hack 不支援負數與十六進位的 A-指令常數；</li>
+<li><strong>必須 &lt; 2^15 = 32768</strong>：再多就塞不進 15 位元位址空間。</li>
+</ol>
+<p>實作時務必檢查，讓組譯器在越界時<strong>明確報錯</strong>，而不是默默截斷產生錯誤位元：</p>
+<pre><code class="language-python"></code></pre>
+<p>另外，<code>isdigit()</code> 的清況要放在「查表」之前——因為 Hack 規定符號不能以數字爲首，所以 <code>@7</code> 一定不會是變數名。這一步先攔住，就不會把 <code>7</code> 誤存進符號表。</p>
+<h3 id="5-4-清理後的行進到兩遍掃描">5.4 清理後的行進到兩遍掃描</h3>
+<p>整理成完整的「讀取＋清理」工具函數：</p>
+<pre><code class="language-python"></code></pre>
+<p>這份「清理後清單」會同時餵給第一遍與第二遍——<strong>前後一致</strong>，不能第一遍用清理版、第二遍用別版，否則行號與行號對不上。</p>
+<hr />
+<h2 id="6-完整組譯器程式碼實作">6. 完整組譯器程式碼實作</h2>
+<p>把上述零件全部組裝起來，就是一支完整、可直接執行的 Python 組譯器。本書慣例，整個程式集中在單一檔案，方便您存檔執行：</p>
+<pre><code class="language-python"></code></pre>
+<p>這就是完整組譯器。全部只有約 130 行，卻完成了：讀檔、去註解、去空白、第一遍標號定位、第二遍指令翻譯＋變數分配、輸出 <code>.hack</code>。每一步你都已在前面小節見過，這是它們的最終合體。</p>
+<hr />
+<h2 id="7-運行示範-把一支程式組譯出來">7. 運行示範：把一支程式組譯出來</h2>
+<p>用本節的組譯器試試一支真實程式——計算 <code>1+2+...+n</code>（<code>n</code> 放在 <code>R0</code>，結果放在 <code>R1</code>）：</p>
+<pre><code class="language-asm"></code></pre>
+<p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20RAM%5B0%5D%20%3D%2010%0A%4010%0AD%3DA%0A%400%0AM%3DD%0A%2F%2F%20Computes%20RAM%5B1%5D%20%3D%201%20%2B%20...%20%2B%20RAM%5B0%5D%0A%40i%0AM%3D1%20%2F%2F%20i%20%3D%201%0A%40sum%0AM%3D0%20%2F%2F%20sum%20%3D%200%0A(LOOP)%0A%40i%20%2F%2F%20if%20i%3ERAM%5B0%5D%20goto%20STOP%0AD%3DM%0A%40R0%0AD%3DD-M%0A%40STOP%0AD%3BJGT%0A%40i%20%2F%2F%20sum%20%2B%3D%20i%0AD%3DM%0A%40sum%0AM%3DD%2BM%0A%40i%20%2F%2F%20i%2B%2B%0AM%3DM%2B1%20%2F%2F%2016%0A%40LOOP%20%2F%2F%20goto%20LOOP%0A0%3BJMP%0A(STOP)%0A%40sum%0AD%3DM%0A%40R1%0AM%3DD%20%2F%2F%20RAM%5B1%5D%20%3D%20the%20sum">習題模擬</a></p>
+<p>執行：</p>
+<pre><code class="language-bash"></code></pre>
+<p>產出的 <code>sum1ton.hack</code>（前 8 行）：</p>
+<pre><code class="language-text"></code></pre>
+<p><code>sum1ton.hack</code> 的內容與程式行號逐行對應——第 0 行 <code>@R0</code>（位址 0）對應 <code>0000000000000000</code>，第 1 行 <code>D=M</code> 對應 <code>1111110000010000</code>，第 2 行 <code>@n</code>（新變數配 16）對應 <code>0000000000010000</code>，以此類推。整支程式經過 6.4 節的 CPU 模擬器執行後，可以驗證：<code>R0=5</code> 時 <code>R1</code> 得到 <code>15</code>（1+2+3+4+5），<code>R0=100</code> 時 <code>R1</code> 得到 <code>5050</code>（高斯求和公式的結果）。</p>
+<blockquote>
+<p><strong>設計思路</strong>：注意 .hack 的第 3 行 <code>M=0</code> 對應 <code>1110101010001000</code>，其中 comp 欄位是 <code>0</code>（全零運算），而 A 暫存器仍是前一步 <code>@sum</code> 載入的 17——於是「把 0 寫進 <code>Memory[17]</code>」就完成了 <code>sum=0</code>。這告訴我們：<strong>A-指令與 C-指令的連續組合，才是完整的「運算」</strong>；A 暫存器是兩者之間的傳輸帶。</p>
+</blockquote>
+<hr />
+<h2 id="8-本章小結">8. 本章小結</h2>
+<ul>
+<li>兩階段掃描解決「標號先引用、後宣告」的矛盾：<strong>第一遍收集標號，第二遍翻譯</strong>。</li>
+<li>第一遍用 <code>pc</code> 計算指令行號，只有真正指令才 <code>pc += 1</code>，標號位址＝ <code>pc</code> 當下值。</li>
+<li>第二遍對同一份清理後清單逐條翻譯：<code>@num</code> 直接轉、<code>@sym</code> 查表或配變數、C-指令查三張表拼位元。</li>
+<li>符號表是兩遍之間共同的「記憶體」，第一遍加標號、第二遍加變數，共用同一張表。</li>
+<li>必處理的細節：以 <code>split(&#x27;//&#x27;)</code> 去註解、<code>strip()</code> 去空白、空行略過、<code>@</code> 常數必須 &lt;32768 且先於查表判斷。</li>
+<li>本書提供的 <code>HackAssembler.py</code> 約 130 行即可完成整條管線，可直接執行、可自行修改。</li>
+</ul>
+<p>下一節，我們配上完整的測試流程，把這支組譯器放進「CPU 模擬器」裡，用真實執行結果驗證它到底對不對。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="6.2.html">⇦ 上一節</a><a class="nav-btn" href="6.4.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

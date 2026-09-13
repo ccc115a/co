@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link active" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="2.4.html">⇦ 上一節</a></div>
+  <div class="title">第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</div>
+  <div class="nav-right"><a class="nav-btn" href="3.2.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch03.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第-3-1-章-觸發器-d-flip-flop-引入時間與狀態">第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</h1>
+<h2 id="前言">前言</h2>
+<p>在前兩章中，我們從最基本的 NAND 閘出發，一路建構出 ALU 等組合邏輯電路。組合邏輯電路有一個關鍵特性：<strong>輸出僅取決於當前的輸入</strong>，不具備任何「記憶」能力。然而，一個真正的電腦必須能夠「記住」東西——暫存中間運算結果、追蹤程式執行到哪一行、保存變數的值。這一切都需要一種全新的電路元件：<strong>能够保留狀態的記憶單元</strong>。</p>
+<p>本章將介紹計算機系統中最底層、最關鍵的元件——<strong>D 觸發器（D Flip-Flop，簡稱 DFF）</strong>。它是整個電腦記憶體層級的基石，從 1-bit 暫存器到數 GB 的主記憶體，最終都建構在 DFF 之上。理解 DFF，就是理解電腦如何從「無狀態的邏輯閘」蜕變為「有狀態的計算機」。</p>
+<hr />
+<h2 id="3-1-1-為何需要記憶-組合邏輯-vs-時序邏輯">3.1.1 為何需要記憶：組合邏輯 vs 時序邏輯</h2>
+<h3 id="組合邏輯的侷限">組合邏輯的侷限</h3>
+<p>回顧我們已經設計過的元件：NAND 閘、NOT、AND、OR、Mux、Adder、ALU……它們都有一個共同特點：</p>
+<pre><code>輸入 → [組合邏輯電路] → 輸出
+</code></pre>
+<p>無論輸入如何變化，輸出都會<strong>即時</strong>跟隨改變（忽略極微小的傳播延遲）。這意味著：</p>
+<ul>
+<li>電路沒有「記住」先前輸入的能力</li>
+<li>一旦輸入消失，輸出立即回到由當前輸入決定的值</li>
+<li>無法保存任何「狀態」資訊</li>
+</ul>
+<p>舉個例子，假設我們用 NAND 閘搭建了一個 XOR 閘：</p>
+<pre><code>A = 1, B = 0 → Output = 1
+A = 0, B = 0 → Output = 0  ← 輸出立即改變，不記得「曾經是 1」
+</code></pre>
+<h3 id="時序邏輯的突破">時序邏輯的突破</h3>
+<p>電腦需要「記住」資料。例如：</p>
+<ul>
+<li>暫存器需要<strong>保留</strong>被寫入的值，直到下次被覆寫</li>
+<li>RAM 需要<strong>保存</strong>資料，即使電路的其他部分在運作</li>
+<li>程式計數器需要<strong>追蹤</strong>目前執行到哪一行指令</li>
+</ul>
+<p>這些需求催生了**時序邏輯（Sequential Logic）**電路。時序邏輯的輸出同時取決於：</p>
+<ol>
+<li><strong>當前的輸入</strong></li>
+<li><strong>先前的狀態</strong>（歷史資訊）</li>
+</ol>
+<pre><code>                    ┌──────────────┐
+輸入 ──────────────→│              │
+                    │  時序邏輯電路  │──→ 輸出
+先前狀態 ──┐       │              │
+           │       └──────────────┘
+           └─────────────────────────┘
+              （透過記憶單元回饋）
+</code></pre>
+<h3 id="狀態的本質">狀態的本質</h3>
+<p>「狀態（State）」是系統在某一時刻的完整描述。對於一個電路而言，狀態就是所有記憶單元中儲存的值。兩個電路即使接收相同的輸入，如果內部狀態不同，也可能產生不同的輸出——這正是電腦能執行不同程式、處理不同資料的原因。</p>
+<hr />
+<h2 id="3-1-2-時脈-clock-概念">3.1.2 時脈（Clock）概念</h2>
+<h3 id="為什麼需要時脈">為什麼需要時脈？</h3>
+<p>在時序電路中，如果讓記憶單元「隨時」更新狀態，會產生嚴重的問題：</p>
+<ol>
+<li><strong>不穩定（Instability）</strong>：輸出改變可能反饋到輸入，導致連鎖反應</li>
+<li><strong>競態條件（Race Condition）</strong>：多個記憶單元同時更新時，更新順序不確定</li>
+<li><strong>時序不可預測</strong>：難以保證所有資料在同一時間準備就緒</li>
+</ol>
+<p>解法是引入一個<strong>全局的節拍器——時脈（Clock）</strong>。時脈是一個在 0 和 1 之間規律振盪的信號：</p>
+<pre><code>時脈信號（Clock）：
+
+    ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐
+    │  │  │  │  │  │  │  │  │  │
+────┘  └──┘  └──┘  └──┘  └──┘  └──
+
+    ↑      ↑      ↑      ↑      ↑
+  第1週期  第2週期  第3週期  第4週期  第5週期
+</code></pre>
+<h3 id="邊緣觸發-edge-triggering">邊緣觸發（Edge Triggering）</h3>
+<p>nand2tetris 採用<strong>正緣觸發（Rising Edge Triggering）</strong>：記憶單元只在時脈信號從 0 變為 1 的<strong>上升沿</strong>那一瞬間更新狀態。</p>
+<pre><code>時脈：     ──┐  ┌──┐  ┌──┐  ┌──
+             │  │  │  │  │  │
+         ────┘  └──┘  └──┘  └──
+
+觸發點：      ↑           ↑
+            邊緣1        邊緣2
+          （在此瞬間
+          更新狀態）
+</code></pre>
+<p>在觸發點之外的所有時間，記憶單元<strong>鎖住</strong>當前的值，不受輸入變化的影響。這就是「同步」的意義——所有狀態更新都在統一的時脈節拍下發生。</p>
+<h3 id="一個直覺類比">一個直覺類比</h3>
+<p>想像一個房間裡有一面鏡子（狀態）和一台攝影機（時脈）：</p>
+<ul>
+<li><strong>攝影機不按快門時</strong>：鏡子前的人可以隨意走動、改變姿勢（輸入變化）</li>
+<li><strong>攝影機按下快門的瞬間</strong>：鏡子前的影像被「定格」並記錄下來（狀態更新）</li>
+<li><strong>之後</strong>：記錄下的影像不隨人的移動而改變（狀態保持）</li>
+</ul>
+<hr />
+<h2 id="3-1-3-d-flip-flop-的運作原理">3.1.3 D Flip-Flop 的運作原理</h2>
+<h3 id="dff-的介面">DFF 的介面</h3>
+<p>D 觸發器（D Flip-Flop）是 nand2tetris 架構中最底層的記憶元件，它只有兩個接腳：</p>
+<pre><code>        ┌─────────┐
+  D ────│         │──── Q
+        │  DFF    │
+ clk ───│         │
+        └─────────┘
+
+D：資料輸入（Data Input）
+Q：資料輸出（Output）
+clk：時脈信號（Clock）——由系統全局提供，內部隱含連接
+</code></pre>
+<h3 id="dff-的行為">DFF 的行為</h3>
+<p>DFF 的功能極其簡單，卻至關重要：</p>
+<blockquote>
+<p><strong>在時脈上升沿，將輸入 D 的值複製到輸出 Q；其餘時間 Q 保持不變。</strong></p>
+</blockquote>
+<p>用公式表示：</p>
+<pre><code>Q(t+1) = D(t)    （在時脈上升沿時）
+Q(t+1) = Q(t)    （其餘時間）
+</code></pre>
+<h3 id="時序圖">時序圖</h3>
+<p>以下時序圖展示了 DFF 在不同輸入下的行為：</p>
+<pre><code>時脈 clk  : ──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──
+             │  │  │  │  │  │  │  │  │  │  │  │
+         ────┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──
+
+資料輸入 D : ────────┐                    ┌──────────
+                     │                    │
+                     └────────────────────┘
+                     （D=0 持續一段時間後變為 1）
+
+輸出 Q    : ──┐        ┌─────────────────────
+             │        │
+         ────┘  ┌─────┘
+         初始=0 │ ← 上升沿2：D=0，Q 保持 0
+               ← 上升沿1：D=1，Q 變為 1
+                                          ← 上升沿3：D=1，Q 保持 1
+</code></pre>
+<h3 id="關鍵觀察">關鍵觀察</h3>
+<ol>
+<li><strong>Q 只在上升沿改變</strong>：即使 D 在非觸發時刻劇烈變化，Q 也無動於衷</li>
+<li><strong>Q 總是「慢一拍」追蹤 D</strong>：D 的值在上升沿被「鎖存」，下一個上升沿才反映到 Q</li>
+<li><strong>DFF 是原子操作</strong>：不論其內部多麼複雜（在 nand2tetris 中假設為原子元件），它的行為完全由 D 和時脈決定</li>
+</ol>
+<hr />
+<h2 id="3-1-4-暫存器需要暫存資料的能力">3.1.4 暫存器需要暫存資料的能力</h2>
+<h3 id="為什麼暫存器必須具備-保持-能力">為什麼暫存器必須具備「保持」能力？</h3>
+<p>暫存器（Register）是 CPU 中用來暫存運算資料的高速記憶單元。考慮以下場景：</p>
+<p><strong>場景：加法運算</strong></p>
+<pre><code class="language-asm">LOAD  R1, 5      ; 將 5 載入暫存器 R1
+LOAD  R2, 3      ; 將 3 載入暫存器 R2
+ADD   R3, R1, R2 ; R3 = R1 + R2
+</code></pre>
+<p>在執行第三條指令時，R1 和 R2 必須<strong>仍然保持著</strong> 5 和 3。如果暫存器沒有「保持」能力，那麼在執行第二條指令時，R1 的值就會消失。</p>
+<h3 id="mux-的局限">Mux 的局限</h3>
+<p>你可能會想：「我們之前不是用 Mux 做過選擇嗎？」沒錯，但 Mux 只能<strong>選擇</strong>某個輸入，它不具備<strong>保存</strong>輸出的能力。暫存器需要的是一種特殊的機制：</p>
+<pre><code>                 ┌─────────────┐
+新資料 ─────────→│             │──→ 輸出（必須保持）
+                 │  暫存器     │
+指令控制 ───────→│  load=0 時   │
+                 │  保持舊值    │
+                 └─────────────┘
+</code></pre>
+<ul>
+<li>當 <code>load = 1</code> 時，接受新資料</li>
+<li>當 <code>load = 0</code> 時，保持舊資料不變</li>
+</ul>
+<p>這種「有條件地更新」的能力，正是 DFF 與 Mux 搭配後所能提供的——這正是下一章（3.2）要實現的 Bit 元件。</p>
+<hr />
+<h2 id="3-1-5-dff-在-nand2tetris-中作為最底層元件">3.1.5 DFF 在 nand2tetris 中作為最底層元件</h2>
+<h3 id="原語-primitive-的哲學">原語（Primitive）的哲學</h3>
+<p>nand2tetris 的設計哲學是一層一層地抽象：</p>
+<pre><code>NAND 閘
+  └→ 各種邏輯閘（NOT, AND, OR, XOR...）
+       └→ 組合邏輯元件（Mux, Adder, ALU...）
+            └→ 【DFF】← 時序邏輯的起點
+                 └→ Bit（1-bit 暫存器）
+                      └→ Register（16-bit 暫存器）
+                           └→ RAM8 / RAM64 / ... / RAM16K
+                                └→ 程式計數器（PC）
+</code></pre>
+<p>DFF 是<strong>組合邏輯世界與時序邏輯世界的分水嶺</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>組合邏輯元件</th>
+<th>DFF</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>有記憶</td>
+<td>否</td>
+<td>是</td>
+</tr>
+<tr>
+<td>依賴時脈</td>
+<td>否</td>
+<td>是</td>
+</tr>
+<tr>
+<td>輸出取決於</td>
+<td>當前輸入</td>
+<td>當前輸入 + 過去狀態</td>
+</tr>
+<tr>
+<td>nand2tetris 中</td>
+<td>用 NAND 閘建構</td>
+<td>假設為原子元件</td>
+</tr>
+</tbody>
+</table>
+<h3 id="dff-被假設為已存在">DFF 被假設為已存在</h3>
+<p>在 nand2tetris 的硬體模擬器（Hardware Simulator）中，DFF 是一個<strong>內建的原子元件</strong>（Primitive），你不需要用 NAND 閘去實現它。它的存在是整個時序邏輯體系的公理——就像歐幾里得幾何中的公設一樣。</p>
+<blockquote>
+<p><strong>你不需要理解 DFF 的內部實現，只需要理解它的行為規範。</strong></p>
+</blockquote>
+<p>這就像你不需要理解電晶體的量子力學，就能使用 NAND 閘一樣。每一層抽象都建立在對下一層的「信任」之上。</p>
+<hr />
+<h2 id="3-1-6-時序圖說明與完整範例">3.1.6 時序圖說明與完整範例</h2>
+<h3 id="完整的-dff-操作範例">完整的 DFF 操作範例</h3>
+<p>以下展示 DFF 在連續多個時脈週期中的行為：</p>
+<pre><code>        T0    T1    T2    T3    T4    T5    T6
+        │     │     │     │     │     │     │
+
+clk  : ─┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──
+        │  │  │  │  │  │  │  │  │  │  │  │  │  │
+    ────┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──┘  └──
+
+D    : ──────────┐              ┌──────────────────
+        1       0              1
+                  └──────────────┘
+
+Q    : ──┐        ┌──────────────┐
+        0 1      1              0
+         ↑        ↑              ↑
+       T0沿     T1沿          T3沿
+       D=1→Q=1  D=0→Q=0      D=0→Q 保持 0
+                                   （注意：T3沿時 D 仍為 0）
+</code></pre>
+<p>逐週期分析：</p>
+<table>
+<thead>
+<tr>
+<th>時脈邊緣</th>
+<th>當時 D 的值</th>
+<th>Q 的新值</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T0 上升沿</td>
+<td>1</td>
+<td>1</td>
+<td>D=1，Q 從 0 變為 1</td>
+</tr>
+<tr>
+<td>T1 上升沿</td>
+<td>0</td>
+<td>0</td>
+<td>D=0，Q 從 1 變為 0</td>
+</tr>
+<tr>
+<td>T2 上升沿</td>
+<td>0</td>
+<td>0</td>
+<td>D=0，Q 保持 0</td>
+</tr>
+<tr>
+<td>T3 上升沿</td>
+<td>1</td>
+<td>1</td>
+<td>D=1，Q 從 0 變為 1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="與組合邏輯的對比">與組合邏輯的對比</h3>
+<p>如果同樣的 D 信號接在一個直接連通的導線上（無 DFF）：</p>
+<pre><code>D    : ──────────┐              ┌──────────────────
+                  └──────────────┘
+
+Output（無 DFF）: ──────────┐              ┌──────
+                  直接跟隨 D 的變化
+</code></pre>
+<p>輸出會在 D 變化的瞬間就改變——沒有任何「鎖存」的效果。這就是 DFF 的價值所在。</p>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<p>本章介紹了從組合邏輯邁向時序邏輯的關鍵一步——D 觸發器（DFF）。以下是核心要點：</p>
+<ol>
+<li><strong>組合邏輯無法記憶</strong>：輸出完全由當前輸入決定，不保留歷史資訊</li>
+<li><strong>時序邏輯引入狀態</strong>：透過記憶單元，電路可以「記住」過去的資訊</li>
+<li><strong>時脈是同步的基石</strong>：統一的時脈信號確保所有狀態更新在同一節奏下進行</li>
+<li><strong>DFF 是最底層的記憶元件</strong>：
+<ul>
+<li>在時脈上升沿鎖存輸入 D 的值到輸出 Q</li>
+<li>其餘時間 Q 保持不變</li>
+<li>在 nand2tetris 中被視為原子元件（Primitive）</li>
+</ul>
+</li>
+<li><strong>DFF 是暫存器的基礎</strong>：結合 Mux 與 DFF，即可建構具有「載入/保持」功能的暫存器</li>
+</ol>
+<p>在下一章（3.2）中，我們將利用 DFF 搭配 Mux，建構出完整的 1-bit 暫存器（Bit）和 16-bit 暫存器（Register），正式進入暫存器的設計世界。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="2.4.html">⇦ 上一節</a><a class="nav-btn" href="3.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

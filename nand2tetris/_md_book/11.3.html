@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11.3 陣列與指標運算的 VM 指令生成</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link active" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="11.2.html">⇦ 上一節</a></div>
+  <div class="title">11.3 陣列與指標運算的 VM 指令生成</div>
+  <div class="nav-right"><a class="nav-btn" href="11.4.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch11.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="11-3-陣列與指標運算的-vm-指令生成">11.3 陣列與指標運算的 VM 指令生成</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明 Jack 的 <code>Array</code> 究竟是什麼——一個把 <code>int</code> 當指標用的抽象層</li>
+<li>說明陣列如何透過 <code>Memory.alloc(size)</code> 配置出一塊連續記憶體</li>
+<li>說明陣列元素讀取與寫入的翻譯模式：<code>base address + index</code> 的位址運算</li>
+<li>說明 <code>that</code> 段（<code>that</code>/<code>pointer 1</code>）在陣列運算中的角色</li>
+<li>掌握「指標運算」的本質：把數字當位址、把它加減偏移</li>
+<li>模擬多維度陣列（用「陣列的陣列」）</li>
+<li>能親手把完整的陣列操作 Jack 程式翻譯成 VM 代碼</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>在 11.2 節，我們看到「物件」在機器底層不過是一塊記憶體＋一只「基址指標（THIS）」。現在要處理的「陣列」其實是同一套思路的另一種表現：<strong>一段連續的記憶體＋一只用來在裡面游走的指標</strong>。</p>
+<p>Jack 的陣列跟 C、Python 都不太一樣，它樸素到令人吃驚——沒有真正的「陣列型別」，只有一個叫 <code>Array</code> 的類別名，而陣列變數其實就是「儲存一個整數（記憶體位址）」的變數。也就是說：</p>
+<blockquote>
+<p><strong>在 Jack 裡，陣列 = 一個記憶體位址（整數）＋ 對這塊記憶體的看法。</strong></p>
+</blockquote>
+<p><code>a[i] = 5</code> 讀起來像是在存取「第 i 個元素」，但底層它真正做的是：<strong>把 <code>a</code> 當成基址，算出 <code>a + i</code>，再去讀寫那個位置的內容</strong>。這正是指標運算——本書第一次在 Jack 層面親眼見到它。</p>
+<hr />
+<h2 id="1-陣列宣告與配置-array-與-memory-alloc">1. 陣列宣告與配置：Array 與 Memory.alloc</h2>
+<h3 id="1-1-宣告只是給變數一個-能放整數-的位置">1.1 宣告只是給變數一個「能放整數」的位置</h3>
+<pre><code class="language-jack">var Array a;      // a 只是一個 int 變數，型別名稱叫 Array
+</code></pre>
+<p>在符號表眼裡，<code>a</code> 的 <code>type</code> 是 <code>Array</code>，<code>kind</code> 是 <code>local</code>（假設放在 method 內）。它本身暫不佔用陣列空間，只是一個普通的區域變數。真正的空間要等到我們呼叫 <code>Memory.alloc</code> 才要得到。</p>
+<h3 id="1-2-配置-用-memory-alloc-換來一段記憶體">1.2 配置：用 Memory.alloc 換來一段記憶體</h3>
+<pre><code class="language-jack">let a = Array.new(10);     // 事實上常以 Array.new 或直接 Memory.alloc 實作
+</code></pre>
+<p><code>Array.new(n)</code> 只是 OS 對 <code>Memory.alloc(n)</code> 的一層很薄包裝。真正的核心是：</p>
+<pre><code class="language-jack">function Array.new(int size) {
+    return Memory.alloc(size);   // 回傳一塊 size 格的連續記憶體起始位址
+}
+</code></pre>
+<p><code>Memory.alloc</code> 回傳的那個整數，就被存進 <code>a</code>。從此 <code>a</code> 這個變數「等於」這塊記憶體的起始位址。</p>
+<h3 id="1-3-翻譯-呼叫-alloc-並存進變數">1.3 翻譯：呼叫 alloc 並存進變數</h3>
+<pre><code class="language-jack">// var Array a; ... let a = Array.new(10);
+</code></pre>
+<p>假設 <code>a</code> 是 <code>local 0</code>。翻譯：</p>
+<pre><code class="language-vm">// let a = Array.new(10);
+push constant 10
+call Array.new 1            // alloc(10)，回傳起始位址
+pop local 0                 // a = 起始位址
+</code></pre>
+<p>或直接：</p>
+<pre><code class="language-vm">push constant 10
+call Memory.alloc 1
+pop local 0
+</code></pre>
+<p>現在 <code>local 0</code>（a）裡存著那 10 格記憶體的基址。</p>
+<hr />
+<h2 id="2-陣列元素讀取與寫入的翻譯-base-index-運算">2. 陣列元素讀取與寫入的翻譯：base + index 運算</h2>
+<p>這是本節的重頭戲。<code>a[i]</code> 究竟怎麼變成 VM 指令？核心公式：</p>
+<pre><code>陣列元素 a[i] 的位址 = a 的值（基址） + i
+</code></pre>
+<p>VM 裡沒有真正的「乘法」，但「基址 + 索引」只是加法，簡單多了。做法是：</p>
+<ol>
+<li>把基址（<code>a</code> 的值）推上 stack</li>
+<li>把索引（<code>i</code>）推上 stack</li>
+<li>相加，得到「目標元素位址」</li>
+<li>依據是讀還是寫，決定下一步</li>
+</ol>
+<h3 id="2-1-寫入-a-i-x">2.1 寫入：<code>a[i] = x</code></h3>
+<p>要寫入，需要「把目標位址當作一個指針」：把計算出的 <code>base+i</code> 放進 <code>that</code> 段指標（<code>pointer 1</code>），然後 <code>pop that 0</code>。</p>
+<pre><code class="language-jack">a[i] = x;    // 假設 a→local 0, i→local 1, x→argument 0
+</code></pre>
+<p>翻譯：</p>
+<pre><code class="language-vm">// a[i] = x;
+push local 1        // i
+push local 0        // a（基址）
+add                 // a + i = 目標位址
+pop pointer 1       // that = 目標位址
+push argument 0     // x
+pop that 0          // RAM[THAT + 0] = x
+</code></pre>
+<p>注意 push 的順序：先推索引、再推基址，相加結果一樣是 <code>a+i</code>（加法可交換）。但要小心：如果式子寫法相反會先推基址再推索引，結果仍是 <code>a+i</code>，無妨。</p>
+<h3 id="2-2-讀取-y-a-i">2.2 讀取：<code>y = a[i]</code></h3>
+<p>讀取同樣先算出目標位址，放入 <code>that</code>，然後 <code>push that 0</code> 把內容推回 stack：</p>
+<pre><code class="language-jack">y = a[i];    // a→local 0, i→local 1, y→local 2
+</code></pre>
+<pre><code class="language-vm">// y = a[i];
+push local 1        // i
+push local 0        // a
+add                 // a + i
+pop pointer 1       // that = 目標位址
+push that 0         // 讀出 RAM[THAT]
+pop local 2         // y
+</code></pre>
+<h3 id="2-3-為什麼一定要先-compute-base-index-再-pointer-1">2.3 為什麼一定要先「compute base+index」再「pointer 1」？</h3>
+<p>關鍵是：<strong><code>that</code> 一次只能指到一個目標</strong>。所以任何元素存取都要「現算現指」，用完立刻放下一個。你不能先設定好 that 再一次讀多個元素，因為那是把活靶子釘死。所以每次 <code>a[i]</code> 都得重頭：推 base、推 index、add、pop pointer 1。</p>
+<blockquote>
+<p><strong>設計思路</strong>：這正是「指標運算」的日常。你手上只有一只 <code>that</code> 指標，每次要碰哪個元素，舊得重算一遍該元素位址放進指針。雖然看起來囉嗦，但這是極簡 VM 做得到的最直白方式。</p>
+</blockquote>
+<hr />
+<h2 id="3-that-段-pointer-1-that-的深入理解">3. that 段（pointer 1 / THAT）的深入理解</h2>
+<p>回想 11.2 節：<code>this</code> 與 <code>pointer 0</code>（THIS）是同一件事——<code>this i</code> 就是 <code>RAM[THIS+i]</code>。這節的 <code>that</code> 與 <code>pointer 1</code>（THAT）完全對稱：</p>
+<ul>
+<li><code>pop pointer 1</code> → 把值寫進 <code>RAM[4]</code>（THAT）</li>
+<li><code>push pointer 1</code> → 讀出 <code>RAM[4]</code></li>
+<li><code>that i</code> → 實際是 <code>RAM[THAT + i]</code></li>
+</ul>
+<p>差別只是「用途的慣例」：<code>this</code> 慣用於物件欄位，<code>that</code> 慣用於陣列元素。但本質上兩者都是「一段記憶體的基址指針」。</p>
+<pre><code>   RAM[4] (THAT)  ──►  [ e0 | e1 | e2 | ... ]   ← 陣列空間
+                           that 0  that 1 ...
+</code></pre>
+<p>當我們 <code>pop pointer 1</code> 設好 that 指向某元素後，<code>that 0</code> 就是那個元素本身。偶爾也會出現 <code>that 1</code>、<code>that 2</code>……例如呼叫 <code>String</code>/<code>Memory</code> 的某些嫁接到陣列的操作，或是一次存取相鄰元素時，直接以 <code>that 0</code>、<code>that 1</code> 取用，省得重算。</p>
+<hr />
+<h2 id="4-指標運算的本質">4. 指標運算的本質</h2>
+<p>到這裡，我們可以點破「指標運算」的真面目：</p>
+<blockquote>
+<p><strong>指標 = 一個被當作記憶體位址使用的整數。指標運算 = 對這個整數做加減法（及其他算術），以得到其他記憶體位址。</strong></p>
+</blockquote>
+<p>在 Jack/VM 層，<code>a + i</code> 這個「加法」不只是在算數學，它同時是在算「哪個 RAM 格」。同一個 <code>add</code> 指令，在物件運算中幫我們算出欄位偏移，在陣列中幫我們算出元素位移——<strong>因為從 VM 的角度看，它們都是「基址 + 偏移」</strong>。</p>
+<p>這也就解釋了為什麼可存取一個「動態」的索引：<code>a[i]</code> 裡的 <code>i</code> 可以是變數、可以是 <code>i+1</code>、甚至可以是另一個陣列的取值 <code>j[m]</code>。無論多複雜，最後都會化為一次 push/add/pop pointer 的組合。</p>
+<hr />
+<h2 id="5-多維度陣列的模擬-陣列的陣列">5. 多維度陣列的模擬：陣列的陣列</h2>
+<p>Jack 沒有原生二維陣列，但我們可以用「<strong>陣列的陣列</strong>」模擬。概念上：</p>
+<pre><code>二維陣列 M[row][col] == M 是一個陣列，它的每個元素又是一個陣列。
+</code></pre>
+<p>實際建構：</p>
+<pre><code class="language-jack">var Array grid;
+var int rows, cols;
+let rows = 3;
+let cols = 4;
+let grid = Array.new(rows);            // grid[0..2] 各自要再指到一個陣列
+let i = 0;
+while (i &lt; rows) {
+    let grid[i] = Array.new(cols);     // 每個 row 配一個長度 cols 的陣列
+    let i = i + 1;
+}
+</code></pre>
+<h3 id="5-1-存取二維元素-grid-r-c-的翻譯">5.1 存取二維元素 <code>grid[r][c]</code> 的翻譯</h3>
+<p>眼光放遠：<code>grid[r][c]</code> 分兩步：</p>
+<ol>
+<li><code>grid[r]</code> → 得出「第 r 列的陣列基址」</li>
+<li><code>(那個基址)[c]</code> → 再套一次陣列讀取</li>
+</ol>
+<p>它的 VM 翻譯依 11.3 的模式疊兩層。以下假設 <code>grid→local 0, r→local 1, c→local 2, value→local 3</code>：</p>
+<pre><code class="language-jack">let grid[r][c] = value;
+</code></pre>
+<p>翻譯（先算出第 r 列的陣列位址，存進暫存，再寫入該列的 c 元素）：</p>
+<pre><code class="language-vm">// 第一層：算出 base = grid[r]
+push local 1                // r
+push local 0                // grid（基址）
+add                         // grid + r
+pop pointer 1               // that = &amp;grid[r]
+push that 0                 // base = grid[r]（這是一個陣列位址）
+pop local 4                 // 暫存變數 base（把 r 列的陣列位址記住）
+
+// 第二層：base[c] = value
+push local 2                // c
+push local 4                // base
+add                         // base + c
+pop pointer 1               // that = &amp;base[c]
+push local 3                // value
+pop that 0                  // 寫入
+</code></pre>
+<pre><code class="language-jack">let x = grid[r][c];
+</code></pre>
+<pre><code class="language-vm">push local 1
+push local 0
+add
+pop pointer 1
+push that 0
+pop local 4                 // base = grid[r]
+
+push local 2
+push local 4
+add
+pop pointer 1
+push that 0
+pop local 5                 // x = grid[r][c]
+</code></pre>
+<p>可以看到：<strong>多維只是把「base + index」的招式重複使用</strong>。每一次「取一個維度」就是把上一層的結果當作新的基址。這就是高階語言的 <code>grid[r][c]</code> 在極簡 VM 下的真面目。</p>
+<hr />
+<h2 id="6-完整的陣列操作翻譯範例">6. 完整的陣列操作翻譯範例</h2>
+<p>來一個能收尾的完整例子。假設某 method 內有一段：</p>
+<pre><code class="language-jack">method void demo() {
+    var Array a;
+    var int i;
+    let i = 0;
+    let a = Array.new(3);
+    while (i &lt; 3) {
+        let a[i] = i * i;      // 存平方
+        let i = i + 1;
+    }
+    return;
+}
+</code></pre>
+<p>符號表（method 的局部）：<code>a→local 0, i→local 1</code>。逐步翻譯：</p>
+<p><strong>function 宣告 + prologue（method 要設 THIS）</strong>：</p>
+<pre><code class="language-vm">function SomeClass.demo 2       // 兩個區域變數 a, i
+push argument 0
+pop pointer 0
+</code></pre>
+<p><strong>let i = 0; 與 let a = Array.new(3);</strong>：</p>
+<pre><code class="language-vm">push constant 0
+pop local 1                     // i = 0
+push constant 3
+call Array.new 1
+pop local 0                     // a = 新陣列（3 格）
+</code></pre>
+<p><strong>while 迴圈的結構</strong>：Jack 的 <code>while (cond) { body }</code> 翻譯成 VM 的 label / goto 循環：</p>
+<pre><code class="language-vm">label WHILE_EXP0
+push local 1                    // i
+push constant 3
+lt                              // i &lt; 3
+not                             // !(i &lt; 3)，為真則跳出
+if-goto WHILE_END0
+</code></pre>
+<p><strong>body: let a[i] = i*i;</strong>（<code>i*i</code> 用 Math.multiply）：</p>
+<pre><code class="language-vm">push local 1                    // i
+push local 0                    // a
+add
+pop pointer 1                   // that = &amp;a[i]
+push local 1                    // i
+push local 1                    // i
+call Math.multiply 2            // i*i
+pop that 0                      // a[i] = i*i
+</code></pre>
+<p><strong>body: let i = i + 1;</strong> 並收尾迴圈：</p>
+<pre><code class="language-vm">push local 1
+push constant 1
+add
+pop local 1                     // i = i + 1
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+return
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：把整個迴圈攤開，會發現「<code>a[i] = exp</code>」就是那組 <code>push index / push base / add / pop pointer 1 / push exp / pop that 0</code> 的固定舞步。熟練它，等於掌握了 Jack 陣列的全部精髓——包括你在作業（<code>Mult</code>, <code>Average</code>, <code>Game</code> 等）裡會用到的所有 list/table 處理。</p>
+</blockquote>
+<hr />
+<h2 id="7-本章小結-本節">7. 本章小結（本節）</h2>
+<ul>
+<li><strong><code>Array</code> 只是個名稱</strong>：陣列變數是一個存整數（記憶體位址）的普通變數。</li>
+<li><strong>配置</strong>：<code>Array.new(n)</code> ≈ <code>Memory.alloc(n)</code>，回傳 n 格連續記憶體的起始位址。</li>
+<li><strong>元素存取公式</strong>：<code>a[i]</code> 的位址 = <code>a</code>（基址） + <code>i</code>（索引），用一個 <code>add</code> 完成。</li>
+<li><strong>that 段</strong>：算出位址後 <code>pop pointer 1</code> 令 <code>that</code> 指向它，再用 <code>that 0</code> 讀寫該元素。</li>
+<li><strong>指標運算本質</strong>：把整數當位址、把加減法當位址位移；物件與陣列其實是同一個道理。</li>
+<li><strong>多維度</strong>：陣列的陣列，把「base + index」疊兩層即可。</li>
+<li>有了 11.1 的符號表、11.2 的物件翻譯、11.3 的陣列翻譯，語法分析器就能對上位生成完整的 VM 指令。</li>
+</ul>
+<p>接下來，11.4 節我們要正式「完工」——把詞法分析、語法分析與本節及前兩節的代碼生成全部整合成一隻真正的編譯器，讓它一口氣把一整個專案編譯成可執行的 VM 程式。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="11.2.html">⇦ 上一節</a><a class="nav-btn" href="11.4.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

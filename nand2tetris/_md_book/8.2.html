@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>8.2 函數呼叫機制：call, function, return</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link active" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="8.1.html">⇦ 上一節</a></div>
+  <div class="title">8.2 函數呼叫機制：call, function, return</div>
+  <div class="nav-right"><a class="nav-btn" href="8.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch08.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="8-2-函數呼叫機制-call-function-return">8.2 函數呼叫機制：call, function, return</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說出 <code>function</code> / <code>call</code> / <code>return</code> 三指令的 VM 規格與各自職責</li>
+<li>說明 <code>function</code> 如何宣告函式並配置、初始化 <code>local</code> 段為零</li>
+<li>說明 <code>call</code> 如何保存 caller 狀態、傳遞參數、設定新的 frame、跳轉</li>
+<li>說明 <code>return</code> 如何還原 caller 狀態、把回傳值交給正確位置</li>
+<li>描述 bootstrap：程式啟動時如何初始化 <code>SP=256</code> 並呼叫 <code>Sys.init</code></li>
+<li>看懂並自行推導演譯一段 <code>call</code> / <code>return</code> 的完整 Hack 程式</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>8.1 節的程式只有一條直線，頂多加上迴圈。但真實的程式是「一個函式呼叫另一個函式、呼叫完再回到原先的位址繼續」——這正是<strong>函式呼叫機制</strong>存在的理由。</p>
+<p>VM 用三條指令搞定它：<code>function</code>（宣告函式）、<code>call</code>（呼叫函式）、<code>return</code>（從函式返回）。這三條是整本「虛擬機進階」的靈魂，也是最容易出錯的地方。我們的策略是：<strong>把規格講清楚 → 把每個暫存器與記憶體位址的推移畫出來 → 再翻譯成 Hack</strong>。一步一步，不貪快。</p>
+<hr />
+<h2 id="1-vm-規格-function-call-return">1. VM 規格：function / call / return</h2>
+<p>先把三條指令的「官方規格」立好，一切翻譯都以此為準。</p>
+<h3 id="1-1-function-指令">1.1 function 指令</h3>
+<pre><code>function &lt;函式名&gt; &lt;nLocal&gt;
+</code></pre>
+<p>作用：宣告一支名為 <code>&lt;函式名&gt;</code> 的函式，它有 <code>&lt;nLocal&gt;</code> 個 local 變數，並且<strong>把這 nLocal 個 local 段全都初始化為 0</strong>。</p>
+<ul>
+<li>例如 <code>function foo 3</code>：宣告函式 <code>foo</code>，有 3 個 local 變數；</li>
+<li>這些 local 佔據的記憶體位址從目前的 <code>LCL</code> 開始連續排列，值全設為 0；</li>
+<li><code>function</code> 指令<strong>不處理</strong>參數——參數是 caller 用 <code>call</code> 時放好、由 <code>ARG</code> 指到的。</li>
+</ul>
+<h3 id="1-2-call-指令">1.2 call 指令</h3>
+<pre><code>call &lt;函式名&gt; &lt;nArgs&gt;
+</code></pre>
+<p>作用：呼叫名為 <code>&lt;函式名&gt;</code> 的函式，並傳遞 <code>&lt;nArgs&gt;</code> 個參數。</p>
+<p>呼叫前，caller 必須先把參數依序 <code>push</code> 到堆疊上，然後執行 <code>call</code>。<code>call</code> 會：</p>
+<ol>
+<li>保存 caller 的狀態（返回位址與各 frame 指標）；</li>
+<li>設定新函式的 frame（把 <code>ARG</code> 指向第一個參數、<code>LCL</code> 指向新 local 起點）；</li>
+<li>跳進被呼叫的函式。</li>
+</ol>
+<h3 id="1-3-return-指令">1.3 return 指令</h3>
+<pre><code>return
+</code></pre>
+<p>作用：結束目前函式，把控制權還給 caller。</p>
+<ul>
+<li>它會把回傳值放到「caller 預期它出現的位置」；</li>
+<li>還原 caller 的 frame（LCL、ARG、THIS、THAT、SP、返回位址）；</li>
+<li>跳回 caller 的返回位址繼續執行。</li>
+</ul>
+<hr />
+<h2 id="2-call-指令的詳細拆解">2. call 指令的詳細拆解</h2>
+<p><code>call</code> 是三者中最複雜的。讓我們把「呼叫發生時，堆疊與記憶體長什麼樣」用到極致。</p>
+<p>一個龐大的約定：<strong>SP = 堆疊指標，永遠指到「下一個可用位置」</strong>（即最後一個元素的下一個）。</p>
+<h3 id="2-1-呼叫前的準備">2.1 呼叫前的準備</h3>
+<p>假設 caller 要呼叫 <code>foo(7, 42)</code>，兩個參數。它先執行：</p>
+<pre><code class="language-vm">push constant 7
+push constant 42
+call foo 2
+</code></pre>
+<p>執行 <code>call foo 2</code> 前一刻，堆疊長這樣（<code>N</code> 是 caller 的 SP）：</p>
+<pre><code>       ... 任意資料 ...
+位址 N-2 : 7           &lt;- 參數 0
+位址 N-1 : 42          &lt;- 參數 1
+位址 N   : （空，SP 指著這）  &lt;- 等於 call 後的 ARG 起點
+</code></pre>
+<h3 id="2-2-call-的五步">2.2 call 的五步</h3>
+<p><code>call foo 2</code> 的 VM 動作，翻譯成 Hack 時依序是五段。<strong>關鍵：caller 的返回位址（retAddr）、LCL、ARG、THIS、THAT 都要被保存</strong>，這樣被呼叫者返回時才能完整還原。</p>
+<p>我們把「推入 SP」的動作寫成連續的 push（後面用 <code>@SP / A=M / M=&lt;值&gt; / @SP / M=M+1</code> 的模式，簡寫為 <code>push value</code>）：</p>
+<p><strong>第一步：把返回位址壓入堆疊（retAddr）</strong></p>
+<pre><code class="language-asm">push retAddr        // 把「call 後下一條指令的位址」壓進去
+</code></pre>
+<p>這是唯一一個「位址」值，會被壓在堆疊最上面。</p>
+<p><strong>第二步：保存 caller 的 frame 指標</strong></p>
+<p>把 <code>LCL</code>、<code>ARG</code>、<code>THIS</code>、<code>THAT</code> 依序壓入堆疊（先 LCL，再 ARG，再 THIS，最後 THAT）：</p>
+<pre><code class="language-asm">push LCL            // 保存 caller 的 LCL
+push ARG            // 保存 caller 的 ARG
+push THIS           // 保存 caller 的 THIS
+push THAT           // 保存 caller 的 THAT
+</code></pre>
+<p><strong>第三步：設定新函式的 ARG</strong></p>
+<p><code>ARG</code> 要被設定為「指向第一個參數」的位址。呼叫前堆疊上共有參數（2 個）、retAddr、四個 frame 指標，加起來 7 個元素，所以：</p>
+<pre><code>ARG = SP - 5 - nArgs
+</code></pre>
+<p>（<code>SP</code> 是還沒 push retAddr/frame 前的原位置 N；壓入 1(ret) + 4(frame) = 5 個之後，SP = N + 5；減掉 <code>5 + nArgs</code>，就回到參數 0 的位置 N - 2。）</p>
+<p>在 Hack 上，需要「先算好位址，再一次操縱 <code>ARG</code> 暫存器」。這裡用一個技巧：直接以「現在 SP 的位置」為基準做減法。</p>
+<p><strong>第四步：設定新函式的 LCL</strong></p>
+<p>把目前 SP 所指的位置設為新函式的 <code>LCL</code>（即「新 frame 的起點」＝所有剛壓入資料之上）。</p>
+<pre><code>LCL = SP
+</code></pre>
+<p><strong>第五步：跳進被呼叫函式</strong></p>
+<pre><code class="language-asm">goto foo            // 0;JMP 到 foo 的第一條指令
+</code></pre>
+<h3 id="2-3-call-的完整-hack-翻譯">2.3 call 的完整 Hack 翻譯</h3>
+<p>把五步拼起來，<code>call foo 2</code> 的完整翻譯（retAddr 符號先佔位，實作時用 <code>FunctionName$ret.N</code> 讓它唯一）：</p>
+<pre><code class="language-asm">// ===== call foo 2 =====
+@retAddr              // 維持一個唯一符號：foo$ret.0
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ① push retAddr
+
+@LCL
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ② push LCL
+
+@ARG
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ② push ARG
+
+@THIS
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ② push THIS
+
+@THAT
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ② push THAT
+
+@SP
+D=M
+@5
+D=D-A
+@2
+D=D-A
+@ARG
+M=D                   // ③ ARG = SP - 5 - 2
+
+@SP
+D=M
+@LCL
+M=D                   // ④ LCL = SP
+
+@foo
+0;JMP                 // ⑤ 跳進 foo
+
+(retAddr)             // ⑥ 返回位址落腳處（被呼叫者 return 後回到這）
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>③ ARG = SP-5-nArgs</code> 這一步最容易被寫錯。我們的 <code>retAddr</code> 是一個「尚未翻譯成實際位址」的符號，實作 CodeWriter 時必須讓它<strong>唯一且可預期</strong>，慣用 <code>函式名$ret.&lt;連續編號&gt;</code>。這樣每支函式的每個 call 都有自己的 retAddr，不會撞名。</p>
+</blockquote>
+<hr />
+<h2 id="3-function-指令的翻譯">3. function 指令的翻譯</h2>
+<p><code>function foo 3</code> 要做兩件事：<strong>宣告入口</strong>＋<strong>初始化 3 個 local 為 0</strong>。</p>
+<h3 id="3-1-宣告入口">3.1 宣告入口</h3>
+<p>翻譯成一個 Hack 標籤：</p>
+<pre><code class="language-asm">(foo)                 // 函式 foo 的入口
+</code></pre>
+<p>（此後 <code>call foo</code> 的跳轉目標就是這個 <code>(foo)</code>。）</p>
+<h3 id="3-2-初始化-local-段為-0">3.2 初始化 local 段為 0</h3>
+<p>接著，把 <code>LCL</code>（此刻已被 call 設好）所指的位置開始，連續 <code>nLocal</code> 個位址全部填 0。因為 <code>LCL = SP</code> 是在 call 的第四步設好的，所以「第一個 local 就是現在 SP 指的位置」，依序填入即可。</p>
+<p><code>function foo 3</code> 的完整翻譯：</p>
+<pre><code class="language-asm">(foo)                // ① 入口標籤
+@0
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ② local 0 = 0
+@0
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ② local 1 = 0
+@0
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1                 // ② local 2 = 0
+</code></pre>
+<p>三組「把 0 推進堆疊」的動作，代表三個 local 變數都被初始化。因為 <code>LCL</code> 已指向堆疊起點，這些「推進去」的 0 正好是 <code>local 0/1/2</code>——<strong>但這裡不使用 LCL 的偏移，而是直接沿著 SP 堆上去</strong>，這是 VM 規格允許的簡化（local 段與堆疊頭重疊）。</p>
+<blockquote>
+<p><strong>設計思路</strong>：你可能會疑惑「為何 function 只是把 0 堆到 SP 上，而不是真的去寫 <code>RAM[LCL+0]</code>？」因為 <code>call</code> 第四步已設定 <code>LCL = SP</code>（當時），接著 function 從該處往上堆 0，兩者完全落在同一塊連續記憶體。等到函式真正開始「用 local」時，<code>LCL</code> 正是第一塊 local 的位址。效用相同、翻譯更簡潔。</p>
+</blockquote>
+<hr />
+<h2 id="4-return-指令的翻譯">4. return 指令的翻譯</h2>
+<p><code>return</code> 是「把一切還原」的關鍵。它要做的事，對應 8.3 節的 frame 概念，這裡先給翻譯。<strong>重點是先把被呼叫者 frame 的尾巴（LCL）備份到一個臨時變數，因為後面會動到堆疊</strong>。</p>
+<h3 id="4-1-return-的步驟">4.1 return 的步驟</h3>
+<ol>
+<li><strong>拿到 frame 的尾端</strong>：<code>R13 = LCL</code>（frame 暫存到臨時暫存器，因為 LCL 馬上會被覆蓋）；</li>
+<li><strong>算出返回位址</strong>：返回位址存放在 frame 的最底部（即 <code>RAM[LCL-5]</code>），<code>R14 = *(frame-5)</code>；</li>
+<li><strong>搬移回傳值</strong>：把堆疊頂端（回傳值）搬到 <code>ARG</code> 所指位置：<code>*ARG = pop()</code>；</li>
+<li><strong>還原 caller 的 SP</strong>：<code>SP = ARG + 1</code>；</li>
+<li><strong>還原 THAT、THIS、ARG、LCL</strong>：依序從 frame 底部往上讀回；</li>
+<li><strong>跳回 retAddr</strong>：<code>goto R14</code>。</li>
+</ol>
+<h3 id="4-2-return-的完整-hack-翻譯">4.2 return 的完整 Hack 翻譯</h3>
+<pre><code class="language-asm">// ===== return =====
+@LCL
+D=M
+@R13
+M=D                 // R13 = frame = LCL（先備份）
+
+@R13
+D=M
+@5
+A=D-A
+D=M
+@R14
+M=D                 // R14 = *(frame-5) = retAddr
+
+@SP
+AM=M-1
+D=M
+@ARG
+A=M
+M=D                 // *ARG = pop()（回傳值搬到 ARG 所指）
+
+@ARG
+D=M+1
+@SP
+M=D                 // SP = ARG + 1
+
+@R13
+D=M
+@1
+A=D-A
+D=M
+@THAT
+M=D                 // THAT = *(frame-1)
+
+@R13
+D=M
+@2
+A=D-A
+D=M
+@THIS
+M=D                 // THIS = *(frame-2)
+
+@R13
+D=M
+@3
+A=D-A
+D=M
+@ARG
+M=D                 // ARG = *(frame-3)
+
+@R13
+D=M
+@4
+A=D-A
+D=M
+@LCL
+M=D                 // LCL = *(frame-4)
+
+@R14
+A=M
+0;JMP               // 跳回 retAddr（回到 caller 的返回位址）
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼要先 <code>@R13 / M=D</code> 保存 LCL？因為第 4 步「還原 LCL」時會覆蓋 LCL，而被呼叫者還需要它的舊值去定位 frame 的各個元素。所以 <strong>frame 尾巴（LCL）是 return 全程的生命線</strong>，必須先存進不會被碰到的臨時暫存器 R13。同理 retAddr 存 R14。</p>
+</blockquote>
+<hr />
+<h2 id="5-程式計數器的起點-bootstrap-與-sys-init">5. 程式計數器的起點：bootstrap 與 Sys.init</h2>
+<p>整支程式該從哪開始？VM 沒有「main」的強制名，Nand2Tetris 的慣例是：<strong>從 <code>Sys.init</code> 開始</strong>。</p>
+<h3 id="5-1-bootstrap-code">5.1 bootstrap code</h3>
+<p>在翻譯所有 VM 檔之前，VM Translator 會先產生一段「啟動碼」，做兩件事：</p>
+<ol>
+<li><strong>把 SP 初始化為 256</strong>（RAM[0] = 256），這樣堆疊從位址 256 開始往上長，避開前面保留給暫存器（0–15）與指標（16–255）的區域；</li>
+<li><strong>呼叫 Sys.init</strong>：這正是第一次 <code>call</code>，從這裡進入整個程式。</li>
+</ol>
+<pre><code class="language-asm">// bootstrap：初始化 SP 並呼叫 Sys.init
+@256
+D=A
+@SP
+M=D                 // SP = 256
+
+// call Sys.init 0（沒有參數）
+@returnAddr         // 唯一符號，例：Sys.init$ret.0
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1               // push retAddr
+@LCL
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1               // push LCL
+@ARG
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1               // push ARG
+@THIS
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1               // push THIS
+@THAT
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1               // push THAT
+@SP
+D=M
+@5
+D=D-A
+@ARG
+M=D                 // ARG = SP - 5 - 0
+@SP
+D=M
+@LCL
+M=D                 // LCL = SP
+@Sys.init
+0;JMP               // 呼叫 Sys.init
+(returnAddr)         // 若 Sys.init 返回，程式回到這（通常到此結束）
+</code></pre>
+<h3 id="5-2-sys-init-的例子">5.2 Sys.init 的例子</h3>
+<p>一個標準的 OS 起始函式：</p>
+<pre><code class="language-vm">// Sys.vm
+function Sys.init 0
+push constant 4000
+pop pointer 0        // THIS = 4000（設定某個物件基底）
+call Main.main 0     // 呼叫真正的主程式
+label END
+goto END            // 迴圈結束（或不回傳）
+</code></pre>
+<p>這樣「程式啟動 → Sys.init → Main.main → 執行 → 結束」的鏈結就建立了。</p>
+<hr />
+<h2 id="6-對照表與翻譯總覽">6. 對照表與翻譯總覽</h2>
+<p>把三條指令的「VM ⇄ Hack」對照集中起來：</p>
+<table>
+<thead>
+<tr>
+<th>VM 指令</th>
+<th>Hack 翻譯要點</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>function foo n</code></td>
+<td><code>(foo)</code> ＋ 連續 n 次「push 0」</td>
+</tr>
+<tr>
+<td><code>call foo m</code></td>
+<td>push retAddr/push LCL/push ARG/push THIS/push THAT → <code>ARG=SP-5-m</code> → <code>LCL=SP</code> → <code>@foo;0;JMP</code> → <code>(foo$ret.K)</code></td>
+</tr>
+<tr>
+<td><code>return</code></td>
+<td>備份 frame→R13、取 retAddr→R14、<code>*ARG=pop()</code>、<code>SP=ARG+1</code>、還原 THAT/THIS/ARG/LCL、<code>goto R14</code></td>
+</tr>
+<tr>
+<td>bootstrap</td>
+<td><code>SP=256</code> ＋ <code>call Sys.init 0</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-1-翻譯者的職責分工-預告">6.1 翻譯者的職責分工（預告）</h3>
+<p>在 8.4 節的完整 Translator 中，這三條指令各自對應 CodeWriter 的一個方法：</p>
+<pre><code class="language-python">def writeFunction(self, name, nLocals)   # function
+def writeCall(self, name, nArgs)         # call
+def writeReturn(self)                    # return
+</code></pre>
+<p>產生的 retAddr 唯一符號策略：對每個 call，用「目前的函式名 + <code>$ret.</code> + 一個遞增編號」命名，例如 <code>foo$ret.0</code>、<code>foo$ret.1</code>……確保不與其他 call 衝突。</p>
+<hr />
+<h2 id="7-設計思路與實作步驟">7. 設計思路與實作步驟</h2>
+<h3 id="7-1-一步一步-實作-function-call-return">7.1 一步一步：實作 function / call / return</h3>
+<ol>
+<li><strong>先寫 <code>writeFunction</code></strong>：最簡單（入口標籤＋推 0×n），且能幫你定義「<code>self.function = name</code>」來餵給 8.1 節的 label/goto；</li>
+<li><strong>再寫 <code>writeReturn</code></strong>：它只依賴 LCL 與堆疊，邏輯封閉，可以先獨自測；</li>
+<li><strong>最後寫 <code>writeCall</code></strong>：最複雜，確認參數、frame、返回位址三者順序都對。</li>
+</ol>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼 call 最難？因為它要「同時」跟 caller 的堆疊開頭、frame 指標、返回位址打交道。對照 8.3 節的堆疊視覺化圖表，把「call 前」與「call 後」的記憶體畫出來，是寫對 call 的黃金方法。</p>
+</blockquote>
+<h3 id="7-2-驗證口訣">7.2 驗證口訣</h3>
+<ul>
+<li>每個 <code>function</code>，都有相對應的「呼叫它的 <code>call</code>」；</li>
+<li>每個 <code>call</code>，被呼叫函式最後都會 <code>return</code>（除了 <code>Sys.init</code> 等故意不回的）；</li>
+<li>任何時刻，<code>SP = ARG + nArgs</code>（若有 nArgs 參數）且 <code>SP &lt;= LCL</code>。</li>
+</ul>
+<hr />
+<h2 id="8-本章小結">8. 本章小結</h2>
+<ul>
+<li><code>function</code> 宣告函式入口並初始化 nLocal 個 local 為 0；</li>
+<li><code>call</code> 依序保存 retAddr、LCL、ARG、THIS、THAT，設定新 ARG/LCL，再跳進函式；</li>
+<li><code>return</code> 先備份 frame，取回 retAddr，搬移回傳值到 <code>*ARG</code>，還原 SP 與各 frame 指標，最後跳回返回位址；</li>
+<li>返回位址是唯一需要「後續才知道標籤」的符號，實作時用「函式名$ret.K」命名保證唯一；</li>
+<li>bootstrap 把 <code>SP</code> 初始化為 256 並 <code>call Sys.init 0</code>，程式由此啟動；</li>
+<li>三者對照表：<code>function</code> 最簡、<code>return</code> 封閉、<code>call</code> 最繁，實作順序建議從簡到繁。</li>
+</ul>
+<p>本節把「怎麼呼叫、怎麼返回」講清楚了，但記住一個殘酷的事實：<strong>return 之所以能完整還原 caller，靠的是那五個 frame 元素井然有序地躺在堆疊裡</strong>。下一節 8.3 我們會把這「呼叫堆疊」一層層攤開來，看看多次嵌套呼叫時，記憶體到底怎麼流轉——那是理解整章的最後一塊拼圖。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="8.1.html">⇦ 上一節</a><a class="nav-btn" href="8.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

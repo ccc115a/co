@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.2 增量器與多位元加法器（Inc / Add16）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link active" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="2.1.html">⇦ 上一節</a></div>
+  <div class="title">2.2 增量器與多位元加法器（Inc / Add16）</div>
+  <div class="nav-right"><a class="nav-btn" href="2.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch02.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="2-2-增量器與多位元加法器-inc-add16">2.2 增量器與多位元加法器（Inc / Add16）</h1>
+<blockquote>
+<p>有了半加器與全加器做地基，本節我們要把它們拼成「真正能幹活」的運算單元：一次算 16 個位元的加法器 Add16，以及程式計數器（Program Counter）賴以為生的增量器 Inc16。同時，我們也會重新認識電腦如何用<strong>二補數</strong>來表示負數，讓加法器順理成章地也能做「減法」。</p>
+</blockquote>
+<h2 id="前言">前言</h2>
+<p>在 2.1 節，我們建好了 1 個位元的半加器與全加器。但現實世界的資料是 16 位元的——一個整數需要 16 條線路同時表示。因此，我們需要把全加器「複製」16 份並串接起來，讓它一次處理一整個 16 位元的數字。這便是 <strong>Add16（16 位元加法器）</strong>。</p>
+<p>另一方面，程式中有一個極度高頻的運算：「加一」。無論是迴圈的計數、陣列的索引，還是下一條指令的位址，都依賴「加一」這個動作。為此，Nand2Tetris 提供了一個專門的 <strong>Inc16</strong> 晶片：把輸入值加 1。</p>
+<p>最後，我們要面對一個關鍵問題：<strong>電腦怎麼表示負數？</strong> 答案是<strong>二補數（Two's Complement）</strong>。只要採用二補數表示法，我們就能用「加法電路」來完成減法——這是一個非常漂亮、幾乎「免費」的設計。</p>
+<h2 id="多位元加法-從-1-bit-到-16-bit">多位元加法：從 1-bit 到 16-bit</h2>
+<p>一個 16 位元數字 <code>a[16]</code>，我們可將它視為 16 條平行的輸入線 <code>a[0]</code> 到 <code>a[15]</code>，其中 <code>a[0]</code> 是最低有效位（LSB，最右邊），<code>a[15]</code> 是最高有效位（MSB，最左邊）。</p>
+<p>把兩個 16 位元數字相加的做法是：<strong>從最低位開始，逐位使用「全加器」，並把低位的 carry 串到高位的 carry-in</strong>。具體接線方式如下：</p>
+<pre><code></code></pre>
+<ul>
+<li>最低位 FA0 的 carry-in 接 0。</li>
+<li>每顆全加器 FA_k 的 carry-out 接到 FA_{k+1} 的 carry-in。</li>
+<li>最後一顆 FA15 的 carry-out，稱為「溢出進位」，通常會被丟棄（或在進位旗標中使用）。</li>
+</ul>
+<p>這就是<strong>漣波進位加法器（Ripple-Carry Adder）</strong>。它的缺點是：carry 要一顆顆「漣漪」地傳過去，位元愈多、延遲愈長。但以本課程的教學目的與模擬器環境而言，這種簡單、正確的設計已完全足夠。</p>
+<h2 id="16-位元加法器-add16">16 位元加法器：Add16</h2>
+<h3 id="設計思路">設計思路</h3>
+<p>Add16 的介面如下：</p>
+<ul>
+<li>輸入：<code>a[16]</code>、<code>b[16]</code>。</li>
+<li>輸出：<code>out[16]</code>，且 <code>out = a + b</code>（以二補數表示）。</li>
+</ul>
+<p>實作方式：串接 16 個全加器。最低位的 carry-in 直接給 0；其餘每個全加器的 carry-in 接上一個的 carry-out。</p>
+<h3 id="add16-hdl">Add16 HDL</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../02/Add16.tst&amp;run=1">習題模擬</a></p>
+<blockquote>
+<p>補充：HDL 中 <code>false</code> 表示常數 0，可直接接在輸入腳位；也可使用 <code>a=a[?]</code> 的 bus slicing 語法簡化。上面的寫法把每個全加器的 carry 用變數 <code>carry0...carry15</code> 明確串接，邏輯清楚、易於除錯。</p>
+</blockquote>
+<h3 id="一個範例驗證">一個範例驗證</h3>
+<pre><code></code></pre>
+<p>從最低位一路相加，得到完全正確的 <code>13112</code>。你可以用硬體模擬器（Hardware Simulator）載入 Add16.hdl 逐一測試不同的輸入組合。</p>
+<h2 id="進位的傳播-carry-propagation">進位的傳播（Carry Propagation）</h2>
+<p>「進位的傳播」指的是 carry 從最低位依序傳到最高位的過程。在漣波進位加法器裡，這是<strong>串列</strong>的行為：第 k 位要能正確相加，必須先等到低位的 carry 傳進來。因此最壞情況下的延遲為：</p>
+<pre><code></code></pre>
+<p>也就是說，16 位元加法器最壞要等 16 倍的單顆全加器延遲。雖然真實 CPU 會用更快的「前瞻進位加法器（Carry-Lookahead Adder）」來改善，但以教學與正確性而言，漣波架構已是絕佳的起點。</p>
+<p>實作上，你可以觀察到一件重要的事：<strong><code>out[15]</code>（最高位的和）與「最後的 carry15」是分開的</strong>。<code>out[15]</code> 是加法的最高有效位結果，而 carry15 是「溢位」旗標（overflow）——當兩正數相加結果為負（超出 16 位元範圍）時，這個進位就會「丟失」。這正是二補數溢位的來源。</p>
+<h2 id="二補數表示法與負數">二補數表示法與負數</h2>
+<h3 id="為何需要二補數">為何需要二補數</h3>
+<p>硬體只有 0 與 1，沒有「負號」這條線。那麼我們該如何用有限的位元表示正數與負數？最直覺的做法是<strong>用一個位元當符號位</strong>，但這會造成「+0」與「-0」同時存在、且加減法電路變複雜。</p>
+<p><strong>二補數（Two's Complement）</strong> 是現代電腦的標準解法。16 位元二補數的規則非常簡單：</p>
+<blockquote>
+<p>一個負數 <code>-x</code> 的二補數表示，等於 <code>x</code> 的每一位取反後再加 1。</p>
+</blockquote>
+<pre><code></code></pre>
+<h3 id="二補數的直覺理解">二補數的直覺理解</h3>
+<p>我們想像 16 位元是一個「鐘面」，從 <code>0000 0000 0000 0000</code>（0）開始往上數，加一後就依序變成 1、2、3……直到 <code>0111 1111 1111 1111</code>（32767，最大的正數）。再往上加一，就「繞回」成 <code>1000 0000 0000 0000</code>，也就是 <strong>-32768</strong>（最小的負數）。繼續加，會依序變成 -32767、-32766……直到 <code>1111 1111 1111 1111</code>（-1），再加一又繞回 0。</p>
+<p>這個「鐘面」式的循環結構，正是二補數的精髓：</p>
+<pre><code></code></pre>
+<h3 id="驗證-為甚麼二補數能讓-加減合一">驗證：為甚麼二補數能讓「加減合一」</h3>
+<p>我們來驗證 <code>5 + (-3) = 2</code> 是否真的能用同一個加法器完成：</p>
+<ul>
+<li>5 的二補數：<code>0000 0000 0000 0101</code></li>
+<li>-3 的二補數：<code>~3 + 1 = 1111 1111 1111 1100 + 1 = 1111 1111 1111 1101</code></li>
+</ul>
+<p>把兩者用 Add16 相加：</p>
+<pre><code></code></pre>
+<p>溢位出來的「1」被丟棄，剩下的 <code>...0010 = 2</code> 完全正確。這證明了：<strong>只要以二補數表示，減法 <code>x - y</code> 就等價於加法 <code>x + (~y + 1)</code>，不需要額外的減法電路</strong>。這也為我們在本章稍後設計 ALU 的 <code>x-y</code> 運算埋下伏筆。</p>
+<h2 id="增量器-inc16">增量器：Inc16</h2>
+<h3 id="設計思路">設計思路</h3>
+<p><strong>Inc16（增量器）</strong> 的介面：</p>
+<ul>
+<li>輸入：<code>in[16]</code>。</li>
+<li>輸出：<code>out[16]</code>，且 <code>out = in + 1</code>。</li>
+</ul>
+<p>它本質上就是一個「把 b 固定為 1」的 16 位元加法器。我們有兩種直覺的實作方式：</p>
+<ol>
+<li><strong>概念上的做法</strong>：把 <code>in</code> 與常數 1 丟進 Add16。但我們並未假設有 Add16 內的 b 值固定能力，讓它去加「常數 1」是合理的。</li>
+<li><strong>優化做法</strong>：既然只要加 1，最低位用半加器（加 1 對最低位），其餘位用全加器串接 carry。這樣更省電路。</li>
+</ol>
+<h3 id="使用-add16-的直覺版-僅供理解">使用 Add16 的直覺版（僅供理解）</h3>
+<pre><code class="language-hdl"></code></pre>
+<h3 id="inc16-標準-hdl-自行串接全加器">Inc16 標準 HDL（自行串接全加器）</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../02/Inc16.tst&amp;run=1">習題模擬</a></p>
+<p>說明：因為除了最低位外，其餘每一位都只是「把 <code>in[k]</code> 加上來自低位的進位」，所以 <code>b</code> 恆為 0（<code>false</code>），僅最低位 <code>in[0]</code> 要加常數 1（<code>true</code>）。這樣極省電路資源。</p>
+<h3 id="inc16-的應用">Inc16 的應用</h3>
+<p>Inc16 看起來微不足道，卻是**程式計數器（Program Counter, PC）**的核心零件：電腦執行完一條指令後，程式計數器通常要「加一」以指向下一條指令位址。我們會在第三章深入探討。</p>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>Add16</strong>：串接 16 個全加器，最低位 carry-in = 0，形成漣波進位加法器，一次計算 <code>a + b</code>。</li>
+<li><strong>進位的傳播</strong>：carry 由低位往高位串列傳遞，是漣波加法器的主要延遲來源。</li>
+<li><strong>Inc16</strong>：只是「加 1」的特例，最低位用半加器、其餘位用全加器即可，是 PC 的核心零件。</li>
+<li><strong>二補數</strong>：<code>-x = (~x) + 1</code>，讓「減法 = 加法」成立，不需額外減法電路，是 ALU 設計的關鍵基礎。</li>
+</ul>
+<p>現在我們已經有了 Add16、Inc16 與二補數的概念，本節的最後一塊拼圖在於「如何把加法、減法與邏輯運算（AND、OR、NOT）整合在一個可切換模式的晶片中」。這正是下一節的主角——<strong>Hack ALU</strong>。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="2.1.html">⇦ 上一節</a><a class="nav-btn" href="2.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

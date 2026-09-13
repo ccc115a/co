@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十章：編譯器 —— 從高階語言到虛擬機碼</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link active" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="9.3.html">⇦ 上一節</a></div>
+  <div class="title">第十章：編譯器 —— 從高階語言到虛擬機碼</div>
+  <div class="nav-right"><a class="nav-btn" href="10.2.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch10.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第十章-編譯器-從高階語言到虛擬機碼">第十章：編譯器 —— 從高階語言到虛擬機碼</h1>
+<h2 id="前言">前言</h2>
+<p>在前面的章節中，我們已經建造了一台完整的電腦：從硬體閘道（第 1 章）到 CPU 與記憶體（第 5 章），再到組譯器（第 6 章）與虛擬機（第 7 章）。如今，我們站在軟體棧的最頂端，準備挑戰最後一個也是最複雜的組件——<strong>編譯器（Compiler）</strong>。</p>
+<p>編譯器是連接「人類思考方式」與「機器執行方式」之間的橋樑。它將高階、易讀的程式語言（如 Java、Python、C++），翻譯成低階的機器可執行指令。在 nand2tetris 的世界裡，我們要將自己設計的 <strong>Jack 程式語言</strong>，編譯成虛擬機碼（VM code），進而讓第 7 章建立的 VM 翻譯器（VM Translator）將其轉換為組語，最終在硬體上執行。</p>
+<p>本章將帶領你從零開始，理解編譯器的基本原理，並動手實作一個完整的 Jack 編譯器。這是一趟從「理解語言」到「生成程式碼」的旅程。</p>
+<hr />
+<h2 id="10-1-編譯器的角色">10.1 編譯器的角色</h2>
+<h3 id="編譯器是什麼">編譯器是什麼？</h3>
+<p>簡單來說，<strong>編譯器是一種程式，它將一種語言（來源語言）翻譯成另一種語言（目標語言）</strong>。最常見的編譯器，是將高階程式語言翻譯成低階的機器語言或虛擬機碼。</p>
+<p>打個比方：如果你是一位講中文的工程師，而機器只懂英文指令，那編譯器就是一位翻譯官——他聽你說中文，然後把你的意思精確地轉述成英文，讓機器能理解並執行。</p>
+<h3 id="編譯器的歷史意義">編譯器的歷史意義</h3>
+<p>編譯器的發明是計算機科學史上最重要的突破之一。1957 年，John McCarthy 的團隊在 MIT 開發了第一個 LISP 編譯器，而更早的 Fortran 編譯器（1957 年，由 John Backus 領導的 IBM 團隊開發）則開創了高階語言編譯的先河。在此之前，程式設計師必須手寫組語或機器碼，極度低效且容易出錯。</p>
+<p>有了編譯器之後，人類可以用接近自然語言的方式書寫程式，而交由電腦完成繁瑣的翻譯工作。這項技術直接催生了整個軟體產業。</p>
+<hr />
+<h2 id="10-2-編譯器的整體管線-pipeline">10.2 編譯器的整體管線（Pipeline）</h2>
+<p>一個典型的編譯器可以分為兩個主要階段：<strong>前端（Front End）</strong> 與 <strong>後端（Back End）</strong>。</p>
+<h3 id="前端-理解來源語言">前端：理解來源語言</h3>
+<p>前端負責「閱讀」來原始碼，理解其結構與語意，並產生一種中間表示（Intermediate Representation, IR）。前端的工作與目標機器無關——無論你要編譯到 x86、ARM 還是虛擬機，前端的分析過程是一樣的。</p>
+<p>前端通常包含以下幾個子階段：</p>
+<pre><code>原始碼 ──→ [詞法分析] ──→ [語法分析] ──→ [語意分析] ──→ 中間表示
+           (Scanner)       (Parser)       (Semantic)
+</code></pre>
+<ol>
+<li>
+<p><strong>詞法分析（Lexical Analysis / Scanning）</strong>：將字元流（character stream）轉換為記號流（token stream）。空白、註解等會被移除，有意義的單元（關鍵字、識別碼、常數、符號）被提取出來。</p>
+</li>
+<li>
+<p><strong>語法分析（Parsing / Syntactic Analysis）</strong>：將記號流依照語法規則（文法）組織成一棵語法樹（Parse Tree 或 Abstract Syntax Tree, AST），檢查程式結構是否合法。</p>
+</li>
+<li>
+<p><strong>語意分析（Semantic Analysis）</strong>：檢查程式的邏輯意義是否正確。例如變數是否已宣告、型態是否匹配、函式呼叫的參數個數是否正確等。</p>
+</li>
+</ol>
+<h3 id="後端-生成目標碼">後端：生成目標碼</h3>
+<p>後端負責將前端產生的中間表示翻譯成目標語言：</p>
+<pre><code>中間表示 ──→ [代碼生成] ──→ [代碼優化] ──→ 目標碼
+             (Code Gen)      (Optimizer)
+</code></pre>
+<ol start="4">
+<li>
+<p><strong>代碼生成（Code Generation）</strong>：根據中間表示，產生目標平台的指令碼。在 nand2tetris 中，目標是 VM 碼。</p>
+</li>
+<li>
+<p><strong>代碼優化（Code Optimization）</strong>（可選）：對生成的代碼進行各種變換，使其更小或更快。在 nand2tetris 的 Jack 編譯器中，我們通常省略這個步驟，以保持簡單性。</p>
+</li>
+</ol>
+<h3 id="前端與後端分離的優勢">前端與後端分離的優勢</h3>
+<p>這種劃分的核心價值在於<strong>可重用性</strong>。同一個前端可以搭配不同的後端，產生不同平台的目標碼。例如，Java 的前端將 <code>.java</code> 編譯成 <code>.class</code> 的位元組碼（bytecode），而不同的 JVM 實作（HotSpot、OpenJ9）則可以作為後端，將位元組碼翻譯成不同作業系統上的機器碼。</p>
+<p>在 nand2tetris 中，我們的編譯器也遵循這個架構：</p>
+<ul>
+<li><strong>前端</strong>：JackTokenizer + CompilationEngine（分析 Jack 語言，產生 VM 碼）</li>
+<li><strong>後端</strong>：VM Translator（將 VM 碼翻譯成組語）</li>
+</ul>
+<hr />
+<h2 id="10-3-jack-編譯器的架構">10.3 Jack 編譯器的架構</h2>
+<p>在我們的 nand2tetris 專案中，Jack 編譯器需要處理以下工作：</p>
+<pre><code>.jack 檔案（原始碼）
+    │
+    ▼
+┌─────────────────────────────┐
+│       Jack 編譯器            │
+│                             │
+│  ┌───────────────────────┐  │
+│  │  JackTokenizer        │  │
+│  │  （詞法分析器）         │  │
+│  └──────────┬────────────┘  │
+│             ▼               │
+│  ┌───────────────────────┐  │
+│  │  CompilationEngine     │  │
+│  │  （語法分析器 +         │  │
+│  │   代碼生成器）          │  │
+│  └──────────┬────────────┘  │
+│             ▼               │
+└─────────────┼───────────────┘
+              │
+              ▼
+        .vm 檔案（VM 碼）
+</code></pre>
+<h3 id="兩個核心組件">兩個核心組件</h3>
+<ol>
+<li>
+<p><strong>JackTokenizer</strong>（詞法分析器）：</p>
+<ul>
+<li>輸入：<code>.jack</code> 檔案的字元流</li>
+<li>輸出：token 序列</li>
+<li>職責：識別關鍵字、符號、識別碼、整數常量、字串常量</li>
+</ul>
+</li>
+<li>
+<p><strong>CompilationEngine</strong>（語法分析器 + 代碼生成器）：</p>
+<ul>
+<li>輸入：token 序列（從 JackTokenizer 取得）</li>
+<li>輸出：<code>.vm</code> 檔案</li>
+<li>職責：解析語法結構、驗證語意、產生 VM 碼</li>
+</ul>
+</li>
+</ol>
+<hr />
+<h2 id="10-4-輸入與輸出">10.4 輸入與輸出</h2>
+<h3 id="輸入-jack-原始碼">輸入：Jack 原始碼</h3>
+<p>Jack 是我們自己設計的高階物件導向語言。一個簡單的 Jack 程式可能長這樣：</p>
+<pre><code class="language-jack">// Main.jack
+class Main {
+    function void main() {
+        var int x, y;
+        let x = 17;
+        let y = 24;
+        do Output.printString(&quot;Hello, World! &quot;);
+        do Output.printInt(x + y);
+        do Output.println();
+        return;
+    }
+}
+</code></pre>
+<h3 id="輸出-xml-與-vm-檔案">輸出：XML 與 VM 檔案</h3>
+<p>在我們的 nand2tetris 實作中，編譯器有兩個輔助輸出：</p>
+<ol>
+<li><strong><code>XxxT.xml</code></strong>：tokenizer 的輸出，列出所有 token</li>
+<li><strong><code>Xxx.xml</code></strong>：parser 的輸出，以 XML 標記呈現語法樹結構</li>
+<li><strong><code>Xxx.vm</code></strong>：最終的 VM 碼，是真正的編譯產物</li>
+</ol>
+<p>XML 輸出的主要目的是<strong>驗證與除錯</strong>。nand2tetris 提供了 <code>TextComparer</code> 工具，可以比較你的輸出與預期輸出是否一致。</p>
+<hr />
+<h2 id="10-5-編譯器-vs-直譯器-vs-組譯器">10.5 編譯器 vs 直譯器 vs 組譯器</h2>
+<p>理解編譯器的最佳方式，是將它與其他語言處理工具做比較：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>編譯器 (Compiler)</th>
+<th>直譯器 (Interpreter)</th>
+<th>組譯器 (Assembler)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>翻譯時機</strong></td>
+<td>執行前（離線）</td>
+<td>執行時（即時）</td>
+<td>執行前（離線）</td>
+</tr>
+<tr>
+<td><strong>輸入</strong></td>
+<td>高階語言原始碼</td>
+<td>高階語言原始碼</td>
+<td>組語原始碼</td>
+</tr>
+<tr>
+<td><strong>輸出</strong></td>
+<td>目標碼（機器碼/VM碼）</td>
+<td>無（直接執行）</td>
+<td>機器碼</td>
+</tr>
+<tr>
+<td><strong>執行速度</strong></td>
+<td>快（已翻譯）</td>
+<td>慢（逐行翻譯）</td>
+<td>快（直接執行）</td>
+</tr>
+<tr>
+<td><strong>錯誤偵測</strong></td>
+<td>編譯時即可發現許多錯誤</td>
+<td>只在執行到該行時才發現</td>
+<td>編譯時</td>
+</tr>
+<tr>
+<td><strong>可移植性</strong></td>
+<td>較差（需針對平台編譯）</td>
+<td>較好（靠直譯器跨平台）</td>
+<td>最差（綁定特定架構）</td>
+</tr>
+<tr>
+<td><strong>範例</strong></td>
+<td>C, C++, Rust</td>
+<td>Python, JavaScript, Ruby</td>
+<td>x86 組語, ARM 組語</td>
+</tr>
+</tbody>
+</table>
+<h3 id="編譯器的優勢">編譯器的優勢</h3>
+<ul>
+<li><strong>執行效率高</strong>：所有翻譯工作在編譯時完成，執行時不需要再進行語言分析</li>
+<li><strong>最佳化空間大</strong>：編譯器可以在翻譯過程中對整體代碼進行分析與優化</li>
+<li><strong>錯誤偵測完整</strong>：可以在編譯時檢查型態錯誤、未宣告變數等問題</li>
+</ul>
+<h3 id="直譯器的優勢">直譯器的優勢</h3>
+<ul>
+<li><strong>開發效率高</strong>：修改後可立即執行，不需要等待編譯</li>
+<li><strong>可移植性好</strong>：只要目標平台有直譯器，同一份原始碼到處可跑</li>
+<li><strong>互動性強</strong>：適合 REPL（Read-Eval-Print Loop）式的互動開發</li>
+</ul>
+<h3 id="組譯器的特殊地位">組譯器的特殊地位</h3>
+<p>組譯器與編譯器的最大差異在於：組語與機器碼之間幾乎是<strong>一對一</strong>的對應關係。每一條組語指令通常對應一條機器指令。而編譯器面對的高階語言與目標碼之間，則是<strong>一對多</strong>或<strong>多對一</strong>的複雜映射。</p>
+<p>在 nand2tetris 中，我們依序建構了：組譯器（第 6 章）→ VM 翻譯器（第 7 章）→ 編譯器（本章）。這恰好是計算機科學中「逐層抽象」理念的完美體現。</p>
+<hr />
+<h2 id="10-6-nand2tetris-編譯器的設計理念">10.6 nand2tetris 編譯器的設計理念</h2>
+<p>nand2tetris 的 Jack 編譯器被刻意設計得<strong>簡單而完整</strong>。它不追求效率或最佳化，而是要讓學生完整體驗編譯器的每一個核心步驟：</p>
+<ol>
+<li>
+<p><strong>遞迴下降（Recursive Descent）</strong>：我們使用遞迴下降解析器，這是最直覺、最容易理解的語法分析方法。每個文法規則對應一個函式。</p>
+</li>
+<li>
+<p><strong>單趟編譯（Single-Pass）</strong>：在可能的範圍內，我們在一趟掃描中同時完成解析與代碼生成，而不像工業級編譯器那樣分為多趟。</p>
+</li>
+<li>
+<p><strong>XML 作為中介表示</strong>：XML 格式讓我們可以用文字工具（如 TextComparer）驗證編譯器的正確性，這是教學上的重要設計。</p>
+</li>
+<li>
+<p><strong>模組化設計</strong>：JackTokenizer 與 CompilationEngine 的職責分明，各自可以獨立測試。</p>
+</li>
+</ol>
+<hr />
+<h2 id="10-7-編譯過程的總覽">10.7 編譯過程的總覽</h2>
+<p>以下是一個完整 Jack 程式的編譯流程圖：</p>
+<pre><code>          Jack 原始碼
+               │
+               ▼
+    ┌─────────────────────┐
+    │   字元流 (char)      │
+    │   &quot;class Main {     │
+    │    function void...&quot; │
+    └─────────┬───────────┘
+              │ JackTokenizer
+              ▼
+    ┌─────────────────────┐
+    │   Token 流           │
+    │   &lt;keyword&gt;class    │
+    │   &lt;identifier&gt;Main  │
+    │   &lt;symbol&gt;{         │
+    │   &lt;keyword&gt;function │
+    │   ...               │
+    └─────────┬───────────┘
+              │ CompilationEngine
+              ▼
+    ┌─────────────────────┐
+    │   語法樹 (XML)       │
+    │   &lt;class&gt;           │
+    │     &lt;keyword&gt;class  │
+    │     &lt;identifier&gt;    │
+    │     &lt;symbol&gt;{       │
+    │     &lt;subroutineDec&gt; │
+    │       ...           │
+    └─────────┬───────────┘
+              │ 代碼生成
+              ▼
+    ┌─────────────────────┐
+    │   VM 碼              │
+    │   function Main     │
+    │     .main 0         │
+    │   push constant 17  │
+    │   pop local 0       │
+    │   ...               │
+    └─────────────────────┘
+</code></pre>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<p>本章是第十章的導論，我們介紹了編譯器的基本概念：</p>
+<ul>
+<li><strong>編譯器</strong>是將高階語言翻譯成低階語言的程式，是軟體棧中最上層的組件。</li>
+<li>編譯器管線包含：詞法分析、語法分析、語意分析、代碼生成等階段。</li>
+<li>前端負責理解來源語言（與目標機器無關），後端負責生成目標碼。</li>
+<li>在 nand2tetris 中，Jack 編譯器的輸入是 <code>.jack</code> 檔案，輸出是 <code>.vm</code> 檔案（以及輔助的 XML 檔案）。</li>
+<li>Jack 編譯器使用遞迴下降解析法，由 JackTokenizer 和 CompilationEngine 兩個核心組件構成。</li>
+<li>編譯器與直譯器、組譯器各有優劣，適用於不同場景。</li>
+</ul>
+<p>在接下來的小節中，我們將依序深入每一個階段：首先是詞法分析（10.2），然後是語法分析（10.3），最後是語法樹的 XML 輸出與測試（10.4）。準備好了嗎？讓我們開始動手實作吧！</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="9.3.html">⇦ 上一節</a><a class="nav-btn" href="10.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

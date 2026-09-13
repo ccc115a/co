@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.4 記憶體段（Memory Segments）的映射與存取</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link active" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="7.3.html">⇦ 上一節</a></div>
+  <div class="title">7.4 記憶體段（Memory Segments）的映射與存取</div>
+  <div class="nav-right"><a class="nav-btn" href="8.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch07.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="7-4-記憶體段-memory-segments-的映射與存取">7.4 記憶體段（Memory Segments）的映射與存取</h1>
+<h2 id="前言">前言</h2>
+<p>前兩節我們學會了 <code>push constant</code> 和所有算術邏輯指令的翻譯。但 VM 的強大之處不止於常數運算——它需要處理<strong>變數</strong>。而變數的存取，就是透過**記憶體段（Memory Segments）**來完成。</p>
+<p>Nand2Tetris 的 VM 定義了八個記憶體段：<code>argument</code>、<code>local</code>、<code>static</code>、<code>constant</code>、<code>this</code>、<code>that</code>、<code>pointer</code>、<code>temp</code>。每個段都有自己的「虛擬位址空間」（從 0 開始的偏移量），VM 翻譯器的任務就是把这些虛擬位址<strong>映射</strong>到 Hack RAM 的實體位址。</p>
+<p>本節將詳解每個段的映射規則、<code>push/pop segment i</code> 的完整 Hack 翻譯，以及完整的追蹤範例。</p>
+<hr />
+<h2 id="1-八個記憶體段總覽">1. 八個記憶體段總覽</h2>
+<pre><code>  VM 的八個記憶體段：
+
+  ┌─────────────┬────────────────────┬─────────────────────────┐
+  │ 段名         │ 虛擬位址範圍       │ Hack RAM 實體映射        │
+  ├─────────────┼────────────────────┼─────────────────────────┤
+  │ argument    │ 0, 1, 2, ...       │ RAM[ARG + i]            │
+  │ local       │ 0, 1, 2, ...       │ RAM[LCL + i]            │
+  │ static      │ 0, 1, 2, ...       │ RAM[16 + k]（唯一位址）   │
+  │ constant    │ 0, 1, 2, ...       │ 不映射 RAM（虛擬常數）    │
+  │ this        │ 0, 1, 2, ...       │ RAM[THIS + i]           │
+  │ that        │ 0, 1, 2, ...       │ RAM[THAT + i]           │
+  │ pointer     │ 0 或 1             │ THIS（位址 3）或 THAT（位址 4）│
+  │ temp        │ 0 ~ 7              │ RAM[5 + i]              │
+  └─────────────┴────────────────────┴─────────────────────────┘
+</code></pre>
+<p>每個段的核心概念：<strong>基地址（base address）+ 偏移量（offset）= 實體 RAM 位址</strong>。</p>
+<hr />
+<h2 id="2-各段的映射規則详解">2. 各段的映射規則详解</h2>
+<h3 id="2-1-constant-段-特殊">2.1 constant 段（特殊）</h3>
+<p><code>constant</code> 段<strong>不映射到任何 RAM</strong>。它只是一個「值的來源」。<code>push constant i</code> 就是把整數 <code>i</code> 直接壓入堆疊——不需要從 RAM 讀取。</p>
+<pre><code class="language-vm">push constant 7   // 直接把 7 壓入堆疊
+</code></pre>
+<p>翻譯方式（與 7.2 節相同）：</p>
+<pre><code class="language-asm">@7
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+</code></pre>
+<h3 id="2-2-argument-段-引數">2.2 argument 段（引數）</h3>
+<p><code>argument</code> 段存放函式的<strong>引數</strong>。基地址存在 <code>ARG</code>（這是一個「虛擬暫存器」，存在 RAM 的某個位址）。</p>
+<pre><code class="language-vm">push argument 0   // 讀取第一個引數
+pop argument 2    // 寫入第三個引數位址
+</code></pre>
+<p>映射規則：<code>argument i</code> → <code>RAM[ARG + i]</code></p>
+<h3 id="2-3-local-段-本地變數">2.3 local 段（本地變數）</h3>
+<p><code>local</code> 段存放函式的<strong>本地變數</strong>。基地址存在 <code>LCL</code>。</p>
+<pre><code class="language-vm">push local 0      // 讀取第一個本地變數
+pop local 1       // 寫入第二個本地變數位址
+</code></pre>
+<p>映射規則：<code>local i</code> → <code>RAM[LCL + i]</code></p>
+<h3 id="2-4-static-段-靜態變數">2.4 static 段（靜態變數）</h3>
+<p><code>static</code> 段存放<strong>檔案級別的全域變數</strong>。與其他段不同，static 段不使用基地址+offset 的模式——每個 <code>static i</code> 被映射到一個<strong>全域唯一的 RAM 位址</strong>（從 16 開始）。</p>
+<pre><code class="language-vm">push static 0     // 讀取第 0 個靜態變數
+pop static 1      // 寫入第 1 個靜態變數
+</code></pre>
+<p>映射規則：<code>static i</code> → <code>RAM[16 + i]</code></p>
+<p>（在組譯器中，<code>static 0</code> 被翻譯成 <code>@Xxx.0</code>、<code>static 1</code> 被翻譯成 <code>@Xxx.1</code>，其中 <code>Xxx</code> 是 VM 檔案名稱。）</p>
+<h3 id="2-5-this-段-物件資料">2.5 this 段（物件資料）</h3>
+<p><code>this</code> 段用來存取「當前物件」的資料欄位。基地址存在 <code>THIS</code>（虛擬暫存器）。</p>
+<pre><code class="language-vm">push this 0       // 讀取物件的第 0 個欄位
+pop this 2        // 寫入物件的第 2 個欄位
+</code></pre>
+<p>映射規則：<code>this i</code> → <code>RAM[THIS + i]</code></p>
+<h3 id="2-6-that-段-陣列元素">2.6 that 段（陣列元素）</h3>
+<p><code>that</code> 段用來存取「由 THAT 指向的記憶體區塊」，通常用於陣列操作。</p>
+<pre><code class="language-vm">push that 0       // 讀取 THAT[0]
+pop that 3        // 寫入 THAT[3]
+</code></pre>
+<p>映射規則：<code>that i</code> → <code>RAM[THAT + i]</code></p>
+<h3 id="2-7-pointer-段-物件基地址操作">2.7 pointer 段（物件基地址操作）</h3>
+<p><code>pointer</code> 段只有兩個值：0 和 1。它不是用來讀寫「資料」，而是用來<strong>設定 THIS 和 THAT 的值</strong>。</p>
+<pre><code class="language-vm">push pointer 0    // 把 THIS 的值壓入堆疊
+pop pointer 1     // 把堆疊頂端的值設為 THAT
+</code></pre>
+<p>映射規則：</p>
+<ul>
+<li><code>pointer 0</code> → 直接操作 <code>THIS</code>（存在 RAM[3]）</li>
+<li><code>pointer 1</code> → 直接操作 <code>THAT</code>（存在 RAM[4]）</li>
+</ul>
+<h3 id="2-8-temp-段-臨時變數">2.8 temp 段（臨時變數）</h3>
+<p><code>temp</code> 段提供 8 個固定位址的臨時變數（不使用基地址+offset）。</p>
+<pre><code class="language-vm">push temp 0       // 讀取 RAM[5]
+pop temp 3        // 寫入 RAM[8]
+</code></pre>
+<p>映射規則：<code>temp i</code> → <code>RAM[5 + i]</code>，其中 <code>0 ≤ i ≤ 7</code></p>
+<hr />
+<h2 id="3-堆疊指標-sp-與基地址的關係">3. 堆疊指標（SP）與基地址的關係</h2>
+<p>VM 使用了兩個關鍵指標系統：</p>
+<h3 id="3-1-sp-stack-pointer">3.1 SP（Stack Pointer）</h3>
+<pre><code>SP = RAM[0]
+堆疊頂端的值 = RAM[SP - 1]
+下一個可 push 的位址 = RAM[SP]
+</code></pre>
+<h3 id="3-2-各段的基地址寄存器">3.2 各段的基地址寄存器</h3>
+<p>Nand2Tetris 把基地址放在特定的 RAM 位址：</p>
+<pre><code>  RAM[0]   = SP   （堆疊指標）
+  RAM[1]   = LCL  （local 段基地址）
+  RAM[2]   = ARG  （argument 段基地址）
+  RAM[3]   = THIS （物件資料基地址）
+  RAM[4]   = THAT （陣列基地址）
+</code></pre>
+<p>這些位址在函式呼叫時由 VM 的 <code>call</code> 指令設定，在函式返回時由 <code>return</code> 指令恢復。本節先假設它們已經被正確設定。</p>
+<hr />
+<h2 id="4-push-pop-segment-i-的完整翻譯">4. push/pop segment i 的完整翻譯</h2>
+<h3 id="4-1-push-segment-i-通用模板">4.1 push segment i（通用模板）</h3>
+<pre><code>  目標：把 RAM[base + i] 的值壓入堆疊
+
+  步驟：
+  ① 取得 base 的值（從對應的基地址寄存器）
+  ② 加上偏移量 i
+  ③ 從那個位址讀取值
+  ④ 把值寫入堆疊頂端
+  5  SP++
+</code></pre>
+<p>以 <code>push local 2</code> 為例：</p>
+<pre><code class="language-asm">// push local 2
+@LCL         // A = 1（LCL 的位址）
+D=M          // D = LCL 的值（例如 2048）
+@2           // A = 2（偏移量）
+D=D+A        // D = 2048 + 2 = 2050（目標位址）
+@R13         // A = 13（暫存位址）
+M=D          // R13 = 2050（暫存目標位址）
+@SP          // A = 0
+A=M          // A = SP 的值
+D=M          // D = SP 當前的值（不是要的！需要從目標位址讀取）
+</code></pre>
+<p>等等，上面的邏輯有問題——我們需要用 R13 暫存目標位址，然後從那個位址讀取。正確的翻譯是：</p>
+<pre><code class="language-asm">// push local 2
+@LCL         // A = 1
+D=M          // D = LCL（基地址，例如 2048）
+@2           // A = 2
+D=D+A        // D = LCL + 2 = 2050
+@R13         // A = 13
+M=D          // R13 = 2050（暫存目標位址）
+@R13         // A = 13
+A=M          // A = 2050
+D=M          // D = RAM[2050]（讀取本地變數的值）
+@SP          // A = 0
+A=M          // A = SP
+M=D          // RAM[SP] = D（值壓入堆疊）
+@SP          // A = 0
+M=M+1        // SP++
+</code></pre>
+<p><strong>14 條指令。</strong></p>
+<p>但這個翻譯有冗餘的 <code>@R13</code>。更優化的版本：</p>
+<pre><code class="language-asm">// push local 2（優化版）
+@LCL         // A = 1
+D=M          // D = LCL
+@2           // A = 2
+D=D+A        // D = LCL + 2（目標位址）
+A=D          // A = 目標位址（直接跳過去，不需要 R13）
+D=M          // D = RAM[LCL + 2]
+@SP          // A = 0
+A=M          // A = SP
+M=D          // RAM[SP] = 值
+@SP          // A = 0
+M=M+1        // SP++
+</code></pre>
+<p><strong>10 條指令。</strong> <code>A=D</code> 這條指令直接把目標位址載入 A，省掉了 R13 的中間步驟。</p>
+<h3 id="4-2-通用-push-模板的翻譯器實現">4.2 通用 push 模板的翻譯器實現</h3>
+<pre><code class="language-python">def _translate_push_segment(self, segment, index):
+    &quot;&quot;&quot;翻譯 push segment index&quot;&quot;&quot;
+    base_reg = SEGMENT_BASE[segment]  # 'local'→'LCL', 'argument'→'ARG', etc.
+    return f&quot;&quot;&quot;
+@{base_reg}
+D=M
+@{index}
+D=D+A
+A=D
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+&quot;&quot;&quot;
+</code></pre>
+<p>其中段名到基地址寄存器的映射：</p>
+<pre><code class="language-python">SEGMENT_BASE = {
+    'local':    'LCL',
+    'argument': 'ARG',
+    'this':     'THIS',
+    'that':     'THAT',
+}
+</code></pre>
+<h3 id="4-3-pop-segment-i-通用模板">4.3 pop segment i（通用模板）</h3>
+<pre><code>  目標：把堆疊頂端的值寫入 RAM[base + i]
+
+  步驟：
+  ① 取得 base 的值
+  ② 加上偏移量 i，計算目標位址
+  ③ 暫存目標位址
+  ④ SP--
+  5  從堆疊頂端取出值
+  6  把值寫入目標位址
+</code></pre>
+<p>以 <code>pop local 2</code> 為例：</p>
+<pre><code class="language-asm">// pop local 2
+@LCL         // A = 1
+D=M          // D = LCL
+@2           // A = 2
+D=D+A        // D = LCL + 2（目標位址）
+@R13         // A = 13
+M=D          // R13 = 2050（暫存目標位址）
+@SP          // A = 0
+M=M-1        // SP--
+A=M          // A = SP
+D=M          // D = 堆疊頂端的值
+@R13         // A = 13
+A=M          // A = 2050
+M=D          // RAM[2050] = 值
+</code></pre>
+<p><strong>12 條指令。</strong> 注意 pop 必須使用 R13 暫存目標位址——因為 <code>M=D</code> 需要先設定 A 為目標位址，但我們需要先把 D 的值從堆疊取出來。這個「先暫存再取值」的模式是 pop 的固定套路。</p>
+<h3 id="4-4-通用-pop-模板的翻譯器實現">4.4 通用 pop 模板的翻譯器實現</h3>
+<pre><code class="language-python">def _translate_pop_segment(self, segment, index):
+    &quot;&quot;&quot;翻譯 pop segment index&quot;&quot;&quot;
+    base_reg = SEGMENT_BASE[segment]
+    return f&quot;&quot;&quot;
+@{base_reg}
+D=M
+@{index}
+D=D+A
+@R13
+M=D
+@SP
+AM=M-1
+D=M
+@R13
+A=M
+M=D
+&quot;&quot;&quot;
+</code></pre>
+<hr />
+<h2 id="5-特殊段的翻譯">5. 特殊段的翻譯</h2>
+<h3 id="5-1-push-pop-pointer">5.1 push/pop pointer</h3>
+<p><code>pointer</code> 段直接操作 <code>THIS</code>（位址 3）和 <code>THAT</code>（位址 4）：</p>
+<pre><code class="language-vm">push pointer 0   // 把 THIS 的值壓入堆疊
+</code></pre>
+<pre><code class="language-asm">// push pointer 0
+@THIS          // A = 3
+D=M            // D = THIS 的值
+@SP            // A = 0
+A=M            // A = SP
+M=D            // RAM[SP] = THIS
+@SP            // A = 0
+M=M+1          // SP++
+</code></pre>
+<p><strong>7 條指令。</strong> 注意這裡的 THIS 是<strong>直接從 RAM[3] 讀取</strong>，不需要加偏移量——因為 pointer 只有 0 和 1 兩個值。</p>
+<pre><code class="language-vm">pop pointer 1   // 把堆疊頂端的值設為 THAT
+</code></pre>
+<pre><code class="language-asm">// pop pointer 1
+@SP            // A = 0
+M=M-1          // SP--
+A=M            // A = SP
+D=M            // D = 堆疊頂端的值
+@THAT          // A = 4
+M=D            // THAT = D
+</code></pre>
+<p><strong>6 條指令。</strong> 比其他 pop 簡單——因為不需要計算目標位址。</p>
+<h3 id="5-2-push-pop-temp">5.2 push/pop temp</h3>
+<p><code>temp</code> 段有固定位址（RAM[5] 到 RAM[12]）：</p>
+<pre><code class="language-vm">push temp 3     // 讀取 RAM[8]
+</code></pre>
+<pre><code class="language-asm">// push temp 3
+@8             // A = 5 + 3 = 8（翻譯器計算好的實體位址）
+D=M            // D = RAM[8]
+@SP            // A = 0
+A=M            // A = SP
+M=D            // RAM[SP] = RAM[8]
+@SP            // A = 0
+M=M+1          // SP++
+</code></pre>
+<p><strong>7 條指令。</strong> 翻譯器直接把 <code>5 + i</code> 計算好，硬編碼進去。</p>
+<pre><code class="language-vm">pop temp 3      // 寫入 RAM[8]
+</code></pre>
+<pre><code class="language-asm">// pop temp 3
+@SP            // A = 0
+M=M-1          // SP--
+A=M            // A = SP
+D=M            // D = 堆疊頂端的值
+@8             // A = 8（5 + 3）
+M=D            // RAM[8] = D
+</code></pre>
+<p><strong>6 條指令。</strong> temp 段的 pop 比其他段簡單——因為位址是固定的，不需要 R13 暫存。</p>
+<h3 id="5-3-push-pop-static">5.3 push/pop static</h3>
+<p><code>static</code> 段在翻譯時會被替換成全域唯一位址：</p>
+<pre><code class="language-vm">push static 0   // 在 Foo.vm 中，這會翻譯成讀取 @Foo.0
+</code></pre>
+<pre><code class="language-asm">// push static 0（Foo.vm）
+@Foo.0          // A = Foo.0 的位址（由組譯器配置，例如 16）
+D=M            // D = RAM[16]
+@SP            // A = 0
+A=M            // A = SP
+M=D            // RAM[SP] = RAM[16]
+@SP            // A = 0
+M=M+1          // SP++
+</code></pre>
+<p><strong>8 條指令。</strong> <code>@Foo.0</code> 是一個符號，由第 6 章的組譯器解析成實際位址。</p>
+<hr />
+<h2 id="6-完整翻譯範例">6. 完整翻譯範例</h2>
+<h3 id="6-1-完整範例-函式中的變數操作">6.1 完整範例：函式中的變數操作</h3>
+<p>假設以下 VM 程式（在函式 <code>Main.main</code> 中執行）：</p>
+<pre><code class="language-vm">function Main.main 2    // 宣告 2 個本地變數
+push constant 17       // 把 17 設為第一個本地變數的值
+pop local 0
+push constant 3        // 把 3 設為第二個本地變數的值
+pop local 1
+push local 0           // 讀取第一個本地變數
+push local 1           // 讀取第二個本地變數
+add                    // 相加
+pop argument 0         // 把結果存到第一個引數（假設 ARG 已設定）
+</code></pre>
+<p>翻譯成 Hack 組合語言：</p>
+<pre><code class="language-asm">// function Main.main 2
+// （設定 LCL、ARG、THIS、THAT — 在 7.5 節詳述）
+@2          // 2 個本地變數
+D=A
+@LCL        // LCL 暫不處理（此處簡化）
+// ...（function 指令的完整翻譯見後續章節）
+
+// push constant 17
+@17
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+
+// pop local 0
+@LCL
+D=M
+@0
+D=D+A
+@R13
+M=D
+@SP
+AM=M-1
+D=M
+@R13
+A=M
+M=D
+
+// push constant 3
+@3
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+
+// pop local 1
+@LCL
+D=M
+@1
+D=D+A
+@R13
+M=D
+@SP
+AM=M-1
+D=M
+@R13
+A=M
+M=D
+
+// push local 0
+@LCL
+D=M
+@0
+D=D+A
+A=D
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+
+// push local 1
+@LCL
+D=M
+@1
+D=D+A
+A=D
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+
+// add
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M+D
+M=D
+@SP
+M=M+1
+
+// pop argument 0
+@ARG
+D=M
+@0
+D=D+A
+@R13
+M=D
+@SP
+AM=M-1
+D=M
+@R13
+A=M
+M=D
+</code></pre>
+<h3 id="6-2-執行追蹤">6.2 執行追蹤</h3>
+<p>假設 <code>LCL = 2048</code>、<code>ARG = 3000</code>，追蹤這個程式的記憶體變化：</p>
+<pre><code>步驟 0（初始）:
+  SP=256, LCL=2048, ARG=3000
+
+步驟 1（push constant 17）:
+  SP=257, RAM[256]=17
+
+步驟 2（pop local 0）:
+  SP=256, RAM[2048]=17    ← local 0 = 17
+
+步驟 3（push constant 3）:
+  SP=257, RAM[256]=3
+
+步驟 4（pop local 1）:
+  SP=256, RAM[2049]=3     ← local 1 = 3
+
+步驟 5（push local 0）:
+  SP=257, RAM[256]=17     ← 從 RAM[2048] 讀取
+
+步驟 6（push local 1）:
+  SP=258, RAM[257]=3      ← 從 RAM[2049] 讀取
+
+步驟 7（add）:
+  SP=257, RAM[256]=20     ← 17 + 3 = 20
+
+步驟 8（pop argument 0）:
+  SP=256, RAM[3000]=20    ← argument 0 = 20
+</code></pre>
+<p>每一步的記憶體變化都可以用「基地址 + 偏移量」來驗證。</p>
+<hr />
+<h2 id="7-七個段的翻譯模式對照表">7. 七個段的翻譯模式對照表</h2>
+<table>
+<thead>
+<tr>
+<th>段</th>
+<th>push 的 Hack 行為</th>
+<th>pop 的 Hack 行為</th>
+<th>特殊處理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constant</code></td>
+<td>載入常數到 D → push</td>
+<td>不允許（會報錯）</td>
+<td>不映射 RAM</td>
+</tr>
+<tr>
+<td><code>local</code></td>
+<td><code>D=M(LCL+i)</code> → push</td>
+<td>pop → <code>M(LCL+i)=D</code></td>
+<td>用 R13 暫存</td>
+</tr>
+<tr>
+<td><code>argument</code></td>
+<td><code>D=M(ARG+i)</code> → push</td>
+<td>pop → <code>M(ARG+i)=D</code></td>
+<td>用 R13 暫存</td>
+</tr>
+<tr>
+<td><code>this</code></td>
+<td><code>D=M(THIS+i)</code> → push</td>
+<td>pop → <code>M(THIS+i)=D</code></td>
+<td>用 R13 暫存</td>
+</tr>
+<tr>
+<td><code>that</code></td>
+<td><code>D=M(THAT+i)</code> → push</td>
+<td>pop → <code>M(THAT+i)=D</code></td>
+<td>用 R13 暫存</td>
+</tr>
+<tr>
+<td><code>pointer</code></td>
+<td>直接讀 THIS/THAT</td>
+<td>直接寫 THIS/THAT</td>
+<td>i 只能是 0 或 1</td>
+</tr>
+<tr>
+<td><code>temp</code></td>
+<td>直接讀 <code>RAM[5+i]</code></td>
+<td>直接寫 <code>RAM[5+i]</code></td>
+<td>i 只能是 0~7</td>
+</tr>
+<tr>
+<td><code>static</code></td>
+<td>讀 <code>@Xxx.i</code></td>
+<td>寫 <code>@Xxx.i</code></td>
+<td>由組譯器配置位址</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-翻譯器實作的段處理模組">8. 翻譯器實作的段處理模組</h2>
+<p>把所有段的翻譯整合成一個完整的處理器：</p>
+<pre><code class="language-python">class VMTranslator:
+    SEGMENT_BASE = {
+        'local': 'LCL', 'argument': 'ARG',
+        'this': 'THIS', 'that': 'THAT',
+    }
+    TEMP_BASE = 5
+
+    def translate_push(self, segment, index):
+        if segment == 'constant':
+            return f&quot;&quot;&quot;
+@{index}
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+&quot;&quot;&quot;
+        elif segment in self.SEGMENT_BASE:
+            base = self.SEGMENT_BASE[segment]
+            return f&quot;&quot;&quot;
+@{base}
+D=M
+@{index}
+D=D+A
+A=D
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+&quot;&quot;&quot;
+        elif segment == 'pointer':
+            reg = 'THIS' if index == 0 else 'THAT'
+            return f&quot;&quot;&quot;
+@{reg}
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+&quot;&quot;&quot;
+        elif segment == 'temp':
+            return f&quot;&quot;&quot;
+@{self.TEMP_BASE + index}
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+&quot;&quot;&quot;
+        elif segment == 'static':
+            return f&quot;&quot;&quot;
+@{self._static_var(index)}
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+&quot;&quot;&quot;
+
+    def translate_pop(self, segment, index):
+        if segment in self.SEGMENT_BASE:
+            base = self.SEGMENT_BASE[segment]
+            return f&quot;&quot;&quot;
+@{base}
+D=M
+@{index}
+D=D+A
+@R13
+M=D
+@SP
+AM=M-1
+D=M
+@R13
+A=M
+M=D
+&quot;&quot;&quot;
+        elif segment == 'pointer':
+            reg = 'THIS' if index == 0 else 'THAT'
+            return f&quot;&quot;&quot;
+@SP
+AM=M-1
+D=M
+@{reg}
+M=D
+&quot;&quot;&quot;
+        elif segment == 'temp':
+            return f&quot;&quot;&quot;
+@SP
+AM=M-1
+D=M
+@{self.TEMP_BASE + index}
+M=D
+&quot;&quot;&quot;
+        elif segment == 'static':
+            return f&quot;&quot;&quot;
+@SP
+AM=M-1
+D=M
+@{self._static_var(index)}
+M=D
+&quot;&quot;&quot;
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：這段翻譯碼展現了一個重要的軟體設計模式——<strong>策略模式（Strategy Pattern）</strong>。每個段的翻譯邏輯不同，但介面相同（都是 translate_push/translate_pop）。用字典（<code>SEGMENT_BASE</code>）把「段名 → 基地址寄存器名」抽離出來，新增段只需要加一行字典項，不需要改翻譯邏輯。</p>
+</blockquote>
+<hr />
+<h2 id="9-本章小結">9. 本章小結</h2>
+<ul>
+<li>VM 定義了<strong>八個記憶體段</strong>，每個段提供結構化的變數存取方式。</li>
+<li>五個「基地址段」（argument、local、this、that、static）使用<strong>基地址 + 偏移量</strong>的映射模式：<code>RAM[base + i]</code>。</li>
+<li><strong>pointer</strong> 段只有兩個值（0→THIS、1→THAT），直接操作物件基地址寄存器。</li>
+<li><strong>temp</strong> 段有固定位址（RAM[5] 到 RAM[12]），不需要基地址寄存器。</li>
+<li><strong>constant</strong> 段不映射 RAM，<code>push constant i</code> 直接把整數 <code>i</code> 壓入堆疊。</li>
+<li><code>push segment i</code> 的 Hack 翻譯：讀取基地址 → 加偏移量 → 從該位址讀取 → 壓入堆疊（~10 條指令）。</li>
+<li><code>pop segment i</code> 的 Hack 翻譯：計算目標位址 → 暫存到 R13 → SP-- → 取值 → 寫入 R13 指向的位址（~12 條指令）。</li>
+<li>特殊段（pointer、temp、static）的翻譯更簡短，因為它們不需要基地址+偏移量的計算。</li>
+</ul>
+<p>下一節，我們處理 VM 的控制流程——<code>label</code>、<code>goto</code>、<code>if-goto</code>——看看條件分支如何翻譯成 Hack 的跳躍指令。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="7.3.html">⇦ 上一節</a><a class="nav-btn" href="8.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

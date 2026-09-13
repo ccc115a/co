@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.3 VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt...）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link active" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="7.2.html">⇦ 上一節</a></div>
+  <div class="title">7.3 VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt...）</div>
+  <div class="nav-right"><a class="nav-btn" href="7.4.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch07.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="7-3-vm-指令翻譯-算術與邏輯指令-add-sub-eq-gt">7.3 VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt...）</h1>
+<h2 id="前言">前言</h2>
+<p>上一節我們理解了堆疊的運作機制，也看過了 <code>add</code> 的 Hack 翻譯。本節要把它推到極致：<strong>把全部九條算術與邏輯指令都翻譯成 Hack 組合語言</strong>。</p>
+<p>這九條指令是 VM 最核心的「計算引擎」。它們全都從堆疊取運算元、做運算、把結果放回堆疊。翻譯器的目標是為每一條指令建立一個<strong>固定的 Hack 指令模式（pattern）</strong>，讓翻譯變成機械式的替換。</p>
+<p>本節結束後，你將擁有完整的翻譯表，可以直接用在 VM 翻譯器的實作中。</p>
+<hr />
+<h2 id="1-指令分類-兩種翻譯模式">1. 指令分類：兩種翻譯模式</h2>
+<p>九條指令可以分成兩類，對應兩種翻譯模式：</p>
+<table>
+<thead>
+<tr>
+<th>類別</th>
+<th>指令</th>
+<th>運算元數</th>
+<th>翻譯模式</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>二元運算</strong></td>
+<td><code>add</code>、<code>sub</code>、<code>and</code>、<code>or</code></td>
+<td>2</td>
+<td>pop-binary-op</td>
+</tr>
+<tr>
+<td><strong>比較運算</strong></td>
+<td><code>eq</code>、<code>gt</code>、<code>lt</code></td>
+<td>2</td>
+<td>pop-binary-op + 跳躍技巧</td>
+</tr>
+<tr>
+<td><strong>一元運算</strong></td>
+<td><code>neg</code>、<code>not</code></td>
+<td>1</td>
+<td>pop-unary-op</td>
+</tr>
+</tbody>
+</table>
+<p>核心思想：二元運算從堆疊取兩個值、算一個值；一元運算從堆疊取一個值、算一個值。比較運算本質也是二元運算，但結果只有 <code>true</code>（-1）或 <code>false</code>（0），需要額外的跳躍邏輯。</p>
+<hr />
+<h2 id="2-pop-unary-op-模式-一元運算的基礎">2. pop-unary-op 模式：一元運算的基礎</h2>
+<p>一元運算（<code>neg</code> 和 <code>not</code>）是最簡單的——只處理堆疊頂端一個值。</p>
+<h3 id="2-1-通用模板">2.1 通用模板</h3>
+<pre><code class="language-asm">// pop-unary-op 通用模板
+@SP         // A = 0
+A=M-1       // A = SP - 1（指向堆疊頂端）
+D=M         // D = 堆疊頂端的值
+// ← 這裡執行一元運算
+M=D         // 結果寫回堆疊頂端
+</code></pre>
+<h3 id="2-2-neg-取負">2.2 neg（取負）</h3>
+<p><code>neg</code> 的語意：把堆疊頂端的值取負（x → -x）。</p>
+<pre><code class="language-asm">// neg
+@SP         // A = 0
+A=M-1       // A = SP - 1
+D=M         // D = x
+D=-D        // D = -x
+M=D         // RAM[SP-1] = -x
+</code></pre>
+<p><strong>5 條指令。</strong> 堆疊深度不變。</p>
+<h3 id="2-3-not-位元-not">2.3 not（位元 NOT）</h3>
+<p><code>not</code> 的語意：把堆疊頂端的值做位元取反（x → !x，每一位 0 變 1、1 變 0）。</p>
+<pre><code class="language-asm">// not
+@SP         // A = 0
+A=M-1       // A = SP - 1
+D=M         // D = x
+D=!D        // D = !x（位元取反）
+M=D         // RAM[SP-1] = !x
+</code></pre>
+<p><strong>5 條指令。</strong> 結構與 <code>neg</code> 完全相同，只差在運算從 <code>D=-D</code> 變成 <code>D=!D</code>。</p>
+<hr />
+<h2 id="3-pop-binary-op-模式-二元運算的基礎">3. pop-binary-op 模式：二元運算的基礎</h2>
+<p>二元運算（<code>add</code>、<code>sub</code>、<code>and</code>、<code>or</code>）從堆疊取兩個值，算出一個結果。</p>
+<h3 id="3-1-通用模板">3.1 通用模板</h3>
+<pre><code class="language-asm">// pop-binary-op 通用模板
+@SP         // A = 0
+M=M-1       // SP = SP - 1
+A=M         // A = SP（指向 y，第二運算元）
+D=M         // D = y
+@SP         // A = 0
+M=M-1       // SP = SP - 1（指向 x，第一運算元）
+A=M         // A = SP
+// ← 這裡執行二元運算，結果放在 D
+M=D         // RAM[SP] = 結果
+@SP         // A = 0
+M=M+1       // SP = SP + 1（結果佔據一個位置）
+</code></pre>
+<p><strong>11 條指令（含重複的 <code>@SP</code>）。</strong> 堆疊深度減少 1。</p>
+<h3 id="3-2-add-加法">3.2 add（加法）</h3>
+<pre><code class="language-asm">// add
+@SP
+M=M-1       // SP--
+A=M         // A = SP
+D=M         // D = y
+@SP
+M=M-1       // SP--
+A=M         // A = SP
+D=M+D       // D = x + y
+M=D         // RAM[SP] = x + y
+@SP
+M=M+1       // SP++
+</code></pre>
+<p><strong>10 條指令。</strong></p>
+<h3 id="3-3-sub-減法">3.3 sub（減法）</h3>
+<pre><code class="language-asm">// sub
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M-D       // D = x - y  （注意：是 x - y，不是 y - x）
+M=D
+@SP
+M=M+1
+</code></pre>
+<p><strong>10 條指令。</strong> 唯一差別：<code>D=M+D</code> 變成 <code>D=M-D</code>。</p>
+<h3 id="3-4-and-位元-and">3.4 and（位元 AND）</h3>
+<pre><code class="language-asm">// and
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M&amp;D       // D = x AND y
+M=D
+@SP
+M=M+1
+</code></pre>
+<p><strong>10 條指令。</strong> 運算改成 <code>D=M&amp;D</code>。</p>
+<h3 id="3-5-or-位元-or">3.5 or（位元 OR）</h3>
+<pre><code class="language-asm">// or
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M|D       // D = x OR y
+M=D
+@SP
+M=M+1
+</code></pre>
+<p><strong>10 條指令。</strong> 運算改成 <code>D=M|D</code>。</p>
+<hr />
+<h2 id="4-比較指令的翻譯-跳躍技巧">4. 比較指令的翻譯：跳躍技巧</h2>
+<p>比較指令（<code>eq</code>、<code>gt</code>、<code>lt</code>）是最有趣的部分。它們也需要從堆疊取兩個值，但運算結果不是數值，而是<strong>布林值</strong>：相等/大於/小於為 <code>true</code>（-1，全 1），否則為 <code>false</code>（0）。</p>
+<h3 id="4-1-hack-沒有-比較後設定-d-的指令">4.1 Hack 沒有「比較後設定 D」的指令</h3>
+<p>Hack 的 ALU 可以做加減法和位元邏輯，但沒有「如果相等就設 D 為 -1」的指令。所以我們需要用<strong>跳躍技巧</strong>：</p>
+<ol>
+<li>計算 <code>x - y</code></li>
+<li>如果結果為 0（表示相等），跳到「設為 true」的程式碼</li>
+<li>否則（不相等），執行「設為 false」的程式碼</li>
+<li>把結果寫回堆疊</li>
+</ol>
+<h3 id="4-2-eq-等於比較">4.2 eq（等於比較）</h3>
+<pre><code class="language-asm">// eq
+@SP
+M=M-1       // SP--
+A=M
+D=M         // D = y
+@SP
+M=M-1       // SP--
+A=M
+D=M-D       // D = x - y
+
+// 如果 D == 0（x == y），跳到 EQ_TRUE
+@EQ_TRUE
+D;JEQ
+
+// 否則（x != y）：設為 false（0）
+@SP
+A=M
+M=0         // RAM[SP] = 0
+@EQ_END
+0;JMP
+
+(EQ_TRUE)
+@SP
+A=M
+M=-1        // RAM[SP] = -1（true）
+
+(EQ_END)
+@SP
+M=M+1       // SP++
+</code></pre>
+<p><strong>翻譯後的指令約 17 條。</strong></p>
+<h3 id="4-3-gt-大於比較">4.3 gt（大於比較）</h3>
+<pre><code class="language-asm">// gt
+@SP
+M=M-1
+A=M
+D=M         // D = y
+@SP
+M=M-1
+A=M
+D=M-D       // D = x - y
+
+// 如果 D &gt; 0（x &gt; y），跳到 GT_TRUE
+@GT_TRUE
+D;JGT
+
+// 否則：設為 false
+@SP
+A=M
+M=0
+@GT_END
+0;JMP
+
+(GT_TRUE)
+@SP
+A=M
+M=-1
+
+(GT_END)
+@SP
+M=M+1
+</code></pre>
+<p><strong>結構與 <code>eq</code> 完全相同</strong>，只差在跳躍條件從 <code>JEQ</code> 變成 <code>JGT</code>。</p>
+<h3 id="4-4-lt-小於比較">4.4 lt（小於比較）</h3>
+<pre><code class="language-asm">// lt
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M-D       // D = x - y
+
+@LT_TRUE
+D;JLT       // 如果 D &lt; 0（x &lt; y），跳到 LT_TRUE
+
+@SP
+A=M
+M=0
+@LT_END
+0;JMP
+
+(LT_TRUE)
+@SP
+A=M
+M=-1
+
+(LT_END)
+@SP
+M=M+1
+</code></pre>
+<p>跳躍條件從 <code>JGT</code> 變成 <code>JLT</code>。</p>
+<h3 id="4-5-比較指令的模式總結">4.5 比較指令的模式總結</h3>
+<p>三條比較指令共享同一個翻譯骨架：</p>
+<pre><code>  ① pop y, pop x
+  ② D = x - y
+  ③ D;J&lt;條件&gt;  → 跳到 TRUE
+  ④ 設為 0（false）→ 跳到 END
+  5 TRUE: 設為 -1（true）
+  6 END: SP++
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>跳躍條件</th>
+<th>true 條件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>eq</code></td>
+<td><code>D;JEQ</code></td>
+<td>x - y == 0</td>
+</tr>
+<tr>
+<td><code>gt</code></td>
+<td><code>D;JGT</code></td>
+<td>x - y &gt; 0</td>
+</tr>
+<tr>
+<td><code>lt</code></td>
+<td><code>D;JLT</code></td>
+<td>x - y &lt; 0</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼比較結果是 -1（全 1）而不是 1？因為 Hack 的布林系統中，<code>true</code> 定義為 -1（所有位元都是 1）。好處是：<code>true AND true = true</code>（<code>-1 &amp; -1 = -1</code>）仍然成立，而 <code>1 &amp; 1 = 1</code> 雖然也成立，但 <code>1 OR 0 = 1</code> 雖然對，<code>-1 OR 0 = -1</code> 也對——用 -1 確保所有位元運算都符合布林邏輯。</p>
+</blockquote>
+<hr />
+<h2 id="5-四個跳躍標籤的命名問題">5. 四個跳躍標籤的命名問題</h2>
+<p>比較指令使用了跳躍標籤（如 <code>EQ_TRUE</code>、<code>EQ_END</code>）。問題是：如果 VM 程式中有兩個 <code>eq</code> 指令，標籤就會重複。</p>
+<p>解決方案：<strong>用唯一名稱</strong>。翻譯器內部維護一個計數器，每翻譯一條比較指令就加一：</p>
+<pre><code>  第 1 個 eq → EQ_TRUE_1, EQ_END_1
+  第 2 個 eq → EQ_TRUE_2, EQ_END_2
+  第 1 個 gt → GT_TRUE_1, GT_END_1
+  ...依此類推
+</code></pre>
+<p>在 Python 翻譯器中，可以用一個計數器實現：</p>
+<pre><code class="language-python">class VMTranslator:
+    def __init__(self):
+        self.label_counter = 0
+
+    def _unique_label(self, prefix):
+        self.label_counter += 1
+        return f&quot;{prefix}_{self.label_counter}&quot;
+
+    def translate_eq(self):
+        label_true = self._unique_label(&quot;EQ_TRUE&quot;)
+        label_end = self._unique_label(&quot;EQ_END&quot;)
+        return f&quot;&quot;&quot;
+// eq
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M-D
+@{label_true}
+D;JEQ
+@SP
+A=M
+M=0
+@{label_end}
+0;JMP
+({label_true})
+@SP
+A=M
+M=-1
+({label_end})
+@SP
+M=M+1
+&quot;&quot;&quot;
+</code></pre>
+<hr />
+<h2 id="6-完整的-vm-hack-翻譯對照表">6. 完整的 VM → Hack 翻譯對照表</h2>
+<h3 id="6-1-九條指令的完整對照">6.1 九條指令的完整對照</h3>
+<table>
+<thead>
+<tr>
+<th>VM 指令</th>
+<th>Hack 指令數</th>
+<th>關鍵 Hack 運算</th>
+<th>SP 變化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>add</code></td>
+<td>10</td>
+<td><code>D=M+D</code></td>
+<td>-1</td>
+</tr>
+<tr>
+<td><code>sub</code></td>
+<td>10</td>
+<td><code>D=M-D</code></td>
+<td>-1</td>
+</tr>
+<tr>
+<td><code>and</code></td>
+<td>10</td>
+<td><code>D=M&amp;D</code></td>
+<td>-1</td>
+</tr>
+<tr>
+<td><code>or</code></td>
+<td>10</td>
+<td><code>D=M|D</code></td>
+<td>-1</td>
+</tr>
+<tr>
+<td><code>neg</code></td>
+<td>5</td>
+<td><code>D=-D</code></td>
+<td>不變</td>
+</tr>
+<tr>
+<td><code>not</code></td>
+<td>5</td>
+<td><code>D=!D</code></td>
+<td>不變</td>
+</tr>
+<tr>
+<td><code>eq</code></td>
+<td>~17</td>
+<td><code>D=M-D</code> + <code>D;JEQ</code></td>
+<td>-1</td>
+</tr>
+<tr>
+<td><code>gt</code></td>
+<td>~17</td>
+<td><code>D=M-D</code> + <code>D;JGT</code></td>
+<td>-1</td>
+</tr>
+<tr>
+<td><code>lt</code></td>
+<td>~17</td>
+<td><code>D=M-D</code> + <code>D;JLT</code></td>
+<td>-1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="6-2-完整追蹤範例">6.2 完整追蹤範例</h3>
+<p>追蹤以下 VM 程式在 Hack 上的執行：</p>
+<pre><code class="language-vm">push constant 7
+push constant 8
+eq
+</code></pre>
+<p><strong>步驟追蹤：</strong></p>
+<pre><code>初始: SP=256
+
+[push constant 7]
+  @7       → A=7
+  D=A      → D=7
+  @SP      → A=0
+  A=M      → A=256
+  M=D      → RAM[256]=7
+  @SP      → A=0
+  M=M+1    → SP=257
+
+[push constant 8]
+  @8       → A=8
+  D=A      → D=8
+  @SP      → A=0
+  A=M      → A=257
+  M=D      → RAM[257]=8
+  @SP      → A=0
+  M=M+1    → SP=258
+
+[eq]
+  @SP; M=M-1     → SP=257
+  A=M; D=M       → D=8（y）
+  @SP; M=M-1     → SP=256
+  A=M; D=M-D     → D=7-8=-1（x-y）
+  @EQ_TRUE_1     → A=EQ_TRUE_1 的位址
+  D;JEQ          → D=-1≠0，不跳
+  @SP; A=M; M=0  → RAM[256]=0（false）
+  @EQ_END_1; 0;JMP → 跳到 EQ_END_1
+
+(EQ_END_1)
+  @SP; M=M+1     → SP=257
+
+最終: RAM[256]=0, SP=257
+</code></pre>
+<p>7 ≠ 8，所以 <code>eq</code> 結果是 0（false）。正確！</p>
+<p>如果改成 <code>push constant 7</code> 再 <code>push constant 7</code>，<code>D=M-D</code> 的結果是 0，<code>D;JEQ</code> 會跳到 <code>EQ_TRUE</code>，RAM[256] 被設為 -1（true）。正確！</p>
+<hr />
+<h2 id="7-實作步驟-建構翻譯器的算術模組">7. 實作步驟：建構翻譯器的算術模組</h2>
+<p>如果你正在寫一個 VM 翻譯器，算術模組的實作步驟如下：</p>
+<h3 id="步驟-1-建立翻譯表">步驟 1：建立翻譯表</h3>
+<p>用字典把 VM 指令映射到 Hack 程式碼模板：</p>
+<pre><code class="language-python">ARITHMETIC_TABLE = {
+    'add': _translate_add,
+    'sub': _translate_sub,
+    'neg': _translate_neg,
+    'eq':  _translate_eq,
+    'gt':  _translate_gt,
+    'lt':  _translate_lt,
+    'and': _translate_and,
+    'or':  _translate_or,
+    'not': _translate_not,
+}
+</code></pre>
+<h3 id="步驟-2-實作-pop-binary-op-輔助函式">步驟 2：實作 pop-binary-op 輔助函式</h3>
+<p>因為四條二元運算的骨架相同，只差在運算式，可以抽成共用邏輯：</p>
+<pre><code class="language-python">def _binary_op(alu_expr):
+    &quot;&quot;&quot;產生二元運算的 Hack 組合語言&quot;&quot;&quot;
+    return f&quot;&quot;&quot;
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D={alu_expr}
+M=D
+@SP
+M=M+1
+&quot;&quot;&quot;
+</code></pre>
+<p>使用時：</p>
+<pre><code class="language-python">def _translate_add(): return _binary_op(&quot;M+D&quot;)
+def _translate_sub(): return _binary_op(&quot;M-D&quot;)
+def _translate_and(): return _binary_op(&quot;M&amp;D&quot;)
+def _translate_or():  return _binary_op(&quot;M|D&quot;)
+</code></pre>
+<h3 id="步驟-3-實作比較指令">步驟 3：實作比較指令</h3>
+<p>比較指令需要唯一名稱，使用計數器：</p>
+<pre><code class="language-python">def _translate_eq(self):
+    t = self._unique_label(&quot;EQ_TRUE&quot;)
+    e = self._unique_label(&quot;EQ_END&quot;)
+    return f&quot;&quot;&quot;
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M-D
+@{t}
+D;JEQ
+@SP
+A=M
+M=0
+@{e}
+0;JMP
+({t})
+@SP
+A=M
+M=-1
+({e})
+@SP
+M=M+1
+&quot;&quot;&quot;
+</code></pre>
+<h3 id="步驟-4-串接主翻譯迴圈">步驟 4：串接主翻譯迴圈</h3>
+<pre><code class="language-python">def translate(self, command):
+    if command in ARITHMETIC_TABLE:
+        return ARITHMETIC_TABLE[command](self)
+    elif command.startswith(&quot;push&quot;):
+        return self._translate_push(command)
+    elif command.startswith(&quot;pop&quot;):
+        return self._translate_pop(command)
+    # ... 其他指令
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：把二元運算抽象成 <code>_binary_op(alu_expr)</code> 是**不要重複自己（DRY）**原則的體現。四條指令的翻譯骨架完全相同，只有運算式不同——如果分別寫四份，改一次要改四處；抽成函式，改一次就全改了。比較指令因為有跳躍標籤的複雜度，無法用同一個抽象，所以獨立實作。</p>
+</blockquote>
+<hr />
+<h2 id="8-優化可能性-進階">8. 優化可能性（進階）</h2>
+<h3 id="8-1-簡化-sp-操作">8.1 簡化 SP 操作</h3>
+<p>在某些情況下，可以減少 <code>@SP</code> 的出現次數：</p>
+<pre><code class="language-asm">// 優化前的 add（10 條指令）
+@SP
+M=M-1
+A=M
+D=M
+@SP
+M=M-1
+A=M
+D=M+D
+M=D
+@SP
+M=M+1
+
+// 優化後的 add（8 條指令）
+@SP
+AM=M-1    // A = SP-1, SP = SP-1（同時完成）
+D=M       // D = y
+A=A-1     // A = SP-2（指向 x）
+D=M+D     // D = x + y
+M=D       // 寫回
+@SP
+M=M+1     // SP++
+</code></pre>
+<p>Hack 允許 <code>AM=M-1</code> 這種「同時寫入 A 和 M」的指令，可以省掉一行。但這需要更細緻的位址追蹤。</p>
+<h3 id="8-2-避免冗餘的-sp-更新">8.2 避免冗餘的 SP 更新</h3>
+<p>比較指令可以重排分支，減少跳躍：</p>
+<pre><code class="language-asm">// 等一下！上面的比較指令都是設為 0 或 -1
+// 如果直接算出布林值，可以更短嗎？
+
+// 替代方案：用算術產生布林值
+// D = (x - y == 0) ? -1 : 0
+// 但 Hack 沒有「條件選取」指令，所以跳躍版仍是最佳選擇
+</code></pre>
+<p>對教學用途而言，清晰度比效率更重要。優化是進階課題。</p>
+<hr />
+<h2 id="9-本章小結">9. 本章小結</h2>
+<ul>
+<li>九條算術邏輯指令分為三類翻譯模式：<strong>pop-unary-op</strong>（neg、not）、<strong>pop-binary-op</strong>（add、sub、and、or）、<strong>比較+跳躍</strong>（eq、gt、lt）。</li>
+<li>一元運算（neg/not）：5 條 Hack 指令，直接處理 <code>RAM[SP-1]</code>，SP 不變。</li>
+<li>二元運算（add/sub/and/or）：10 條 Hack 指令，pop 兩個值、運算、push 結果、SP 減 1。</li>
+<li>比較運算（eq/gt/lt）：~17 條 Hack 指令，用 <code>x - y</code> 的差配合 <code>JEQ/JGT/JLT</code> 跳躍來產生布林值（true = -1，false = 0）。</li>
+<li>比較指令的跳躍標籤必須用<strong>唯一名稱</strong>（如 <code>EQ_TRUE_1</code>、<code>GT_END_3</code>），避免重複。</li>
+<li>核心設計原則：<strong>可重用的翻譯模式</strong>。二元運算用 <code>_binary_op(alu_expr)</code> 抽象；比較指令用統一骨架 + 可替換的跳躍條件。</li>
+<li>VM 的 <code>sub</code> 是 <code>x - y</code>（先 push 的是 x，後 push 的是 y），寫 VM 時要注意運算元順序。</li>
+</ul>
+<p>下一節，我們處理記憶體段的映射——看看 <code>push local 2</code> 這種「帶段名的 push」如何翻譯成 Hack 的實際 RAM 位址存取。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="7.2.html">⇦ 上一節</a><a class="nav-btn" href="7.4.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

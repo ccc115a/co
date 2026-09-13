@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11.2 物件導向特性的底層翻譯：Constructors, Methods, Fields</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link active" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="11.1.html">⇦ 上一節</a></div>
+  <div class="title">11.2 物件導向特性的底層翻譯：Constructors, Methods, </div>
+  <div class="nav-right"><a class="nav-btn" href="11.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch11.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="11-2-物件導向特性的底層翻譯-constructors-methods-fields">11.2 物件導向特性的底層翻譯：Constructors, Methods, Fields</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明 <code>constructor</code> 如何配置物件記憶體（透過 <code>Memory.alloc</code>）並把結果送回 <code>this</code></li>
+<li>說明 <code>method</code> 如何「偷偷」接收 <code>this</code>——它被當作 <code>argument 0</code>，並複製到 <code>local 0</code></li>
+<li>說明 <code>function</code> 與 <code>constructor</code>/<code>method</code> 在翻譯上的關鍵差異</li>
+<li>說明欄位（field）的存取如何經由 <code>this</code> 段的偏移（offset）達成</li>
+<li>理解 <code>pointer 0</code> 與 <code>THIS</code> 指標的關係，以及 VM translator 如何把它兌現成實際 RAM 位址</li>
+<li>能親手把一個完整的 Jack 類別翻譯成等價的 VM 代碼</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>有了 11.1 節的符號表作為地基，這一節我們要挑戰 Jack 最「神奇」的部分：<strong>物件導向</strong>。</p>
+<p>你在 Jack 裡寫 <code>Clock c = Clock.new(9, 30);</code> 然後呼叫 <code>c.setHour(10);</code>。看起來那麼自然。可是我們在第 8 章打造的 VM 是「無腦的」：它只有 <code>pop</code>、<code>push</code>、<code>call</code>、<code>return</code> 這一套極簡指令，既不知道什麼叫「建構物件」，也不知道什麼叫「呼叫方法」。</p>
+<p>那這些物件導向的語法，到底被翻譯成什麼？答案是：<strong>全部化合為最基本的記憶體操作與函式呼叫</strong>。物件不過是一塊「用 <code>Memory.alloc</code> 換來的記憶體」，方法不過是「把 this 當隱藏參數傳進去的普通函式」。本節就是要拆穿這個魔術，讓你看清程式碼背後一切的真相。</p>
+<hr />
+<h2 id="1-先釐清三種-subroutine-的角色">1. 先釐清三種 subroutine 的角色</h2>
+<p>Jack 的 subroutine 一共有三種關鍵字：<code>constructor</code>、<code>function</code>、<code>method</code>。它們在翻譯規則上各有千秋，先總覽一張表：</p>
+<table>
+<thead>
+<tr>
+<th>關鍵字</th>
+<th style="text-align:center">屬於物件？</th>
+<th style="text-align:center">接收 this？</th>
+<th>回傳什麼？</th>
+<th>使用時機</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>constructor</code></td>
+<td style="text-align:center">類別層級</td>
+<td style="text-align:center">否</td>
+<td>回傳<strong>新建物件</strong>的 this 位址</td>
+<td>建立物件（像 <code>Clock.new</code>）</td>
+</tr>
+<tr>
+<td><code>function</code></td>
+<td style="text-align:center">類別層級</td>
+<td style="text-align:center">否</td>
+<td>普通值</td>
+<td>靜態工具函式（像 <code>Memory.alloc</code>）</td>
+</tr>
+<tr>
+<td><code>method</code></td>
+<td style="text-align:center">實例層級</td>
+<td style="text-align:center"><strong>是</strong>（argument 0）</td>
+<td>普通值</td>
+<td>操作某個特定物件（像 <code>c.setHour</code>）</td>
+</tr>
+</tbody>
+</table>
+<p>請特別看 <code>constructor</code> 與 <code>method</code> 的差別：</p>
+<ul>
+<li><strong>constructor</strong> 是「製造者」：它負責向 OS 要一塊記憶體當作物件空間，把 field 初始化好，最後把「這塊空間的位址」交給呼叫者。它本身<strong>不針對任何已存在的物件</strong>操作，所以不收 this。</li>
+<li><strong>method</strong> 是「操作者」：它一定要知道「我是在對哪個物件動手」。這個「哪個物件」就是隱藏的 this，看似沒寫在參數列，其實被 VM 悄悄排在 <code>argument 0</code>。</li>
+</ul>
+<p>而 <code>function</code> 兩者都不是——它是個孤獨的全域函式，就像 C 語言裡的普通函式。</p>
+<hr />
+<h2 id="2-constructor-的翻譯-alloc-之後回傳-this">2. Constructor 的翻譯：alloc 之後回傳 this</h2>
+<h3 id="2-1-為什麼-constructor-要先計算欄位數量">2.1 為什麼 constructor 要先計算欄位數量</h3>
+<p>constructor 的第一件工作，是替物件開出空間。空間多大？取決於這個物件有幾個 field。還記得符號表嗎——<code>field int hour; field int minute;</code> 就有兩個 field，所以這個物件的空間就是 2 格。</p>
+<p>Nand2Tetris 的做法是：在編譯 constructor 時，查類別符號表的 <strong>field 計數</strong>，得到 <code>nFields</code>，然後生成一個對 <code>Memory.alloc(nFields)</code> 的呼叫。<code>Memory.alloc</code> 是 Jack OS 裡負責「記憶體配置器」的函式，它會回傳一塊空白記憶體的起始位址。</p>
+<h3 id="2-2-關鍵技巧-把-this-段指向新建的記憶體">2.2 關鍵技巧：把 this 段指向新建的記憶體</h3>
+<p><code>Memory.alloc</code> 回傳的位址存在 stack 上。但接下來 constructor 內的 <code>field</code> 存取（例如 <code>hour = 9</code>）需要寫進「this 段的偏移」裡。於是一個關鍵動作發生：</p>
+<blockquote>
+<p><strong>把 alloc 回傳的位址，放進 <code>THIS</code> 指標（也就是 pointer 0）。</strong> 從此以後，<code>pop this 0</code> 這類指令就會寫進這塊新建的記憶體。</p>
+</blockquote>
+<p>而 constructor 最後要「把 this 位址交給呼叫者」，所以它會 <strong><code>pop pointer 0</code>（把位址放進 THIS）之後，再把 <code>pointer 0</code> 的值 push 回去</strong>，然後 <code>return</code>。呼叫者拿到這個位址，之後呼叫 method 時就靠它。</p>
+<h3 id="2-3-完整翻譯範例-clock-類別-vm">2.3 完整翻譯範例：Clock 類別 → VM</h3>
+<p>來看一個具體例子。我們定義一個帶兩個欄位的 Clock 類別：</p>
+<pre><code class="language-jack">// Clock.jack
+class Clock {
+    field int hour;
+    field int minute;
+
+    constructor Clock new(int h, int m) {
+        let hour = h;
+        let minute = m;
+        return this;
+    }
+
+    method void print() {
+        do Output.printInt(hour);
+        do Output.printChar(58);  // ':'
+        do Output.printInt(minute);
+        return;
+    }
+}
+</code></pre>
+<p>先把符號表建立起來。類別符號表：</p>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>type</th>
+<th style="text-align:center">kind</th>
+<th style="text-align:center">index</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>hour</td>
+<td>int</td>
+<td style="text-align:center">field</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td>minute</td>
+<td>int</td>
+<td style="text-align:center">field</td>
+<td style="text-align:center">1</td>
+</tr>
+</tbody>
+</table>
+<p>編譯 constructor <code>new</code> 時子程式符號表：</p>
+<table>
+<thead>
+<tr>
+<th>name</th>
+<th>type</th>
+<th style="text-align:center">kind</th>
+<th style="text-align:center">index</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>h</td>
+<td>int</td>
+<td style="text-align:center">argument</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td>m</td>
+<td>int</td>
+<td style="text-align:center">argument</td>
+<td style="text-align:center">1</td>
+</tr>
+</tbody>
+</table>
+<p><code>nFields = 2</code>。現在逐步翻譯 constructor：</p>
+<p><strong>開頭（prologue）</strong>：</p>
+<pre><code class="language-vm">function Clock.new 0        // 宣告函式；0 個區域變數
+push constant 2             // 這是欄位數量（nFields = field 計數）
+call Memory.alloc 1         // 呼叫 alloc(2)，回傳物件位址
+pop pointer 0               // 把位址放進 THIS（pointer 0）
+</code></pre>
+<p>接著處理 <code>let hour = h;</code>。這裡 <code>hour</code> 是 field 0 → <code>this 0</code>；<code>h</code> 是 argument 0。翻譯成：</p>
+<pre><code class="language-vm">push argument 0             // 把 h 推入 stack
+pop this 0                  // 存進 this 0（即 THIS+0）
+</code></pre>
+<p>處理 <code>let minute = m;</code>，<code>minute</code> 是 field 1：</p>
+<pre><code class="language-vm">push argument 1
+pop this 1
+</code></pre>
+<p>最後 <code>return this;</code>。<code>this</code> 這個「變數」其實就是 <code>pointer 0</code>。要把 this 的值當作回傳值：</p>
+<pre><code class="language-vm">push pointer 0              // 把 THIS 位址推入 stack 作為回傳值
+return
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：注意 <code>return this;</code> 生成的兩條指令 <code>push pointer 0</code> + <code>return</code>。假如漏了 <code>push pointer 0</code>，<code>return</code> 就會把某個不相干的 stack 值當作回傳，呼叫者拿到的就不是物件位址了。<strong>constructor 的這個 closing 動作正是物件出生的最後關鍵一步。</strong></p>
+</blockquote>
+<p>所以完整的 Clock.new 翻譯是：</p>
+<pre><code class="language-vm">function Clock.new 0
+push constant 2
+call Memory.alloc 1
+pop pointer 0
+push argument 0
+pop this 0
+push argument 1
+pop this 1
+push pointer 0
+return
+</code></pre>
+<hr />
+<h2 id="3-method-的翻譯-this-變成-argument-0-與-local-0">3. Method 的翻譯：this 變成 argument 0 與 local 0</h2>
+<h3 id="3-1-method-的-隱藏參數">3.1 method 的「隱藏參數」</h3>
+<p>當你寫 <code>c.setHour()</code>，編譯器（語法層）看到的是呼叫一個 method。但底層，方法呼叫時除了真的參數之外，還得先傳入<strong>這個物件本身的位址</strong>。所以 method 的宣告在翻譯時，會被當作「<strong>比表面上看起來多一個參數</strong>」的函式：</p>
+<ul>
+<li>表面上 <code>method int foo(int a)</code> 只有一個參數 <code>a</code></li>
+<li>實際上 VM 函式 <code>Clock.foo</code> 有 <strong>2 個</strong>參數：<code>argument 0 = this</code>（物件位址）、<code>argument 1 = a</code></li>
+</ul>
+<h3 id="3-2-method-的-prologue-this-this-並備份到-local-0">3.2 method 的 prologue：THIS = this，並備份到 local 0</h3>
+<p>method 進入後的第一件事，是把 <code>argument 0</code>（this）設定為當前的物件。做法是把 <code>argument 0</code> 抄到 <code>pointer 0</code>，讓 <code>this</code> 段指向這個物件——這樣 body 裡所有的 <code>field</code> 存取（<code>this 0</code>、<code>this 1</code>…）才會落在正確物件的記憶體上：</p>
+<pre><code class="language-vm">function Clock.print 0      // method：區域變數 0 個
+push argument 0             // this（物件位址）在 argument 0
+pop pointer 0               // THIS = 物件位址
+</code></pre>
+<p>另外，Nand2Tetris 教材還建議一個「保險措施」：把 this 也複製一份到 <code>local 0</code>。為何？因為 VM 的 function 定義行要寫區域變數數量，若本身沒有 <code>var</code>，我們仍想留一格來保存 this，就宣告 <code>function Clock.print 1</code>，然後 <code>argument 0 → local 0</code>。這樣即便 body 內部混亂指針，也仍保有 this 的副本。（後續小結會再提醒這點。）</p>
+<h3 id="3-3-method-body-的欄位存取">3.3 method body 的欄位存取</h3>
+<p>body 內 <code>Output.printInt(hour)</code> 中，<code>hour</code> 是 field 0。要讀它的值，得先讓 <code>this 段</code> 指向正確物件（上面 prologue 已做），再：</p>
+<pre><code class="language-vm">push this 0
+</code></pre>
+<p>這條指令在後端的 VM translator 眼裡，是「把 <code>RAM[THIS + 0]</code> 推入 stack」。</p>
+<p>完整的 <code>Clock.print</code> 方法翻譯（假設採「宣告 1 個區域變數並把 this 備份到 local 0」的策略）：</p>
+<pre><code class="language-vm">function Clock.print 1
+push argument 0
+pop pointer 0               // THIS = this
+push argument 0
+pop local 0                 // （選用）備份 this 到 local 0
+push this 0
+call Output.printInt 1
+pop temp 0                  // 丟棄 printInt 的回傳值（do 陳述式）
+push constant 58
+call Output.printChar 1
+pop temp 0
+push this 1
+call Output.printInt 1
+pop temp 0
+push constant 0
+return
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>do</code> 陳述式呼叫完畢後回傳值沒人要用，所以用 <code>pop temp 0</code> 把它從 stack 上丟掉（避免 stack 髒掉）。而 method 的 <code>return</code>（沒有明確回傳值時）習慣上回傳 <code>constant 0</code>。</p>
+</blockquote>
+<hr />
+<h2 id="4-function-的翻譯-最單純的平凡函式">4. Function 的翻譯：最單純的平凡函式</h2>
+<p><code>function</code> 既不管 alloc 也不接 this，是最乾淨的一種。它的翻譯規則就是最標準的 VM 函式：</p>
+<ul>
+<li><code>function ClassName.name k</code> 開場，<code>k</code> = 區域變數個數</li>
+<li>body 直接翻譯，凡 <code>var</code> 變數依符號表 → <code>local i</code>，參數 → <code>argument j</code></li>
+</ul>
+<p>舉例，若有一個靜態工具函式：</p>
+<pre><code class="language-jack">function int twice(int x) {
+    return 2 * x;
+}
+</code></pre>
+<p>翻譯：</p>
+<pre><code class="language-vm">function ClassName.twice 0
+push constant 2
+push argument 0
+call Math.multiply 2
+return
+</code></pre>
+<p>（<code>Math.multiply</code> 是 Jack OS 提供的乘法函式，輸出輸出兩個參數。）</p>
+<hr />
+<h2 id="5-欄位存取-pointer-0-與-this-的關係">5. 欄位存取、pointer 0 與 THIS 的關係</h2>
+<h3 id="5-1-一張圖看懂-this-pointer-this-段">5.1 一張圖看懂 THIS / pointer / this 段</h3>
+<p>VM 有一組特殊的虛擬暫存器，<code>pointer 0</code> 與 <code>pointer 1</code> 分別是 <strong>THIS</strong> 與 <strong>THAT</strong> 的替身。第 8 章的 VM translator 在實作時這樣設定，例如 Hack 上 THIS 落在 <code>RAM[3]</code>、THAT 落在 <code>RAM[4]</code>。</p>
+<ul>
+<li><code>pop pointer 0</code> → 把值寫進 <code>RAM[3]</code>（即 THIS）</li>
+<li><code>push pointer 0</code> → 讀出 <code>RAM[3]</code></li>
+<li><code>this i</code> → 實際是 <code>RAM[THIS + i]</code>，也就是 <code>RAM[RAM[3] + i]</code></li>
+</ul>
+<p>所以「set THIS = 某物件位址」之後，所有 <code>this i</code> 的讀寫就全部指向該物件的第 i 個欄位。這正是物件欄位的存在方式：</p>
+<pre><code>        RAM[3]  (THIS)  ──►  [ hour | minute | ... ]   ← 物件空間
+                               this 0   this 1
+</code></pre>
+<h3 id="5-2-欄位移動的實質">5.2 欄位移動的實質</h3>
+<p>「欄位存取 = 其中一個基址 + 偏移」——這個概念在本書 11.3 節處理陣列時會再次出現。簡單說，物件欄位就是把「物件起始位址（THIS）」當基址，再加上欄位編號作為偏移。<code>this 0</code>、<code>this 1</code> 二個就是 <code>THIS+0</code>、<code>THIS+1</code>。</p>
+<hr />
+<h2 id="6-完整的-jack-類別-vm-翻譯範例">6. 完整的 Jack 類別 → VM 翻譯範例</h2>
+<p>現在把前面各片段的 Clock 類別一次翻譯到位，方便你對照：</p>
+<p><strong>Jack（Clock.jack）：</strong></p>
+<pre><code class="language-jack">class Clock {
+    field int hour;
+    field int minute;
+
+    constructor Clock new(int h, int m) {
+        let hour = h;
+        let minute = m;
+        return this;
+    }
+
+    method void print() {
+        do Output.printInt(hour);
+        do Output.printChar(58);
+        do Output.printInt(minute);
+        return;
+    }
+}
+</code></pre>
+<p><strong>VM（Clock.vm）：</strong></p>
+<pre><code class="language-vm">// Clock.new
+function Clock.new 0            // 宣告 0 個區域變數（此處策略以宣告 0）
+push constant 2
+call Memory.alloc 1
+pop pointer 0
+push argument 0
+pop this 0
+push argument 1
+pop this 1
+push pointer 0
+return
+
+// Clock.print
+function Clock.print 1          // 宣告 1 格用來備份 this
+push argument 0
+pop pointer 0
+push argument 0
+pop local 0
+push this 0
+call Output.printInt 1
+pop temp 0
+push constant 58
+call Output.printChar 1
+pop temp 0
+push this 1
+call Output.printInt 1
+pop temp 0
+push constant 0
+return
+</code></pre>
+<p><strong>驗證方法</strong>：把 Cloud 的 <code>Clock.vm</code> 交由第 8 章的 VM translator 轉成 <code>Clock.asm</code>，再交給第 6 章的組譯器與第 5 章的電腦模擬器。只要 <code>this/pointer</code>、<code>call/return</code> 的語意正確，這個物件就真的活了過來。</p>
+<h3 id="設計思路與實作步驟總整理">設計思路與實作步驟總整理</h3>
+<ol>
+<li><strong>constructor</strong>：算出 <code>nFields</code> → <code>Memory.alloc(nFields)</code> → <code>pop pointer 0</code> → 初始化 field → <code>push pointer 0</code>（return this）。</li>
+<li><strong>method</strong>：視為多一個參數（argument 0 = this）→ prologue 把 <code>argument 0</code> 設為 THIS（並可備份到 local 0）→ body 內 field 用 <code>this i</code>。</li>
+<li><strong>function</strong>：最單純，無 this、無 alloc，直接翻譯 body。</li>
+<li>field 就是 <code>THIS + 偏移</code>；<code>pointer 0</code> 只是 THIS 在 VM 指令中的代稱。</li>
+</ol>
+<hr />
+<h2 id="7-本章小結-本節">7. 本章小結（本節）</h2>
+<ul>
+<li><strong>constructor</strong> 翻譯三步曲：<code>Memory.alloc(欄位數)</code> → <code>pop pointer 0</code>（this 段指向新物件）→ 以 <code>push pointer 0</code> 回傳物件位址。</li>
+<li><strong>method</strong> 翻譯關鍵：隱藏參數 <code>this</code> 放在 <code>argument 0</code>，進入時複製到 THIS（<code>argument 0 → pointer 0</code>），讓 <code>field</code> 能用 <code>this i</code> 存取。</li>
+<li><strong>function</strong> 最單純：無物件、無 this，直接依符號表翻譯。</li>
+<li>欄位 = <code>物件基址(THIS) + 偏移</code>；<code>pop/push pointer 0</code> 就是讀寫 THIS 指標本身。</li>
+<li><code>do</code> 呼叫後要 <code>pop temp 0</code> 丟棄回傳值；method 無回傳值時回傳 <code>constant 0</code>。</li>
+<li>一張符號表（11.1）＋ 這套翻譯規則，就足以讓 VM 執行真正的物件導向程式。</li>
+</ul>
+<p>接下來，11.3 節我們處理 Jack 的另一個常客——<strong>陣列</strong>——看它如何用 <code>Memory.alloc</code> 配出空間、如何用「基址 + 索引」與 <code>that</code> 段完成元素讀寫。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="11.1.html">⇦ 上一節</a><a class="nav-btn" href="11.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

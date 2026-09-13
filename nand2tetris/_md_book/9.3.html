@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.3 使用 Jack 編寫第一個圖形化小遊戲</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link active" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="9.2.html">⇦ 上一節</a></div>
+  <div class="title">9.3 使用 Jack 編寫第一個圖形化小遊戲</div>
+  <div class="nav-right"><a class="nav-btn" href="10.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch09.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="9-3-使用-jack-編寫第一個圖形化小遊戲">9.3 使用 Jack 編寫第一個圖形化小遊戲</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>使用 Jack OS 提供的 <code>Screen</code>（繪圖）、<code>Keyboard</code>（鍵盤輸入）、<code>Output</code>（文字輸出）等 API</li>
+<li>理解「先擦後畫」的動畫模型，避免畫面殘影</li>
+<li>設計並撰寫一個完整的小遊戲（拍子接球遊戲）</li>
+<li>走完整個開發流程：<strong>編寫 → 編譯 → 載入 VM 模擬器 → 執行與測試</strong></li>
+<li>使用 Sys.wait 控制遊戲幀率、用方向鍵控制物件移動</li>
+<li>除錯 Jack 遊戲的常見問題（閃爍、卡鍵、越界、碰撞不準）</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>9.1 教了你 Jack 的語法，9.2 揭開了物件與陣列的記憶體底層。現在該把這些知識派上用場了——我們要寫一個<strong>真正能玩的圖形化小遊戲</strong>。</p>
+<p>本節做的遊戲是經典的<strong>拍子接球（Pong）</strong>：螢幕下方有一支拍子，用左右方向鍵控制；一顆球在螢幕四周彈來彈去，接到球就得分，漏掉球就少一條命。規則簡單、畫面單純，卻完整覆蓋了遊戲開發的核心主題：</p>
+<ul>
+<li><strong>畫面輸出</strong>：如何畫方塊、擦方塊</li>
+<li><strong>使用者輸入</strong>：如何讀鍵盤、處理方向鍵</li>
+<li><strong>碰撞偵測</strong>：球與牆、球與拍子的碰撞判斷</li>
+<li><strong>遊戲迴圈</strong>：狀態更新與幀率控制</li>
+<li><strong>計分與生命</strong>：掛上基本的 game state</li>
+</ul>
+<p>更重要的是，這支程式會忠實走過你親手打造（或即將打造）的整條工具鏈：<code>.jack</code> → 編譯器 → <code>.vm</code> → VM 翻譯器 → Hack 電腦。當遊戲在模擬器裡跑起來那一刻，就是整條「從 0 到 1」之路的階段性回報。</p>
+<hr />
+<h2 id="1-前置知識-jack-os-提供的-api">1. 前置知識：Jack OS 提供的 API</h2>
+<p>在寫遊戲之前，先認識 Jack 作業系統提供的幾個「現成工具」類別。它們在 Nand2Tetris 工具包的 <code>OS/</code> 目錄裡，以 <code>.vm</code> 檔的形式存在（第 12 章你會自己實作它們）。</p>
+<h3 id="1-1-screen-類別-畫到螢幕上">1.1 Screen 類別 —— 畫到螢幕上</h3>
+<p>Screen 管理從 16384 開始的螢幕記憶體映射（第 4 章有詳細介紹）。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>功能</th>
+<th>底層知識</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Screen.clearScreen()</code></td>
+<td>把整個螢幕清成背景色</td>
+<td>把 8192 個 word 全部設 0</td>
+</tr>
+<tr>
+<td><code>Screen.setColor(boolean b)</code></td>
+<td>設定「目前的畫筆顏色」</td>
+<td><code>true</code>=黑，<code>false</code>=白</td>
+</tr>
+<tr>
+<td><code>Screen.drawPixel(x, y)</code></td>
+<td>在座標 (x, y) 畫一個點</td>
+<td>計算 word 位址 + 位移 <strong>此後所有繪圖方法的量產基礎</strong></td>
+</tr>
+<tr>
+<td><code>Screen.drawLine(x1, y1, x2, y2)</code></td>
+<td>畫一條線</td>
+<td>內建 Bresenham 演算法</td>
+</tr>
+<tr>
+<td><code>Screen.drawRectangle(x1, y1, x2, y2)</code></td>
+<td>畫一個實心矩形</td>
+<td>重複呼叫 drawLine</td>
+</tr>
+<tr>
+<td><code>Screen.drawCircle(x, y, r)</code></td>
+<td>畫一個實心圓</td>
+<td>用中點畫圓法</td>
+</tr>
+</tbody>
+</table>
+<p><strong>螢幕座標系統</strong>：解析度 512 × 256，左上角為原點 (0,0)，x 向右、y 向下遞增。</p>
+<pre><code class="language-jack">// 基本用法
+do Screen.setColor(true);                    // 換黑色：開始作畫
+do Screen.drawRectangle(100, 100, 300, 160); // 畫一個實心長方形
+do Screen.setColor(false);                   // 換白色：變成橡皮擦
+do Screen.drawRectangle(100, 100, 300, 160); // 把同一個長方形「擦掉」
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>setColor(false)</code> 就是橡皮擦。黑白系統的巧妙之處在於——<strong>「擦除」不是特殊功能，只是用同一個繪圖 API 通通畫成背景色（0）</strong>。這讓動畫就變成「先畫白、再畫黑」的循環，正是本節遊戲動畫的最核心機制。</p>
+</blockquote>
+<h3 id="1-2-keyboard-類別-讀取鍵盤">1.2 Keyboard 類別 —— 讀取鍵盤</h3>
+<p>Keyboard 讀取位址 24576 的鍵盤記憶體映射。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Keyboard.keyPressed()</code></td>
+<td>回傳目前被按下的鍵的碼（沒有按鍵時回傳 0）</td>
+</tr>
+<tr>
+<td><code>Keyboard.readChar()</code></td>
+<td>等待並回傳使用者按下的一個字元</td>
+</tr>
+<tr>
+<td><code>Keyboard.readLine()</code></td>
+<td>讀一整行文字（直到 Enter）</td>
+</tr>
+<tr>
+<td><code>Keyboard.readInt()</code></td>
+<td>讀一整行並轉成整數</td>
+</tr>
+</tbody>
+</table>
+<p><strong>方向鍵與特殊鍵的碼</strong>（這些是 Jack OS 的既定規格）：</p>
+<table>
+<thead>
+<tr>
+<th>鍵</th>
+<th>碼</th>
+<th>鍵</th>
+<th>碼</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>左方向鍵</td>
+<td>130</td>
+<td>空白鍵</td>
+<td>32</td>
+</tr>
+<tr>
+<td>上方向鍵</td>
+<td>131</td>
+<td>Enter</td>
+<td>128</td>
+</tr>
+<tr>
+<td>右方向鍵</td>
+<td>132</td>
+<td>Backspace</td>
+<td>129</td>
+</tr>
+<tr>
+<td>下方向鍵</td>
+<td>133</td>
+<td>ESC</td>
+<td>27</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-jack">// 讀取目前按下的鍵
+var int key;
+let key = Keyboard.keyPressed();
+if (key = 132) {          // 右方向鍵（注意：比較用單等號 =）
+    do Screen.drawPixel(10, 10);
+}
+</code></pre>
+<h3 id="1-3-output-類別-顯示文字">1.3 Output 類別 —— 顯示文字</h3>
+<p>Output 把文字畫住螢幕上方，以「字元格」為單位（每格 8×8 像素，共 32 欄 × 16 列）。</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Output.moveCursor(row, col)</code></td>
+<td>移動游標（row: 0-15, col: 0-31）</td>
+</tr>
+<tr>
+<td><code>Output.printChar(char c)</code></td>
+<td>印一個字元</td>
+</tr>
+<tr>
+<td><code>Output.printString(String s)</code></td>
+<td>印一串文字</td>
+</tr>
+<tr>
+<td><code>Output.printInt(int n)</code></td>
+<td>印一個整數</td>
+</tr>
+<tr>
+<td><code>Output.println()</code></td>
+<td>換行</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-jack">do Output.moveCursor(0, 0);
+do Output.printString(&quot;Score: &quot;);
+do Output.printInt(42);
+</code></pre>
+<h3 id="1-4-sys-與-math-類別">1.4 Sys 與 Math 類別</h3>
+<table>
+<thead>
+<tr>
+<th>類別</th>
+<th>常用方法</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Sys</code></td>
+<td><code>Sys.wait(ms)</code></td>
+<td>暫停指定的毫秒數，控制遊戲幀率</td>
+</tr>
+<tr>
+<td><code>Sys.halt()</code></td>
+<td>系統停止</td>
+<td>結束程式</td>
+</tr>
+<tr>
+<td><code>Math</code></td>
+<td><code>Math.abs(x)</code></td>
+<td>絕對值（碰撞運算常用）</td>
+</tr>
+<tr>
+<td><code>Math</code></td>
+<td><code>Math.multiply(a,b)</code>、<code>Math.divide(a,b)</code></td>
+<td>乘除法（16-bit Hack 沒有硬體乘法）</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-jack">do Sys.wait(30);            // 每幀暫停 30ms ≈ 每秒 33 幀
+var int d;
+let d = Math.abs(-5);       // d = 5
+</code></pre>
+<hr />
+<h2 id="2-遊戲設計-拍子接球-pong">2. 遊戲設計：拍子接球（Pong）</h2>
+<h3 id="2-1-遊戲規則">2.1 遊戲規則</h3>
+<ul>
+<li>一支拍子（寬 80、高 6 像素）固定在螢幕底部 (y=240)，用 <strong>左/右方向鍵</strong> 移動</li>
+<li>一顆球（半徑 3 像素）在螢幕內飛行，撞到左右牆與天花板會反彈</li>
+<li>球碰到 <strong>拍子</strong> → 得分 +1，球向上反彈</li>
+<li>球漏到螢幕底部以下 → 生命 -1，球重置回上方</li>
+<li>生命歸零 → 顯示 Game Over；按 <strong>ESC</strong> 隨時離開</li>
+</ul>
+<h3 id="2-2-先擦後畫-的動畫模型">2.2 「先擦後畫」的動畫模型</h3>
+<p>Game Loop（遊戲迴圈）是每一支即時遊戲的心跳：</p>
+<pre><code>┌────────────────────────────────────┐
+│  1. 讀取鍵盤輸入                     │
+│  2. 根據輸入更新物件狀態（座標）      │
+│  3. 把舊畫面「擦掉」（畫成白色）      │
+│  4. 把新畫面「畫上」（畫成黑色）      │
+│  5. Sys.wait 控制幀率                │
+└────────────────────────────────────┘
+         ▲                          │
+         └──────── 無限重複 ──────────┘
+</code></pre>
+<p>物件移動的標準做法是「<strong>先擦舊、再畫新</strong>」：</p>
+<pre><code class="language-jack">do drawBall(false);              // 先在舊位置畫白（擦掉）
+let ballX = ballX + ballVX;      // 更新座標
+let ballY = ballY + ballVY;
+do drawBall(true);               // 再在新位置畫黑（畫出）
+</code></pre>
+<h3 id="2-3-檔案結構">2.3 檔案結構</h3>
+<p>本專案由兩個類別組成，放在同一個專案目錄（編譯器一次處理一個目錄）：</p>
+<pre><code>PongGame/
+├── Main.jack    ← 程式入口：顯示說明、等待開始、啟動遊戲
+└── Pong.jack    ← 遊戲本體：拍子、球、碰撞、計分、主迴圈
+</code></pre>
+<hr />
+<h2 id="3-逐步實作">3. 逐步實作</h2>
+<h3 id="3-1-第一步-pong-類別的欄位設計">3.1 第一步：Pong 類別的欄位設計</h3>
+<p>先把遊戲的「狀態」想清楚——遊戲裡需要記住的一切就住在欄位裡。回想 9.2 節：<strong>每到達一個欄位，new 時就要多 alloc 一個 word，記憶體圖就會多一格</strong>。</p>
+<pre><code class="language-jack">class Pong {
+
+    // ------ 拍子 ------
+    field int paddleW;    // 拍子寬度（固定 80）
+    field int paddleX;    // 拍子左端 x 座標（要移動的就是它）
+    field int paddleY;    // 拍子頂端 y 座標（固定 240）
+
+    // ------ 球 ------
+    field int ballR;      // 球半徑（用正方形近似）
+    field int ballX;      // 球心 x
+    field int ballY;      // 球心 y
+    field int ballVX;     // 水平速度（每幀移動像素）
+    field int ballVY;     // 垂直速度
+
+    // ------ 遊戲狀態 ------
+    field int score;      // 得分
+    field int lives;      // 剩餘生命
+</code></pre>
+<p>這個類別共有 9 個 field，因此建構子會向 <code>Memory.alloc(9)</code> 請求 9 個 word 的 heap 空間。</p>
+<h3 id="3-2-第二步-建構子與繪圖方法">3.2 第二步：建構子與繪圖方法</h3>
+<p>建構子把物件初始化之後畫出初始畫面。注意「<strong>匯集所有常數</strong>」的習慣——遊戲的魔法數字全部集中在這裡，改速度、改拍子寬度只要動建構子一行。</p>
+<pre><code class="language-jack">    constructor Pong new() {
+        let paddleW = 80;
+        let paddleX = 216;          // (512 - 80) / 2：置中
+        let paddleY = 240;
+        let ballR = 3;
+        let score = 0;
+        let lives = 3;
+        do resetBall();             // 把球放回上方並畫出
+        do drawPaddle(true);
+        do drawScore();
+        do drawInstructions();
+        return this;                // 回傳物件的 heap 位址
+    }
+</code></pre>
+<p>繪圖方法做成「<strong>帶布林參數的版本</strong>」——<code>true</code> 畫黑（出現）、<code>false</code> 畫白（消失）。這樣同一支方法同時是「畫筆」也是「橡皮擦」：</p>
+<pre><code class="language-jack">    // 依參數 colored 決定是畫出還是擦掉拍子
+    method void drawPaddle(boolean colored) {
+        do Screen.setColor(colored);
+        do Screen.drawRectangle(paddleX, paddleY,
+                                paddleX + paddleW, paddleY + 6);
+        return;
+    }
+
+    // 依參數 colored 決定是畫出還是擦掉球（用小正方形近似圓形）
+    method void drawBall(boolean colored) {
+        do Screen.setColor(colored);
+        do Screen.drawRectangle(ballX - ballR, ballY - ballR,
+                                ballX + ballR, ballY + ballR);
+        return;
+    }
+
+    // 重置球的位置：放到頂端中間，向下飛
+    method void resetBall() {
+        let ballX = 256;
+        let ballY = 20;
+        let ballVX = 2;
+        let ballVY = 2;
+        do drawBall(true);
+        return;
+    }
+</code></pre>
+<h3 id="3-3-第三步-文字輸出方法">3.3 第三步：文字輸出方法</h3>
+<p>用 Output 顯示分數與操作說明：</p>
+<pre><code class="language-jack">    method void drawScore() {
+        do Output.moveCursor(0, 0);
+        do Output.printString(&quot;  Score: &quot;);
+        do Output.printInt(score);
+        do Output.printString(&quot;    Lives: &quot;);
+        do Output.printInt(lives);
+        do Output.printString(&quot;       &quot;);
+        return;
+    }
+
+    method void drawInstructions() {
+        do Output.moveCursor(2, 3);
+        do Output.printString(&quot;Pong! Bounce the ball!&quot;);
+        do Output.moveCursor(3, 3);
+        do Output.printString(&quot;Arrows=move  ESC=quit&quot;);
+        return;
+    }
+
+    method void drawGameOver() {
+        do Output.moveCursor(12, 6);
+        do Output.printString(&quot;Game Over! Final Score: &quot;);
+        do Output.printInt(score);
+        do Output.moveCursor(14, 6);
+        do Output.printString(&quot;Press ESC to quit&quot;);
+        return;
+    }
+</code></pre>
+<blockquote>
+<p>細節：<code>printString</code> 結尾多印幾個空白，用來「蓋掉」比上一幀短的殘留文字（例如 <code>Lives: 3</code> 變成 <code>Lives: 2</code> 時，多出來的尾巴要用空格蓋住）。</p>
+</blockquote>
+<h3 id="3-4-第四步-拍子移動">3.4 第四步：拍子移動</h3>
+<p>讀方向鍵，移動拍子。移動前先擦舊位置、移動後畫新位置。用邊界檢查避免拍子衝出螢幕：</p>
+<pre><code class="language-jack">    method void movePaddle() {
+        var int key;
+        let key = Keyboard.keyPressed();
+        if (key = 132) {                      // 132 = 右方向鍵
+            if (paddleX + paddleW &lt; 511) {    // 別衝出右緣
+                do drawPaddle(false);          // 擦掉舊位置
+                let paddleX = paddleX + 8;
+                do drawPaddle(true);           // 畫到新位置
+            }
+        }
+        if (key = 130) {                      // 130 = 左方向鍵
+            if (paddleX &gt; 0) {                // 別衝出左緣
+                do drawPaddle(false);
+                let paddleX = paddleX - 8;
+                do drawPaddle(true);
+            }
+        }
+        return;
+    }
+</code></pre>
+<h3 id="3-5-第五步-球的移動與碰撞">3.5 第五步：球的移動與碰撞</h3>
+<p>這是遊戲最「物理」的部分。球的座標每個 frame 加上速度向量；撞牆就翻轉對應方向的速度分量：</p>
+<pre><code class="language-jack">    // 碰撞判斷：球要往下、且落在拍子所在的 y 帶，且水平位置在拍子範圍內
+    method boolean ballHitPaddle() {
+        if (ballVY &lt; 0) { return false; }                  // 往上飛不會碰到
+        if (ballY + ballR &lt; paddleY) { return false; }     // 還沒到拍子高度
+        if (ballY + ballR &gt; paddleY + 8) { return false; } // 已穿過拍子帶
+        if (ballX &lt; paddleX) { return false; }             // 在拍子左邊外
+        if (ballX &gt; paddleX + paddleW) { return false; }   // 在拍子右邊外
+        return true;
+    }
+
+    method void moveBall() {
+        do drawBall(false);                 // 擦掉舊球
+        let ballX = ballX + ballVX;         // 更新座標
+        let ballY = ballY + ballVY;
+
+        if (ballX &lt; ballR) {                // 撞左牆
+            let ballX = ballR;
+            let ballVX = -ballVX;
+        }
+        if (ballX &gt; 511 - ballR) {          // 撞右牆
+            let ballX = 511 - ballR;
+            let ballVX = -ballVX;
+        }
+        if (ballY &lt; ballR) {                // 撞天花板
+            let ballY = ballR;
+            let ballVY = -ballVY;
+        }
+        if (ballHitPaddle()) {              // 接到球！
+            let ballVY = -ballVY;           // 向上反彈
+            let ballY = paddleY - ballR;    // 貼齊拍子上緣，避免卡住
+            let score = score + 1;
+        }
+        do drawBall(true);                  // 畫上新球
+        return;
+    }
+
+    // 掉球：生命減一，若還有命就把球重置回上方
+    method void loseLife() {
+        let lives = lives - 1;
+        if (lives &gt; 0) {
+            do resetBall();
+        }
+        return;
+    }
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>ballHitPaddle</code> 的檢查順序暗藏了除錯智慧——<strong>把最不可能的條件放前面、最貴的運算放後面</strong>（其實這五個條件都很便宜，但「先排除多數情況」的思考習慣本身很有價值）。更重要的是條件完整：只往下飛、只在那條 y 帶、只當水平位置重疊才算「命中」。這三件事缺一不可，否則球會「穿過」拍子或「隔空」接住。</p>
+</blockquote>
+<h3 id="3-6-第六步-遊戲主迴圈">3.6 第六步：遊戲主迴圈</h3>
+<p>主迴圈把每一幀的片段組合起來：讀鍵盤 → 動拍子 → 動球 → 檢查生命 → 更新分數 → 暫停讓畫面停留。ESC 隨時直接離場：</p>
+<pre><code class="language-jack">    method void run() {
+        var int key;
+        while (true) {
+            let key = Keyboard.keyPressed();
+            if (key = 27) {              // ESC → 離開遊戲
+                return;
+            }
+            if (lives &gt; 0) {
+                do movePaddle();
+                do moveBall();
+                if (ballY &gt; 300) {         // 球掉出螢幕底部
+                    do loseLife();
+                }
+                if (lives &gt; 0) {
+                    do drawScore();
+                    do Sys.wait(30);       // 每幀 30ms ≈ 33 fps
+                }
+            } else {
+                do drawGameOver();         // 生命歸零
+                do Sys.wait(200);
+            }
+        }
+        return;
+    }
+</code></pre>
+<h3 id="3-7-main-類別-程式入口">3.7 Main 類別：程式入口</h3>
+<p><code>Main.main()</code> 是 Jack 程式的起點（就像 C 的 <code>main</code>）。它先顯示說明、等待玩家按空白鍵開始，再交給 <code>Pong.run()</code> 接手：</p>
+<pre><code class="language-jack">// Main.jack
+
+class Main {
+
+    function void main() {
+        var Pong game;
+        do Output.moveCursor(8, 6);
+        do Output.printString(&quot;Welcome to Pong!&quot;);
+        do Output.moveCursor(10, 6);
+        do Output.printString(&quot;Press SPACE to start...&quot;);
+        while (Keyboard.keyPressed() = 0) {     // 等待任何按鍵
+            do Sys.wait(20);
+        }
+        let game = Pong.new();                  // 建立遊戲物件
+        do game.run();                          // 進入主迴圈
+        return;
+    }
+}
+</code></pre>
+<h3 id="3-8-完整程式碼-pong-jack">3.8 完整程式碼：Pong.jack</h3>
+<p>將上面的片段組合成一個完整檔案，即可直接交給 Jack 編譯器：</p>
+<pre><code class="language-jack">// Pong.jack
+// 拍子接球小遊戲：方向鍵移動拍子，接住反彈的球
+// 左右牆與天花板會反彈；漏球扣命；ESC 離開
+
+class Pong {
+
+    field int paddleW;
+    field int paddleX;
+    field int paddleY;
+
+    field int ballR;
+    field int ballX;
+    field int ballY;
+    field int ballVX;
+    field int ballVY;
+
+    field int score;
+    field int lives;
+
+    constructor Pong new() {
+        let paddleW = 80;
+        let paddleX = 216;
+        let paddleY = 240;
+        let ballR = 3;
+        let score = 0;
+        let lives = 3;
+        do resetBall();
+        do drawPaddle(true);
+        do drawScore();
+        do drawInstructions();
+        return this;
+    }
+
+    method void run() {
+        var int key;
+        while (true) {
+            let key = Keyboard.keyPressed();
+            if (key = 27) {
+                return;
+            }
+            if (lives &gt; 0) {
+                do movePaddle();
+                do moveBall();
+                if (ballY &gt; 300) {
+                    do loseLife();
+                }
+                if (lives &gt; 0) {
+                    do drawScore();
+                    do Sys.wait(30);
+                }
+            } else {
+                do drawGameOver();
+                do Sys.wait(200);
+            }
+        }
+        return;
+    }
+
+    method void movePaddle() {
+        var int key;
+        let key = Keyboard.keyPressed();
+        if (key = 132) {
+            if (paddleX + paddleW &lt; 511) {
+                do drawPaddle(false);
+                let paddleX = paddleX + 8;
+                do drawPaddle(true);
+            }
+        }
+        if (key = 130) {
+            if (paddleX &gt; 0) {
+                do drawPaddle(false);
+                let paddleX = paddleX - 8;
+                do drawPaddle(true);
+            }
+        }
+        return;
+    }
+
+    method boolean ballHitPaddle() {
+        if (ballVY &lt; 0) { return false; }
+        if (ballY + ballR &lt; paddleY) { return false; }
+        if (ballY + ballR &gt; paddleY + 8) { return false; }
+        if (ballX &lt; paddleX) { return false; }
+        if (ballX &gt; paddleX + paddleW) { return false; }
+        return true;
+    }
+
+    method void moveBall() {
+        do drawBall(false);
+        let ballX = ballX + ballVX;
+        let ballY = ballY + ballVY;
+
+        if (ballX &lt; ballR) {
+            let ballX = ballR;
+            let ballVX = -ballVX;
+        }
+        if (ballX &gt; 511 - ballR) {
+            let ballX = 511 - ballR;
+            let ballVX = -ballVX;
+        }
+        if (ballY &lt; ballR) {
+            let ballY = ballR;
+            let ballVY = -ballVY;
+        }
+        if (ballHitPaddle()) {
+            let ballVY = -ballVY;
+            let ballY = paddleY - ballR;
+            let score = score + 1;
+        }
+        do drawBall(true);
+        return;
+    }
+
+    method void loseLife() {
+        let lives = lives - 1;
+        if (lives &gt; 0) {
+            do resetBall();
+        }
+        return;
+    }
+
+    method void resetBall() {
+        let ballX = 256;
+        let ballY = 20;
+        let ballVX = 2;
+        let ballVY = 2;
+        do drawBall(true);
+        return;
+    }
+
+    method void drawPaddle(boolean colored) {
+        do Screen.setColor(colored);
+        do Screen.drawRectangle(paddleX, paddleY,
+                                paddleX + paddleW, paddleY + 6);
+        return;
+    }
+
+    method void drawBall(boolean colored) {
+        do Screen.setColor(colored);
+        do Screen.drawRectangle(ballX - ballR, ballY - ballR,
+                                ballX + ballR, ballY + ballR);
+        return;
+    }
+
+    method void drawScore() {
+        do Output.moveCursor(0, 0);
+        do Output.printString(&quot;  Score: &quot;);
+        do Output.printInt(score);
+        do Output.printString(&quot;    Lives: &quot;);
+        do Output.printInt(lives);
+        do Output.printString(&quot;       &quot;);
+        return;
+    }
+
+    method void drawInstructions() {
+        do Output.moveCursor(2, 3);
+        do Output.printString(&quot;Pong! Bounce the ball!&quot;);
+        do Output.moveCursor(3, 3);
+        do Output.printString(&quot;Arrows=move  ESC=quit&quot;);
+        return;
+    }
+
+    method void drawGameOver() {
+        do Output.moveCursor(12, 6);
+        do Output.printString(&quot;Game Over! Final Score: &quot;);
+        do Output.printInt(score);
+        do Output.moveCursor(14, 6);
+        do Output.printString(&quot;Press ESC to quit&quot;);
+        return;
+    }
+}
+</code></pre>
+<hr />
+<h2 id="4-編譯與執行">4. 編譯與執行</h2>
+<h3 id="4-1-需要的工具鏈元件">4.1 需要的工具鏈元件</h3>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>狀態</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Jack Compiler</td>
+<td>第 10-11 章實作 / 使用官方成品</td>
+<td>把 <code>.jack</code> 翻譯成 <code>.vm</code></td>
+</tr>
+<tr>
+<td>OS 的 <code>.vm</code> 檔</td>
+<td>官方提供（或第 12 章自製）</td>
+<td><code>Math.vm</code>、<code>Screen.vm</code>、<code>Keyboard.vm</code>、<code>Output.vm</code>、<code>Sys.vm</code>、<code>String.vm</code>、<code>Array.vm</code>、<code>Memory.vm</code></td>
+</tr>
+<tr>
+<td>VM Emulator</td>
+<td>官方工具</td>
+<td>載入 <code>.vm</code> 檔執行，附螢幕與鍵盤模擬</td>
+</tr>
+</tbody>
+</table>
+<h3 id="4-2-步驟一-編寫並組織專案目錄">4.2 步驟一：編寫並組織專案目錄</h3>
+<p>把兩份原始碼放進一個目錄（編譯器以「資料夾」為單位）：</p>
+<pre><code>PongGame/
+├── Main.jack
+└── Pong.jack
+</code></pre>
+<h3 id="4-3-步驟二-編譯-jack-vm">4.3 步驟二：編譯 .jack → .vm</h3>
+<p>使用 Nand2Tetris 工具的 Jack Compiler：</p>
+<pre><code class="language-bash"># 方法一：使用官方 GUI 工具
+$ nand2tetris/tools/JackCompiler.sh            # 然後選 PongGame 資料夾
+
+# 方法二：使用官方命令列工具
+$ nand2tetris/tools/JackCompiler.sh PongGame/
+
+# 方法三：使用你自己在第 10-11 章實作的 Jack 編譯器
+$ python3 JackCompiler.py PongGame/
+</code></pre>
+<p>編譯成功後，<code>PongGame/</code> 目錄內出現 <code>Main.vm</code> 與 <code>Pong.vm</code>。編譯器的統計資訊會告訴你每個類別的 VM 指令數。</p>
+<p>看一下成品長什麼樣（README 的 <code>Pong.vm</code> 片段）：</p>
+<pre><code>// Pong.vm（節錄）
+function Pong.new 0
+push constant 9
+call Memory.alloc 1
+pop pointer 0
+...
+function Pong.moveBall 0
+push pointer 0
+pop local 0
+...
+</code></pre>
+<p>請對照 9.2 節的內容自行追蹤：<code>push constant 9 call Memory.alloc</code> 就是建構子向 heap 請求 9 個 word——<strong>這正是「物件 = 一段連續記憶體」的證據</strong>。</p>
+<h3 id="4-4-步驟三-載入-vm-emulator">4.4 步驟三：載入 VM Emulator</h3>
+<ol>
+<li>開啟 <code>nand2tetris/tools/VMEmulator.sh</code>（Windows 為 <code>.bat</code>）；</li>
+<li><code>File → Load Program</code> → 選擇 <strong>PongGame 資料夾</strong>（模擬器會自動載入資料夾內所有 <code>.vm</code>）；</li>
+<li>如果 OS 服務沒有自動載入，把 <code>nand2tetris/tools/OS/</code> 下的 <code>.vm</code> 檔一起載入（模擬程式的 <code>Settings</code> 會列出 OS 的 <code>.vm</code>）。</li>
+</ol>
+<h3 id="4-5-步驟四-執行與測試">4.5 步驟四：執行與測試</h3>
+<ol>
+<li>按下 <code>Run</code>（或 <code>Step</code> 逐步執行）；看到起始畫面「Welcome to Pong!」與「Press SPACE to start...」；</li>
+<li>按空白鍵 → 遊戲開始，螢幕上方出現分數列，底部出現拍子，頂端出現球；</li>
+<li>球開始飛行，撞牆反彈；</li>
+<li>按 <strong>右方向鍵</strong> → 拍子右移；按 <strong>左方向鍵</strong> → 拍子左移；</li>
+<li>讓球落在拍子上 → 分數 +1、球往上彈；</li>
+<li>故意漏球 3 次 → Game Over 畫面與最終分數；</li>
+<li>按 <strong>ESC</strong> → 程式結束（在 VM Emulator 中 <code>Sys.halt</code> 或 return 結束）。</li>
+</ol>
+<h3 id="4-6-驗證與除錯技巧">4.6 驗證與除錯技巧</h3>
+<p>當遊戲行為不如預期，用這張查表快速定位：</p>
+<table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>幾乎可以肯定是</th>
+<th>修法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>畫面殘影、球拖尾</td>
+<td>「先擦後畫」順序錯，或忘了擦舊物件</td>
+<td>檢查 <code>moveBall</code> / <code>movePaddle</code> 是否先 <code>draw...(false)</code></td>
+</tr>
+<tr>
+<td>球「穿過」拍子</td>
+<td>碰撞的 y 帶太窄，或速度太快時跳過了那條帶</td>
+<td>放寬 y 帶 (<code>paddleY+8</code>)；把速度調小</td>
+</tr>
+<tr>
+<td>拍子移動很卡</td>
+<td><code>Sys.wait</code> 太大；或不必要的每幀重畫</td>
+<td>只重畫「有變化」的物件；縮小 wait</td>
+</tr>
+<tr>
+<td>文字重疊或殘留</td>
+<td><code>printInt</code> 數字變短，舊尾巴沒蓋掉</td>
+<td>在 <code>printString</code> 結尾補空白</td>
+</tr>
+<tr>
+<td>按鍵沒反應</td>
+<td>用錯 key 碼（方向鍵是 130~133，不是 ASCII）</td>
+<td>對照 1.2 節的按鍵碼表</td>
+</tr>
+<tr>
+<td>一進遊戲就 Game Over</td>
+<td>初始位置或速度設錯，球直接掉出底部</td>
+<td>檢查 <code>resetBall</code> 的 <code>ballY=20</code> 與 <code>ballVY&gt;0</code></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>設計思路</strong>：除錯的最高原則就是「<strong>二分法</strong>」。如果畫面完全不對，先不管邏輯，把 <code>do moveBall()</code> 暫時註解掉——如果拍子還能動、球靜止，就證明輸入與繪圖是好的，問題只在球。如果拍子也不動，再切一半：先查鍵盤，再查繪圖。<strong>永遠先縮小懷疑範圍，而不是盯著整支程式猜</strong>。</p>
+</blockquote>
+<hr />
+<h2 id="5-可玩的範例講解">5. 可玩的範例講解</h2>
+<p>把執行過程「拆解」到 VM 層，會看到遊戲背後的每一步：</p>
+<table>
+<thead>
+<tr>
+<th>你看到的畫面</th>
+<th>對應的 Jack 程式</th>
+<th>在底層做的事</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>拍子出現</td>
+<td><code>let game = Pong.new()</code> 內的 <code>drawPaddle(true)</code></td>
+<td><code>Screen.drawRectangle</code> 把一段連續的螢幕記憶體 word 設為 <code>-1</code></td>
+</tr>
+<tr>
+<td>拍子右移</td>
+<td><code>movePaddle</code> 偵測 <code>key=132</code></td>
+<td>舊位置矩形「填 0」→ <code>paddleX+8</code> → 新位置矩形「填 -1」</td>
+</tr>
+<tr>
+<td>球反彈</td>
+<td><code>moveBall</code> 的 <code>ballVX = -ballVX</code></td>
+<td>速度向量取反，座標下次往另一方向累加</td>
+</tr>
+<tr>
+<td>分數 +1</td>
+<td><code>ballHitPaddle()</code> 回傳 true</td>
+<td>8 個 word 的記憶體（樣板）與拍子的記憶體範圍重疊判斷</td>
+</tr>
+<tr>
+<td>Game Over</td>
+<td><code>lives=0</code> → <code>drawGameOver()</code></td>
+<td>純文字輸出到螢幕記憶體的第 13-14 列</td>
+</tr>
+</tbody>
+</table>
+<p>同時，這支遊戲展示了本節三個「再想一層」的關鍵設計：</p>
+<ol>
+<li><strong>物件狀態全部住在 field 裡</strong>——拍子座標、球座標、速度、分數、生命，都是物件的記憶體內容。遊戲世界就是物件的集合，物件的互動就是記憶體狀態的讀寫（對照 9.2 節）。</li>
+<li><strong>碰撞是「邏輯判斷」而不是「物理引擎」</strong>——只做了簡單的區間重疊（overlap）判斷，就足以駕馭這個 512×256 的虛擬世界。</li>
+<li><strong>遊戲迴圈就是「讀輸入 → 更新狀態 → 繪圖 → 讓步」</strong>——這個骨架可以無限擴充：加二號玩家、加速球、加音效……骨幹完全不動。</li>
+</ol>
+<hr />
+<h2 id="6-延伸挑戰">6. 延伸挑戰</h2>
+<p>學完本節後，動手改改看（每一項都只需要動一支方法）：</p>
+<ul>
+<li><strong>加速</strong>：每接一次球，讓 <code>ballVX</code>/<code>ballVY</code> 稍微變大（小心：太快會「跳穿」拍子，這正是碰撞 y 帶要設計成容錯的原因）。</li>
+<li><strong>隨機發球</strong>：重設球時用 <code>Math.multiply</code> 或簡短判斷讓 <code>ballVX</code> 有時為負。</li>
+<li><strong>計分增強</strong>：把 <code>Output.printString</code> 換成遊戲內繪圖計分（用小方塊畫生命值）。</li>
+<li><strong>雙人對戰</strong>：把拍子換成左右兩支，各自用 WASD 與方向鍵控制。</li>
+<li><strong>改寫成貪吃蛇雛形</strong>：用 9.2 節的陣列知識存蛇身座標，frame 間「擦尾畫頭」就能動起來。</li>
+</ul>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li>遊戲需要三大 OS API：<code>Screen</code>（畫）、<code>Keyboard</code>（讀輸入）、<code>Output</code>（印文字），配 <code>Sys.wait</code> 控制節奏。</li>
+<li>「<strong>先擦後畫</strong>」是黑白螢幕上動畫的基本單位：<code>setColor(false)</code> 就是橡皮擦，同一個 <code>drawRectangle</code> 先畫白、再畫黑。</li>
+<li>Game Loop 骨架＝<strong>讀輸入 → 更新狀態 → 繪圖 → 讓步（wait）</strong>，無限重複。</li>
+<li>拍子移動用方向鍵碼（左 130、右 132），移動前檢查邊界避免越界。</li>
+<li>球的運動是「座標 += 速度」，撞牆就翻轉對應速度分量；碰撞要用「<strong>y 帶 + 水平重疊 + 方向</strong>」三個條件精準判斷。</li>
+<li>完整開發流程：<strong>編寫 .jack → JackCompile 翻譯成 .vm → VM Emulator 載入（連同 OS 的 .vm）→ 執行測試 → 對照症狀表除錯</strong>。</li>
+<li>建構子裡的 <code>push constant 9 call Memory.alloc</code> 見證了 9.2 節的核心主張：物件的 9 個欄位就是 heap 上連續的 9 個 word。</li>
+</ul>
+<p>到這裡，第 9 章「Jack 語言導覽」完成：<strong>9.1 語法結構、9.2 物件與記憶體本質、9.3 完整小遊戲</strong>。你現在已經能用高階語言「寫出」一支遊戲；接下來的挑戰，是把書中這條路的「翻譯層」真正補齊——第 10 章，我們要親手寫出詞法分析器（Tokenizer），開始打造自己的 Jack 編譯器。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="9.2.html">⇦ 上一節</a><a class="nav-btn" href="10.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

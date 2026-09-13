@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.2 Hack 機器語言規格：A-指令與 C-指令</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link active" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="4.1.html">⇦ 上一節</a></div>
+  <div class="title">4.2 Hack 機器語言規格：A-指令與 C-指令</div>
+  <div class="nav-right"><a class="nav-btn" href="4.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch04.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="4-2-hack-機器語言規格-a-指令與-c-指令">4.2 Hack 機器語言規格：A-指令與 C-指令</h1>
+<p>上一節確立了 ISA 的原則——Hack 只需兩類指令。現在我們把合約寫死：每一條指令的 16 個位元，分別代表什麼意思。本節是本書最重要的「規格書」章節，請把文中的兩張編碼總表（comp 與 dest/jump）當成字典使用——第六章寫組譯器時，就是把文字助記元對照這兩張表逐項翻譯；第五章做 CPU 時，也是依這兩張表把位元解讀成電路動作。本節最後會示範把一行行組合語言用手工翻譯成二進位機器碼，確認全程沒有模糊地帶。</p>
+<h2 id="三種指令都能做什麼-兩類格式-一個故事">三種指令都能做什麼？—— 兩類格式，一個故事</h2>
+<p>Hack 指令統一為 16 位元寬，所有指令分成兩大類。第一筆位元（最高位元 bit 15）是我們的「分類標籤」：</p>
+<table>
+<thead>
+<tr>
+<th>指令類型</th>
+<th>bit15</th>
+<th>其餘 15 位元</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>A-指令</strong>（<code>@xxx</code>）</td>
+<td><code>0</code></td>
+<td>15 位元的位址或常數</td>
+<td>把該數值載入 <strong>A 暫存器</strong></td>
+</tr>
+<tr>
+<td><strong>C-指令</strong>（<code>comp;dest;jump</code>）</td>
+<td><code>1</code></td>
+<td><code>1</code>、<code>1</code>、<code>a</code>、<code>comp</code>、<code>dest</code>、<code>jump</code></td>
+<td>計算、儲存、跳躍三合一</td>
+</tr>
+</tbody>
+</table>
+<p>這種「看第一個位元就知道指令性質」的設計，讓第五章的 CPU 不用猜——電路只要檢查 bit15 是 0 還是 1，就能決定要把指令送進哪一條解碼路徑。</p>
+<pre><code class="language-text">   A-指令： 0 ─────────────────────────────
+            │ 0 │ x x x x x x x x x x x x x x x │
+            「0 + 15 位元位址/常數」
+
+   C-指令： 1 1 1 a c1 c2 c3 c4 c5 c6 d1 d2 d3 j1 j2 j3
+            │固定│ │ 計算欄位 │ │ 目的欄位 │ │ 跳躍欄位 │
+</code></pre>
+<p>口訣：<strong>A 指令帶位址，C 指令帶運算</strong>。</p>
+<h2 id="a-指令-0-15-位元的位址-常數">A-指令：0 + 15 位元的位址/常數</h2>
+<h3 id="格式">格式</h3>
+<pre><code class="language-text">@value        其中 value 為 0~32767 的十進位整數
+0 vvvvvvvvvvvvvvv        （最高位元 0 + 15 位元的數值）
+</code></pre>
+<h3 id="語意">語意</h3>
+<p>把 <code>value</code> 這個數值（同時也是位址）載入 A 暫存器。執行後：</p>
+<ul>
+<li><code>A = value</code></li>
+<li>若指令的下一行要存取記憶體，則 <code>M</code> 就代表 <code>RAM[value]</code></li>
+<li>若下一行是跳躍指令，跳躍目標就是 <code>value</code></li>
+</ul>
+<h3 id="範例與編碼">範例與編碼</h3>
+<table>
+<thead>
+<tr>
+<th>組合語言</th>
+<th>十進位值</th>
+<th>15 位元二進位</th>
+<th>完整 16 位元指令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@21</code></td>
+<td>21</td>
+<td><code>000000000010101</code></td>
+<td><code>0 000000000010101</code> → <code>0000000000010101</code></td>
+</tr>
+<tr>
+<td><code>@SCREEN</code></td>
+<td>16384</td>
+<td><code>100000000000000</code></td>
+<td><code>0 100000000000000</code> → <code>0100000000000000</code></td>
+</tr>
+<tr>
+<td><code>@KBD</code></td>
+<td>24576</td>
+<td><code>110000000000000</code></td>
+<td><code>0 110000000000000</code> → <code>0110000000000000</code></td>
+</tr>
+<tr>
+<td><code>@R5</code></td>
+<td>5</td>
+<td><code>000000000000101</code></td>
+<td><code>0 000000000000101</code> → <code>0000000000000101</code></td>
+</tr>
+</tbody>
+</table>
+<p>幾個重點：</p>
+<ol>
+<li><strong><code>@</code> 後面既可以寫數字，也可以寫符號</strong>（如 <code>SCREEN</code>、<code>R5</code>、<code>LOOP</code>）。寫符號時，最終還是要由組譯器換成數字位址（第六章會處理）；但在概念上，位元層永遠是「0 + 15 位元數字」。</li>
+<li><strong>位址上限是 32767</strong>。A-指令無法表達 32768 以上的數字，這與 4.1 節說過的 32K 記憶體定址範圍一致。</li>
+<li><strong>「夾帶常數」的標準手法</strong>：A-指令本身不計算。想讓常數進入資料通路，慣例是先 <code>@常數</code>，緊接 <code>D=A</code>，把 A 裡的數值搬進 D 當運算元：</li>
+</ol>
+<pre><code class="language-asm">@100
+D=A        // D = 100
+</code></pre>
+<h2 id="c-指令-111-a-cccccc-ddd-jjj">C-指令：111 + a + cccccc + ddd + jjj</h2>
+<h3 id="格式">格式</h3>
+<pre><code class="language-text">comp ; dest ; jump        （分號在 Hack 語法中為可有可無的分隔記號）
+
+1 1 1 a  c1 c2 c3 c4 c5 c6  d1 d2 d3  j1 j2 j3
+│固定│ │  comp 欄位   │   dest 欄位 │  jump 欄位 │
+</code></pre>
+<table>
+<thead>
+<tr>
+<th>欄位</th>
+<th>位元位置</th>
+<th>寬度</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>前綴 <code>111</code></td>
+<td>bit 15~13</td>
+<td>3</td>
+<td>固定為 <code>111</code>，標示這是 C-指令。注意前綴必須與 bit12 以後區隔，避免與 A-指令混淆。</td>
+</tr>
+<tr>
+<td><code>a</code></td>
+<td>bit 12</td>
+<td>1</td>
+<td>選擇計算運算元：<code>0</code> 表示用 <strong>A</strong>，<code>1</code> 表示用 <strong>M</strong>（即 RAM[A]）。</td>
+</tr>
+<tr>
+<td><code>comp</code>（ccc）</td>
+<td>bit 11~6</td>
+<td>6</td>
+<td>告訴 ALU 執行哪一種計算。</td>
+</tr>
+<tr>
+<td><code>dest</code>（ddd）</td>
+<td>bit 5~3</td>
+<td>3</td>
+<td>運算結果要寫進哪些地方（A / D / M，可複選）。</td>
+</tr>
+<tr>
+<td><code>jump</code>（jjj）</td>
+<td>bit 2~0</td>
+<td>3</td>
+<td>根據結果的負/零/正決定是否跳躍。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="語意">語意</h3>
+<p>一條 C-指令同時完成三件事，順序為：</p>
+<ol>
+<li><strong>計算</strong>：ALU 以 <code>comp</code> 指定的函數，用 D 與（由 <code>a</code> 選擇的）A 或 M 算出結果。</li>
+<li><strong>儲存</strong>：依 <code>dest</code> 把結果寫入 A、D、M（一個或多個）。</li>
+<li><strong>跳躍</strong>：依 <code>jump</code> 檢查結果的正負零，決定是否把 PC 設為 A 暫存器的值。</li>
+</ol>
+<p>因為「計算結果」在同一個時脈內既被儲存、也被拿來判斷跳躍，所以 Hack 容許我們寫出例如 <code>D=D+1;JGT</code> 這種「邊算邊跳」的指令。</p>
+<h3 id="如何組合一個-c-指令">如何組合一個 C-指令</h3>
+<p>Hack 組合語言的 C-指令寫法是「<code>dest=comp;jump</code>」三段式，但<strong>三段都可以省略</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>寫法</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>D=M</code></td>
+<td>只計算（comp=M）+ 存 D（dest=D），不跳。</td>
+</tr>
+<tr>
+<td><code>D;JGT</code></td>
+<td>只計算（comp=D）+ 跳躍（jump=JGT），不存。<code>dest</code> 留空。</td>
+</tr>
+<tr>
+<td><code>MD=D+1</code></td>
+<td>計算 D+1，同時存入 M 與 D。</td>
+</tr>
+<tr>
+<td><code>0;JMP</code></td>
+<td>計算常數 0，無條件跳躍（jump=JMP）。最經典的「無窮迴圈」。</td>
+</tr>
+</tbody>
+</table>
+<p>「不指定 dest」時，引擎照樣算，只是不保存；「不指定 jump」時，引擎照樣算，只是不跳。這解釋了為什麼 <code>0;JMP</code> 這種「不存不跳錯」的寫法總是以 <code>comp=0</code> 隨便配一個計算欄位。</p>
+<h2 id="計算欄位-comp-一切交給-alu">計算欄位 comp：一切交給 ALU</h2>
+<p><code>comp</code> 指定 ALU「算什麼」，運算元是 D 與另一輸入。<code>a=0</code> 時另一個輸入是 <strong>A</strong> 暫存器的內容；<code>a=1</code> 時是 <strong>M</strong>（＝RAM[A]）。下表左半列出 <code>a=0</code> 的所有組合，右半列出對應的 <code>a=1</code> 版本。</p>
+<h3 id="comp-完整對照表">comp 完整對照表</h3>
+<table>
+<thead>
+<tr>
+<th>運算 a=0</th>
+<th>c1c2c3c4c5c6</th>
+<th>運算 a=1</th>
+<th>c1c2c3c4c5c6</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0</code></td>
+<td><code>101010</code></td>
+<td><code>0</code></td>
+<td><code>101010</code></td>
+<td>常數 0（立即輸出 0）</td>
+</tr>
+<tr>
+<td><code>1</code></td>
+<td><code>111111</code></td>
+<td><code>1</code></td>
+<td><code>111111</code></td>
+<td>常數 1</td>
+</tr>
+<tr>
+<td><code>-1</code></td>
+<td><code>111010</code></td>
+<td><code>-1</code></td>
+<td><code>111010</code></td>
+<td>常數 -1（全 1）</td>
+</tr>
+<tr>
+<td><code>D</code></td>
+<td><code>001100</code></td>
+<td><code>D</code></td>
+<td><code>001100</code></td>
+<td>D 暫存器的值</td>
+</tr>
+<tr>
+<td><code>A</code></td>
+<td><code>110000</code></td>
+<td><code>M</code></td>
+<td><code>110000</code></td>
+<td>A 的值／RAM[A] 的值</td>
+</tr>
+<tr>
+<td><code>!D</code></td>
+<td><code>001101</code></td>
+<td><code>!D</code></td>
+<td><code>001101</code></td>
+<td>對 D 逐位元取反</td>
+</tr>
+<tr>
+<td><code>!A</code></td>
+<td><code>110001</code></td>
+<td><code>!M</code></td>
+<td><code>110001</code></td>
+<td>對 A／M 逐位元取反</td>
+</tr>
+<tr>
+<td><code>-D</code></td>
+<td><code>001111</code></td>
+<td><code>-D</code></td>
+<td><code>001111</code></td>
+<td>D 的二補數取負</td>
+</tr>
+<tr>
+<td><code>-A</code></td>
+<td><code>110011</code></td>
+<td><code>-M</code></td>
+<td><code>110011</code></td>
+<td>A／M 的負值</td>
+</tr>
+<tr>
+<td><code>D+1</code></td>
+<td><code>011111</code></td>
+<td><code>D+1</code></td>
+<td><code>011111</code></td>
+<td>D 加 1</td>
+</tr>
+<tr>
+<td><code>A+1</code></td>
+<td><code>110111</code></td>
+<td><code>M+1</code></td>
+<td><code>110111</code></td>
+<td>A／M 加 1</td>
+</tr>
+<tr>
+<td><code>D-1</code></td>
+<td><code>001110</code></td>
+<td><code>D-1</code></td>
+<td><code>001110</code></td>
+<td>D 減 1</td>
+</tr>
+<tr>
+<td><code>A-1</code></td>
+<td><code>110010</code></td>
+<td><code>M-1</code></td>
+<td><code>110010</code></td>
+<td>A／M 減 1</td>
+</tr>
+<tr>
+<td><code>D+A</code></td>
+<td><code>000010</code></td>
+<td><code>D+M</code></td>
+<td><code>000010</code></td>
+<td>D + A／M</td>
+</tr>
+<tr>
+<td><code>D-A</code></td>
+<td><code>010011</code></td>
+<td><code>D-M</code></td>
+<td><code>010011</code></td>
+<td>D − A／M</td>
+</tr>
+<tr>
+<td><code>A-D</code></td>
+<td><code>000111</code></td>
+<td><code>M-D</code></td>
+<td><code>000111</code></td>
+<td>A/M − D</td>
+</tr>
+<tr>
+<td><code>D&amp;A</code></td>
+<td><code>000000</code></td>
+<td><code>D&amp;M</code></td>
+<td><code>000000</code></td>
+<td>逐位元 AND</td>
+</tr>
+<tr>
+<td><code>D\|A</code></td>
+<td><code>010101</code></td>
+<td><code>D\|M</code></td>
+<td><code>010101</code></td>
+<td>逐位元 OR</td>
+</tr>
+</tbody>
+</table>
+<p>注意幾個有趣的對稱：</p>
+<ol>
+<li><strong><code>A</code> 與 <code>M</code> 的 <code>c1…c6</code> 完全相同</strong>，只是 <code>a</code> 位元不同——硬體共用一套電路，多一根選擇線切換輸入來源。</li>
+<li><strong>五個「原生函數」</strong>：<code>0、1、-1、D、A/M</code> 對應第二章 ALU 的五種最基礎輸出，其餘都是它們的組合。</li>
+<li><strong><code>M=D+M</code> 是合法的一條指令</strong>：comp 讀記憶體、dest 又寫回記憶體，硬體先算出 <code>D+M</code> 再把結果存回 <code>RAM[A]</code>，完全沒有衝突。</li>
+</ol>
+<h2 id="目的欄位-dest-結果要寫去哪">目的欄位 dest：結果要寫去哪</h2>
+<p><code>dest</code> 的三個位元，由左至右依序對應 <strong>A、D、M</strong> 是否被寫入：</p>
+<table>
+<thead>
+<tr>
+<th>dest 助記元</th>
+<th>d1(A)</th>
+<th>d2(D)</th>
+<th>d3(M)</th>
+<th>動作</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>（空）null</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>不儲存結果</td>
+</tr>
+<tr>
+<td><code>M</code></td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>寫入 RAM[A]</td>
+</tr>
+<tr>
+<td><code>D</code></td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>寫入 D</td>
+</tr>
+<tr>
+<td><code>MD</code></td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>同時寫入 M 與 D</td>
+</tr>
+<tr>
+<td><code>A</code></td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>寫入 A</td>
+</tr>
+<tr>
+<td><code>AM</code></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>同時寫入 A 與 M</td>
+</tr>
+<tr>
+<td><code>AD</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>同時寫入 A 與 D</td>
+</tr>
+<tr>
+<td><code>AMD</code></td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>同時寫入 A、D、M</td>
+</tr>
+</tbody>
+</table>
+<p>重點：</p>
+<ul>
+<li>任何對記憶體的寫入都必須透過 <code>M</code>，而 <code>M</code> 效力的前提是 <strong>A 暫存器先指向目標位址</strong>。</li>
+<li><code>dest=A</code> 雖然罕見，但它讓 <code>D=A</code> 與 <code>A=M</code> 這類指令成為可能。</li>
+<li><code>dest</code> 留空時（如 <code>D;JGT</code>），結果丟棄，但跳躍判斷仍看結果。</li>
+</ul>
+<h2 id="跳躍欄位-jump-結果的正負零決定去向">跳躍欄位 jump：結果的正負零決定去向</h2>
+<p><code>jump</code> 的三個位元，由左至右依序是 <strong>j1（結果&lt;0）、j2（結果=0）、j3（結果&gt;0）</strong>：「看落點在哪一區就跳」。</p>
+<table>
+<thead>
+<tr>
+<th>jump 助記元</th>
+<th>j1(&lt;0)</th>
+<th>j2(=0)</th>
+<th>j3(&gt;0)</th>
+<th>跳躍條件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>（空）null</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>不跳</td>
+</tr>
+<tr>
+<td><code>JGT</code></td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td>結果 &gt; 0</td>
+</tr>
+<tr>
+<td><code>JEQ</code></td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>結果 = 0</td>
+</tr>
+<tr>
+<td><code>JGE</code></td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>結果 ≥ 0（&gt;0 或 =0）</td>
+</tr>
+<tr>
+<td><code>JLT</code></td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>結果 &lt; 0</td>
+</tr>
+<tr>
+<td><code>JNE</code></td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td>結果 ≠ 0（&lt;0 或 &gt;0）</td>
+</tr>
+<tr>
+<td><code>JLE</code></td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>結果 ≤ 0（&lt;0 或 =0）</td>
+</tr>
+<tr>
+<td><code>JMP</code></td>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+<td>無條件跳躍</td>
+</tr>
+</tbody>
+</table>
+<p>跳躍的機制是：<strong>若條件成立，下一條指令位址（PC）＝ A 暫存器現在的值</strong>。所以跳躍指令之前，永遠要先有一個 <code>@目標</code> 把目標位址放進 A：</p>
+<pre><code class="language-asm">@END
+D;JEQ        // 若 D==0，跳去標籤 END（A 已載入 END 的位址）
+</code></pre>
+<p>組合語言寫法 <code>@END</code> 搭配 <code>D;JEQ</code>，在機器碼層次是兩條指令；<code>END</code> 這個標籤也會在組譯階段被換成真實的 ROM 位址。</p>
+<h2 id="位址暫存器-a-與記憶體-m-存取記憶體的-兩步舞">位址暫存器 A 與記憶體 M：存取記憶體的「兩步舞」</h2>
+<p>前面反覆強調，「想碰 RAM，先餵 A」。這個規則是 Hack 指令集的靈魂，值得用一個小節講透。在 Hack 中：</p>
+<ul>
+<li><code>M</code> 只是「RAM[A]」的代名詞，世界上<strong>沒有獨立的 M 暫存器電路</strong>。</li>
+<li>因此，想要讀寫記憶體，任何程式都必須遵循同一個兩步節奏：</li>
+</ul>
+<pre><code class="language-asm">@100        // 步驟一：A = 100（指定位址）
+M=D         // 步驟二：RAM[100] = D     （寫）
+</code></pre>
+<pre><code class="language-asm">@100        // 步驟一：A = 100
+D=M         // 步驟二：D = RAM[100]     （讀）
+</code></pre>
+<p>如果把「內容」與「位址」分開思考，A 在讀取的瞬間扮演了「指標」，而 <code>D=M</code>、<code>M=D</code>、<code>M=M+1</code> 這些指令則同時具備「解參考（dereference）」的意義。正是因為 A 具有「既是資料又是位址」的雙重身分，Hack 才能用如此精簡的指令集表達出指針程式設計的所有威力。這個「兩步舞」模式的萬用寫法如下：</p>
+<pre><code class="language-asm">// 將「位址指標」存在暫存器與記憶體中遊走
+@addr        // A = 位址 addr 的位置
+A=M          // A = RAM[addr]（把指標的值解出來，成為新位址）
+D=M          // D = RAM[RAM[addr]]——真正的目標內容
+</code></pre>
+<p>上面的例子同時示範了 <code>dest=A</code> 的用途：<code>A=M</code> 把「指標所指的位址」放回 A，讓後續指令能繼續透過它存取目標。陣列走訪、螢幕塗色（4.3 節）全靠這招。</p>
+<h2 id="完整編碼實作-把一個程式手工組譯">完整編碼實作：把一個程式手工組譯</h2>
+<p>理論讀夠了，現在動手把組合語言一行行翻成 0/1。我們用一個「兩個記憶體字組相加」的小程式當範例：</p>
+<pre><code class="language-asm">// Add2.asm：計算 RAM[2] = RAM[0] + RAM[1]
+@R0
+D=M          // D = RAM[0]
+@R1
+D=D+M        // D = RAM[0] + RAM[1]
+@R2
+M=D          // RAM[2] = D
+(END)
+@END
+0;JMP        // 無窮迴圈：程式結束
+</code></pre>
+<p>逐行編碼（R0、R1、R2 是預先定義符號，值為 0、1、2；END 標籤落在第 6 條指令的位置）：</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>組合語言</th>
+<th>判斷</th>
+<th>16 位元二進位</th>
+<th>十六進位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>@R0</code></td>
+<td>A-指令，值 0</td>
+<td><code>0000000000000000</code></td>
+<td><code>0x0000</code></td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>D=M</code></td>
+<td>C：<code>a=1, comp=M(110000), dest=D(010), jump=000</code></td>
+<td><code>1111110000010000</code></td>
+<td><code>0xFC10</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>@R1</code></td>
+<td>A-指令，值 1</td>
+<td><code>0000000000000001</code></td>
+<td><code>0x0001</code></td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>D=D+M</code></td>
+<td>C：<code>a=1, comp=D+M(000010), dest=D(010), jump=000</code></td>
+<td><code>1111000010010000</code></td>
+<td><code>0xF090</code></td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>@R2</code></td>
+<td>A-指令，值 2</td>
+<td><code>0000000000000010</code></td>
+<td><code>0x0002</code></td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>M=D</code></td>
+<td>C：<code>a=0, comp=D(001100), dest=M(001), jump=000</code></td>
+<td><code>1110001100001000</code></td>
+<td><code>0xE308</code></td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>@END</code></td>
+<td>A-指令，值 6</td>
+<td><code>0000000000000110</code></td>
+<td><code>0x0006</code></td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>0;JMP</code></td>
+<td>C：<code>a=0, comp=0(101010), dest=null(000), jump=JMP(111)</code></td>
+<td><code>1110101010000111</code></td>
+<td><code>0xEA87</code></td>
+</tr>
+</tbody>
+</table>
+<p>產生的<code>.hack</code> 檔內容即為上表「16 位元二進位」那一欄逐行排列。你可以親手用下列公式驗證：
+<code>D=M</code>＝前綴 <code>111</code>＋<code>a=1</code>＋<code>comp=110000</code>＋<code>dest=010</code>＋<code>jump=000</code> → <code>1111 1100 0001 0000</code>（<code>0xFC10</code>），與上表一致。這就是組譯器（第六章）內部每天在做的事——只是它做得又準又快。</p>
+<h2 id="進階組合語言範例">進階組合語言範例</h2>
+<p>學會兩張編碼表後，可以玩出更多花樣。下面兩個例子刻意把「運算、資料位置、跳躍」三個元素都塞進短短幾行。</p>
+<h3 id="例一-絕對值函數">例一：絕對值函數</h3>
+<pre><code class="language-asm">// 計算 RAM[1] = |RAM[0]|
+@R0
+D=M          // D = RAM[0]
+@POS
+D;JGE        // 若 D ≥ 0，跳過取負
+D=-D         // D = -D（利用 comp 的 -D 運算）
+(POS)
+@R1
+M=D          // RAM[1] = |RAM[0]|
+(END)
+@END
+0;JMP
+</code></pre>
+<h3 id="例二-陣列走訪-指標解參考">例二：陣列走訪（指標解參考）</h3>
+<pre><code class="language-asm">// 把 RAM[10] 開始的連續 5 個字組全部歸零
+@5
+D=A
+@n
+M=D          // n = 5（元素個數）
+@10
+D=A
+@p
+M=D          // p = 10（起始指標）
+(LOOP)
+@p
+A=M          // A = 指標所指位址（解參考）
+M=0          // RAM[p] = 0
+@p
+M=M+1        // p = p + 1（前進一個字組）
+@n
+M=M-1        // n = n - 1
+@n
+D=M
+@LOOP
+D;JGT        // n &gt; 0 就繼續
+(END)
+@END
+0;JMP
+</code></pre>
+<p>第二個例子把 A-指令、C-指令、標籤、變數符號（<code>n</code>、<code>p</code>）全部派上用場，正是第四節「正式寫程式」的預習。</p>
+<h2 id="設計思路與實作步驟">設計思路與實作步驟</h2>
+<p>設計 Hack 指令格式時，我們依循了幾個明確的工程決策：</p>
+<ol>
+<li><strong>用 bit15 做指令分類</strong>：第一看看 <code>0</code> 或 <code>111…</code> 即知種類，解碼電路分岔最簡單。</li>
+<li><strong>C-指令的欄位寬度固定</strong>：<code>1+1+6+3+3=14</code> 位元加上前綴正好 16 位元，不浪費、不重疊，位元位置直接刻進電路。</li>
+<li><strong>comp 與第二章 ALU 對齊</strong>：<code>c1…c6</code> 直接餵給 ALU 的控制腳，第五章幾乎不用加解碼邏輯。</li>
+<li><strong>跳躍目標統一放 A</strong>：避免要為「跳躍專用暫存器」再分配位元；代價是跳躍前必須先 <code>@目標</code>。</li>
+<li><strong>導入符號層</strong>：<code>@R0</code>、<code>@LOOP</code>、<code>@SCREEN</code> 這些符號在組譯階段才解析成位址，程式設計師不用背數字。</li>
+<li><strong>用 CPU 模擬器驗證編碼</strong>：把上面的 <code>.hack</code> 檔載入模擬器逐步執行，檢查 D、A、RAM 的變化是否符合語意。</li>
+</ol>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>A-指令</strong>：<code>0</code>＋15 位元數值，唯一任務是把位址/常數載入 A；可寫數字或符號，位址上限 32767。</li>
+<li><strong>C-指令</strong>：<code>111 a cccccc ddd jjj</code>，一次完成「計算、儲存、跳躍」；<code>a</code> 選 A/M，<code>comp</code> 指定 ALU 函數，<code>dest</code> 指定寫入目標，<code>jump</code> 依結果負零正決定是否把 PC 設為 A。</li>
+<li><strong>comp 表</strong>：<code>0/1/-1/D/A(M)/!D/!A(!M)/-D/-A(-M)/D+1/A+1/M+1/D-1/…/D+A/D-A/A-D/D&amp;A/D|A</code>，且 A 與 M 共用同一組 <code>c1…c6</code>，只差 <code>a</code> 位元。</li>
+<li><strong>dest 表</strong>：<code>null/M/D/MD/A/AM/AD/AMD</code>；<strong>jump 表</strong>：<code>null/JGT/JEQ/JGE/JLT/JNE/JLE/JMP</code>。</li>
+<li><strong>兩步舞守則</strong>：讀寫記憶體前必先 <code>@位址</code> 餵 A；<code>A=M</code>＋<code>M=…</code> 是強大的指標解參考組合。</li>
+<li><strong>手工組譯</strong>：每一條指令都能透過「判斷指令種類 → 查表 → 填空」三步驟轉成 16 位元碼，這是第六章組譯器自動化的藍本。</li>
+</ul>
+<p>掌握了 A、C 兩種指令的完整位元規格後，我們還差一塊拼圖：程式如何與螢幕、鍵盤打交道？這就進入 4.3 節的記憶體映射 I/O。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="4.1.html">⇦ 上一節</a><a class="nav-btn" href="4.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

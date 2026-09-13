@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 4 章</span>機器語言（Hack 組語）</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/4.1.md" title="電子書：第 4.1 節 硬體與軟體的交界：指令集架構（ISA）">§4.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/4.2.md" title="電子書：第 4.2 節 Hack 機器語言規格：A-指令與 C-指令">§4.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/4.3.md" title="電子書：第 4.3 節 記憶體映射 I/O：螢幕與鍵盤的控制原理">§4.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/4.4.md" title="電子書：第 4.4 節 寫入你的第一個 Hack 組合語言程式">§4.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/4.1.html" title="電子書：第 4.1 節 硬體與軟體的交界：指令集架構（ISA）">§4.1</a>、<a class="pill" target="mdbook" href="../_md_book/4.2.html" title="電子書：第 4.2 節 Hack 機器語言規格：A-指令與 C-指令">§4.2</a>、<a class="pill" target="mdbook" href="../_md_book/4.3.html" title="電子書：第 4.3 節 記憶體映射 I/O：螢幕與鍵盤的控制原理">§4.3</a>、<a class="pill" target="mdbook" href="../_md_book/4.4.html" title="電子書：第 4.4 節 寫入你的第一個 Hack 組合語言程式">§4.4</a>　(<a target="mdbook" href="../_md_book/README.html" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">硬體線邁向完成之前，先學會「對機器說話」。本章要交付兩支組合語言程式：
   乘法 <b>Mult.asm</b> 與螢幕反白 <b>Fill.asm</b>。卡上的互動面板會真的幫你組譯、執行、看暫存器。</p>
@@ -31,7 +31,7 @@
   </div>
 
   <h2>習題一：Mult.asm — 乘法 R2 = R0 × R1</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/4.4.md" title="電子書：第 4.4 節 寫入你的第一個 Hack 組合語言程式">§4.4</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/4.4.html" title="電子書：第 4.4 節 寫入你的第一個 Hack 組合語言程式">§4.4</a></p>
   <p>用「重複加法」實現：<code>R2</code> 從 0 開始，每圈 <code>R1</code> 加一次、<code>R0</code> 減一次，
   直到 <code>R0 ≤ 0</code> 為止。面板已把輸入預設為 R0=3、R1=5：組譯 → 執行，看看最後 R2 是不是 15。</p>
   <div data-widget="emu" data-asm="#multAsm" data-setup="0=3 1=5"
@@ -40,7 +40,7 @@
   <div class="tip">跟著上面的「等效 C 語言」註解讀程式：每一段組語都對應一行高階程式，這正是第四章講義〈從 C 到組合語言〉的精神。</div>
 
   <h2>習題二：Fill.asm — 螢幕反白控制</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/4.3.md" title="電子書：第 4.3 節 記憶體映射 I/O：螢幕與鍵盤的控制原理">§4.3</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/4.3.html" title="電子書：第 4.3 節 記憶體映射 I/O：螢幕與鍵盤的控制原理">§4.3</a></p>
   <p>無窮迴圈：偵測 <b>KBD</b> —— 有按鍵就把整個螢幕寫 -1（全黑），沒按鍵就寫 0（全白）。
   這支程式永遠不會「跑完」，你要觀察的是執行過程中 SCREEN 的變化：</p>
   <ol>

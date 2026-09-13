@@ -9,13 +9,13 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 10 章</span>編譯器：語法分析</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/10.1.md" title="電子書：第 10.1 節 編譯器總覽：從高階語言到虛擬機碼">§10.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/10.2.md" title="電子書：第 10.2 節 詞法分析（Lexical Analysis / Tokenizer）">§10.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/10.3.md" title="電子書：第 10.3 節 語法分析（Parsing / Context-Free Grammar）">§10.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/10.4.md" title="電子書：第 10.4 節 語法樹與 XML 結構輸出測試">§10.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/10.1.html" title="電子書：第 10.1 節 編譯器總覽：從高階語言到虛擬機碼">§10.1</a>、<a class="pill" target="mdbook" href="../_md_book/10.2.html" title="電子書：第 10.2 節 詞法分析（Lexical Analysis / Tokenizer）">§10.2</a>、<a class="pill" target="mdbook" href="../_md_book/10.3.html" title="電子書：第 10.3 節 語法分析（Parsing / Context-Free Grammar）">§10.3</a>、<a class="pill" target="mdbook" href="../_md_book/10.4.html" title="電子書：第 10.4 節 語法樹與 XML 結構輸出測試">§10.4</a>　(<a target="mdbook" href="../_md_book/README.html" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">編譯器分四個互相隔離的階段——本單位的設計走得越乾淨，後續越好做。
   本章先做「前半段」：把 Jack 原始碼切成符號、再證實語法正確。</p>
 
   <h2>四階段兵棋圖</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/10.1.md" title="電子書：第 10.1 節 編譯器總覽：從高階語言到虛擬機碼">§10.1</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/10.1.html" title="電子書：第 10.1 節 編譯器總覽：從高階語言到虛擬機碼">§10.1</a></p>
   <table class="tbl">
     <tr><th>階段</th><th>做的事</th><th>本章/下一章</th></tr>
     <tr><td>1. Lexical（詞法）</td><td>token 化：<code>class</code>、<code>;</code>、<code>42</code>…</td><td>Ch10→11</td></tr>
@@ -33,7 +33,7 @@
   </div>
 
   <h2>本 repo 的 Jacobs 語法分析器實驗</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/10.3.md" title="電子書：第 10.3 節 語法分析（Parsing / Context-Free Grammar）">§10.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/10.4.md" title="電子書：第 10.4 節 語法樹與 XML 結構輸出測試">§10.4</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/10.3.html" title="電子書：第 10.3 節 語法分析（Parsing / Context-Free Grammar）">§10.3</a>、<a class="pill" target="mdbook" href="../_md_book/10.4.html" title="電子書：第 10.4 節 語法樹與 XML 結構輸出測試">§10.4</a></p>
   <ul>
     <li><b>10/_PyJackAnalyzer</b>：Python 寫的 JackAnalyzer（tokenizer＋compilation engine）。</li>
     <li><b>10/{ArrayTest, Square, ExpressionlessSquare}</b>：教材程式，供 parser 吃（比對 hint .xml）。</li>

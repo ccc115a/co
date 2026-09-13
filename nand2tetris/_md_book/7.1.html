@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>7.1 為何需要虛擬機？跨平台與中間語言構想</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link active" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="6.4.html">⇦ 上一節</a></div>
+  <div class="title">7.1 為何需要虛擬機？跨平台與中間語言構想</div>
+  <div class="nav-right"><a class="nav-btn" href="7.2.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch07.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="7-1-為何需要虛擬機-跨平台與中間語言構想">7.1 為何需要虛擬機？跨平台與中間語言構想</h1>
+<h2 id="前言">前言</h2>
+<p>在第 6 章，我們親手打造了一個組譯器，把 Hack 組合語言翻譯成機器碼。組譯器的美妙之處在於「一對一」——每一條 <code>.asm</code> 指令對應一條 <code>.hack</code> 機器碼。但當你開始想寫真正的程式時，問題就來了：</p>
+<p><strong>組合語言太痛苦了。</strong></p>
+<p>想在螢幕上畫一個點？你需要管理記憶體位址、手動計算偏移量、用迴圈搬資料。想做一次陣列存取？你需要一整串 <code>@offset</code>、<code>D=A</code>、<code>A=D+M</code>、<code>D=M</code> 的指令。一個高階語言的 <code>if-else</code>，在組合語言裡可能是二十條指令加三個跳躍標號。</p>
+<p>第 7 章開始的「虛擬機（Virtual Machine，簡稱 VM）」，正是為了解決這個問題而生的中間層。它讓你不必直接對著裸露的硬體寫作，而是透過一個「簡化的、抽象的計算模型」來表達程式的邏輯。本節先回答最根本的問題：<strong>為何需要 VM？它的核心理念是什麼？</strong></p>
+<hr />
+<h2 id="1-高階語言的-翻譯困境">1. 高階語言的「翻譯困境」</h2>
+<p>假設你正在設計一個新的高階語言（本書第 10 章的 Jack 語言），你想讓它能跑在不同的硬體平台上。你遇到的第一個問題是：</p>
+<pre><code>  Jack 程式（一次寫好）
+       │
+       ▼
+  ┌────┴────┐
+  │  目標？  │
+  └────┬────┘
+       │
+       ├──→ Hack 組合語言？（本書的目標平台）
+       ├──→ x86 組合語言？（Intel/AMD 的 PC）
+       ├──→ ARM 組合語言？（手機、Apple Silicon）
+       └──→ RISC-V 組合語言？（新興開源架構）
+</code></pre>
+<p>如果你直接把 Jack 翻譯成目標平台的組合語言，你就需要為<strong>每一個平台</strong>寫一套翻譯器。四個平台就是四套翻譯器。每個平台的暫存器數量不同、指令格式不同、記憶體模型不同——這是一場維護噩夢。</p>
+<h3 id="1-1-為什麼不能直接翻譯成機器碼">1.1 為什麼不能直接翻譯成機器碼？</h3>
+<p>一個看似合理的方案是：直接從高階語言翻譯成機器碼。但這裡有幾個深層的困難：</p>
+<table>
+<thead>
+<tr>
+<th>困難</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>指令集差異</strong></td>
+<td>Hack 只有 A/C 兩種指令，x86 有數百種，RISC-V 有六種格式——直接翻譯意味著為每個平台重寫所有翻譯邏輯</td>
+</tr>
+<tr>
+<td><strong>暫存器分配</strong></td>
+<td>Hack 只有 A/D 兩個暫存器，x86 有 16 個通用暫存器，如何把高階語言的變數「分配」到暫存器？</td>
+</tr>
+<tr>
+<td><strong>記憶體模型</strong></td>
+<td>不同平台的堆疊方向、呼叫慣例、對齊要求都不同</td>
+</tr>
+<tr>
+<td><strong>最佳化的困難</strong></td>
+<td>直接在高階語言和機器碼之間做最佳化，搜索空間太大，幾乎不可能做到好</td>
+</tr>
+</tbody>
+</table>
+<p>核心問題是：<strong>高階語言的抽象層次與機器碼的抽象層次差距太遠</strong>。中間缺少一個「緩衝區」。</p>
+<hr />
+<h2 id="2-中間表示-intermediate-representation-ir-的構想">2. 中間表示（Intermediate Representation，IR）的構想</h2>
+<p>計算機科學家在 1960 年代就發現了這個問題的解法：<strong>引入一個「中間層」，把翻譯拆成兩步</strong>。</p>
+<pre><code>  高階語言（Jack）
+       │
+       ▼  ← 第一步翻譯：高階 → IR（與平台無關）
+  中間表示（VM Code / IR）
+       │
+       ▼  ← 第二步翻譯：IR → 目標平台（與平台有關）
+  目標平台組合語言（Hack / x86 / ARM / ...）
+</code></pre>
+<p>這個中間表示（IR）的設計原則是：</p>
+<ol>
+<li><strong>平台無關</strong>：IR 不依賴任何特定硬體，同一段 IR 可以翻譯到任何平台</li>
+<li><strong>足夠簡單</strong>：比高階語言簡單得多，容易翻譯</li>
+<li><strong>足夠表達</strong>：能表達高階語言的所有控制流程與資料操作</li>
+</ol>
+<h3 id="2-1-常見的-ir-類型">2.1 常見的 IR 類型</h3>
+<p>計算機科學中有多種 IR 設計，各有特色：</p>
+<table>
+<thead>
+<tr>
+<th>IR 類型</th>
+<th>代表</th>
+<th>特點</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>堆疊式（Stack-based）</strong></td>
+<td>Java Bytecode、Python Bytecode、<strong>Nand2Tetris VM</strong></td>
+<td>運算元隱含在堆疊頂端，指令極簡</td>
+</tr>
+<tr>
+<td><strong>暫存器式（Register-based）</strong></td>
+<td>LLVM IR、Lua VM</td>
+<td>類似組合語言，有明確的暫存器命名</td>
+</tr>
+<tr>
+<td><strong>三地址碼（Three-address code）</strong></td>
+<td>GCC GIMPLE、LLVM IR</td>
+<td>每條指令最多三個操作數</td>
+</tr>
+</tbody>
+</table>
+<p>Nand2Tetris 選擇<strong>堆疊式 IR</strong>，因為它最簡單、指令最少、最適合教學。一條 VM 指令只需要一個單字，不需要指定運算元的位址——運算元就在堆疊頂端。</p>
+<hr />
+<h2 id="3-vm-抽象層-虛擬的電腦">3. VM 抽象層：虛擬的電腦</h2>
+<p>VM 不只是一種 IR 格式——它本身也是一台<strong>虛擬的電腦</strong>。就像 Hack 硬體有 A/D 暫存器和 RAM 一樣，VM 也有自己的「硬體」：</p>
+<table>
+<thead>
+<tr>
+<th>VM 資源</th>
+<th>說明</th>
+<th>Hack 硬體的對應</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>運算堆疊（Stack）</strong></td>
+<td>用來放運算元與暫存結果</td>
+<td>沒有直接對應（Hack 沒有堆疊指令）</td>
+</tr>
+<tr>
+<td><strong>記憶體段（Memory Segments）</strong></td>
+<td>argument、local、static、this、that、pointer、temp、constant</td>
+<td>RAM 的不同區段</td>
+</tr>
+<tr>
+<td><strong>程式計數器（PC）</strong></td>
+<td>指向下一條要執行的 VM 指令</td>
+<td>PC 暫存器</td>
+</tr>
+<tr>
+<td><strong>暫存器（有限）</strong></td>
+<td>只有 THIS、THAT 等少數幾個</td>
+<td>A、D 暫存器</td>
+</tr>
+</tbody>
+</table>
+<p>關鍵洞察：<strong>VM 的每一個資源，都需要翻譯成 Hack RAM 中的某些位址</strong>。這就是第 7 章的核心工作——把 VM 的抽象資源「映射」到 Hack 的實體硬體上。</p>
+<h3 id="3-1-vm-抽象的好處">3.1 VM 抽象的好處</h3>
+<p>把程式跑在 VM 上，而不是直接跑在硬體上，有幾個巨大的好處：</p>
+<pre><code>  Jack 程式
+      │
+      ▼
+  VM 編譯器（Platform-Independent）
+      │
+      ▼
+  VM 程式碼（.vm 檔案）
+      │
+      ├──→ VM 翻譯器（Hack 版）→ .asm → .hack → Hack 電腦
+      ├──→ VM 翻譯器（x86 版）→ .s → 目標碼 → x86 電腦
+      └──→ VM 翻譯器（ARM 版）→ .s → 目標碼 → ARM 電腦
+</code></pre>
+<ol>
+<li><strong>跨平台</strong>：同一份 <code>.vm</code> 檔案可以翻譯到任何平台；換平台只需要改 VM 翻譯器，不需要改編譯器</li>
+<li><strong>模組化</strong>：編譯器（高階語言 → VM）和 VM 翻譯器（VM → 機器碼）可以分開開發</li>
+<li><strong>除錯容易</strong>：VM 代碼比機器碼可讀得多，可以在 VM 層級除錯</li>
+<li><strong>最佳化機會</strong>：可以在 IR 層級做平台無關的最佳化</li>
+</ol>
+<hr />
+<h2 id="4-nand2tetris-的-vm-語言-在-jack-與-hack-之間">4. Nand2Tetris 的 VM 語言：在 Jack 與 Hack 之間</h2>
+<p>在 Nand2Tetris 的工具鏈中，VM 佔據了<strong>第三層</strong>的位置：</p>
+<pre><code>  第 10 章：Jack 程式（高階語言，物件導向）
+      │
+      ▼  編譯器（第 10-11 章）
+  第 7 章：VM 程式碼（堆疊式 IR）
+      │
+      ▼  VM 翻譯器（第 7 章）
+  第 6 章：Hack 組合語言
+      │
+      ▼  組譯器（第 6 章）
+  第 5 章：Hack 機器碼
+      │
+      ▼  硬體執行（第 4-5 章）
+  Nand 閘（第 1-2 章）
+</code></pre>
+<p>VM 語言是這條翻譯鏈的<strong>中間樞紐</strong>。它上承 Jack 編譯器的輸出，下接 Hack 組譯器的輸入。</p>
+<h3 id="4-1-vm-程式碼長什麼樣">4.1 VM 程式碼長什麼樣？</h3>
+<p>一個簡單的 VM 程式範例——計算 <code>17 + 10</code>：</p>
+<pre><code class="language-vm">// 計算 17 + 10，結果放在堆疊頂端
+push constant 17
+push constant 10
+add
+</code></pre>
+<p>三條指令，一目了然：</p>
+<ol>
+<li><code>push constant 17</code>：把常數 17 壓進堆疊</li>
+<li><code>push constant 10</code>：把常數 10 壓進堆疊</li>
+<li><code>add</code>：從堆疊頂端彈出兩個值，相加，把結果壓回堆疊</li>
+</ol>
+<p>對比同等功能的 Hack 組合語言：</p>
+<pre><code class="language-asm">// 計算 17 + 10，結果在 D 暫存器
+@17
+D=A
+@10
+D=D+A
+</code></pre>
+<p>VM 代碼更簡潔、更接近人類的思維方式。你不需要知道「哪個值在 A 暫存器、哪個值在 D 暫存器」——堆疊自動管理一切。</p>
+<h3 id="4-2-為什麼選擇堆疊式-vm">4.2 為什麼選擇堆疊式 VM？</h3>
+<p>Nand2Tetris 的 VM 設計成堆疊式（stack-based），而不是暫存器式（register-based），有一個很務實的原因：</p>
+<p><strong>堆疊式 VM 的指令集極小且規則</strong>。</p>
+<p>一個堆疊式 VM 只需要很少的指令格式：</p>
+<table>
+<thead>
+<tr>
+<th>指令類型</th>
+<th>語法範例</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>堆疊操作</td>
+<td><code>push constant 7</code>、<code>pop local 2</code></td>
+<td>把值放進或取出堆疊</td>
+</tr>
+<tr>
+<td>算術邏輯</td>
+<td><code>add</code>、<code>sub</code>、<code>eq</code>、<code>and</code></td>
+<td>從堆疊取運算元，運算，結果壓回</td>
+</tr>
+<tr>
+<td>程式流程</td>
+<td><code>label</code>、<code>goto</code>、<code>if-goto</code></td>
+<td>分支與跳躍</td>
+</tr>
+<tr>
+<td>函式呼叫</td>
+<td><code>call function 2</code>、<code>function</code>、<code>return</code></td>
+<td>呼叫與返回</td>
+</tr>
+</tbody>
+</table>
+<p>對比暫存器式 VM（如 LLVM IR），你不需要做「暫存器分配」這個複雜的最佳化問題。所有運算元的位置都是<strong>隱含的</strong>——它就在堆疊頂端。這大幅簡化了翻譯器的複雜度。</p>
+<blockquote>
+<p><strong>設計思路</strong>：Nand2Tetris 的核心哲學是「先理解原理，再追求效率」。堆疊式 VM 牺牲了一些執行效率（因為需要更多的 push/pop），但換來了<strong>翻譯器的極簡性</strong>。當你在第 7 章寫出 VM 翻譯器時，你會發現每一條 VM 指令幾乎都可以翻譯成一個固定的 Hack 指令模式——這種「機械式翻譯」正是堆疊式 VM 的設計目標。</p>
+</blockquote>
+<hr />
+<h2 id="5-vm-指令的整體設計哲學">5. VM 指令的整體設計哲學</h2>
+<p>Nand2Tetris 的 VM 指令集只有四種類別，共約二十幾條指令。這種「極簡」不是隨意的——每一條指令都對應到一個明確的<strong>計算操作</strong>：</p>
+<h3 id="5-1-四種指令類別">5.1 四種指令類別</h3>
+<pre><code>┌─────────────────────────────────────────────┐
+│              VM 指令集總覽                    │
+├─────────────────────────────────────────────┤
+│                                             │
+│  ① 堆疊操作    push / pop                   │
+│  ② 算術邏輯    add, sub, neg, eq, gt,       │
+│                lt, and, or, not             │
+│  ③ 程式流程    label, goto, if-goto         │
+│  ④ 函式管理    function, call, return       │
+│                                             │
+└─────────────────────────────────────────────┘
+</code></pre>
+<p>第 7 章的前半段（7.1-7.4 節）集中在①②④——堆疊操作、算術邏輯、記憶體段；後半段（7.5-7.6 節）處理③④——程式流程控制與函式呼叫。</p>
+<h3 id="5-2-設計哲學-最小的指令集-最大的表達力">5.2 設計哲學：最小的指令集，最大的表達力</h3>
+<p>VM 指令集的設計遵循幾個原則：</p>
+<p><strong>原則一：每一條指令只做一件事</strong></p>
+<p><code>add</code> 只做加法，<code>push</code> 只做壓入。沒有「加法後壓入」這種合併指令。這樣每個翻譯模組都是獨立的、可測試的。</p>
+<p><strong>原則二：所有運算都在堆疊上進行</strong></p>
+<p>算術指令不接受任何參數——它們從堆疊頂端自動取運算元。這意味著 <code>add</code> 的翻譯器永遠知道：第一個運算元在 <code>SP-2</code>，第二個在 <code>SP-1</code>，結果要寫回 <code>SP-1</code>。</p>
+<p><strong>原則三：記憶體段提供結構化存取</strong></p>
+<p>變數不是直接用位址存取，而是透過記憶體段（<code>local 0</code>、<code>argument 1</code>）存取。翻譯器把段名＋偏移量轉換成實際的 RAM 位址。</p>
+<h3 id="5-3-vm-翻譯器的角色">5.3 VM 翻譯器的角色</h3>
+<p>VM 翻譯器（也叫 VM Translator）的本質就是<strong>把每一條 VM 指令替換成一組 Hack 組合語言指令</strong>：</p>
+<pre><code>  .vm 檔案
+     │
+     ▼
+  ┌──────────────────────┐
+  │     VM 翻譯器         │
+  │   VM Translator      │
+  └──────────────────────┘
+     │
+     ▼
+  .asm 檔案（Hack 組合語言）
+     │
+     ▼
+  第 6 章的組譯器
+     │
+     ▼
+  .hack 檔案（機器碼）
+</code></pre>
+<p>與組譯器「一對一」的翻譯不同，VM 翻譯器是<strong>一對多</strong>的翻譯：一條 VM 指令可能產生 5 到 50 條 Hack 指令。例如 <code>add</code> 只需要約 10 條 Hack 指令，但 <code>call function 3</code> 可能需要 40 條以上。</p>
+<hr />
+<h2 id="6-從高階到低階-完整翻譯鏈範例">6. 從高階到低階：完整翻譯鏈範例</h2>
+<p>讓我們追蹤一段 Jack 程式如何層層翻譯，感受整個工具鏈的運作：</p>
+<p><strong>Jack 原始碼：</strong></p>
+<pre><code class="language-jack">// 計算兩個數的和
+var int a, b;
+let a = 17;
+let b = 10;
+return a + b;
+</code></pre>
+<p><strong>翻譯成 VM 碼：</strong></p>
+<pre><code class="language-vm">function Main.main 2
+push constant 17
+pop local 0
+push constant 10
+pop local 1
+push local 0
+push local 1
+add
+return
+</code></pre>
+<p><strong>翻譯成 Hack 組合語言（部分）：</strong></p>
+<pre><code class="language-asm">// push constant 17
+@17
+D=A
+@SP
+A=M
+M=D
+@SP
+M=M+1
+
+// pop local 0
+@LCL
+D=M
+@0
+D=D+A
+@R13
+M=D
+@SP
+AM=M-1
+D=M
+@R13
+A=M
+M=D
+
+// push local 0
+@LCL
+D=M
+@0
+A=D+A
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+
+// ...（後續指令類似）
+</code></pre>
+<p>從 Jack 的 3 行，到 VM 的 7 行，再到 Hack 的數十行——每一層翻譯都把抽象降低一個層次，直到硬體能理解的最終形式。<strong>VM 層是這個翻譯鏈的腰部</strong>：它足夠簡單，可以機械式地翻譯成任何目標平台；又足夠強大，可以表達高階語言的所有語意。</p>
+<hr />
+<h2 id="7-本章小結">7. 本章小結</h2>
+<ul>
+<li>高階語言直接翻譯成機器碼面臨<strong>跨平台困難、最佳化複雜</strong>的問題，需要一個中間層。</li>
+<li>**中間表示（IR）**把翻譯拆成兩步：高階 → IR（平台無關），IR → 機器碼（平台相關）。</li>
+<li>VM 是一種 IR 加上虛擬的執行環境；Nand2Tetris 採用<strong>堆疊式 VM</strong>，因為指令集最簡、翻譯最機械化。</li>
+<li>VM 的四大指令類別：<strong>堆疊操作、算術邏輯、程式流程、函式管理</strong>。</li>
+<li>VM 翻譯器的角色是把 <code>.vm</code> 翻譯成 <code>.asm</code>；與組譯器的「一對一」不同，VM 翻譯是「一對多」。</li>
+<li>Nand2Tetris 的完整工具鏈：<strong>Jack → VM → Hack ASM → Hack 機器碼 → 硬體執行</strong>，VM 是這條鏈的中間樞紐。</li>
+</ul>
+<p>下一節，我們深入 VM 的核心資料結構——<strong>堆疊（Stack）</strong>，看看 push/pop 如何在 Hack 硬體上運作。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="6.4.html">⇦ 上一節</a><a class="nav-btn" href="7.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

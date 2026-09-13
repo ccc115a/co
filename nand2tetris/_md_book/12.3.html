@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12.3 螢幕與繪圖：Screen（畫線、畫圓演算法）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link active" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="12.2.html">⇦ 上一節</a></div>
+  <div class="title">12.3 螢幕與繪圖：Screen（畫線、畫圓演算法）</div>
+  <div class="nav-right"><a class="nav-btn" href="12.4.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch12.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="12-3-螢幕與繪圖-screen-畫線-畫圓演算法">12.3 螢幕與繪圖：Screen（畫線、畫圓演算法）</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明螢幕記憶體映射（screen memory map）的原理：一個像素如何對應到一組記憶體位元</li>
+<li>解釋像素 <code>(x,y)</code> 與 RAM 位址、位元的計算公式（<code>base + y*32 + x/16</code>，位元 <code>x mod 16</code>）</li>
+<li>實作 <code>drawPixel</code>、<code>drawLine</code>、<code>drawRectangle</code>、<code>drawCircle</code>、<code>clearScreen</code></li>
+<li>說明 <strong>Bresenham 直線演算法</strong>：如何只用整數加法與符號判斷畫出任意斜率直線</li>
+<li>說明<strong>畫圓演算法</strong>：如何利用對稱性與逐八分圓（或 Bresenham 圓）描繪圓</li>
+<li>讀懂並維護完整的 <code>Screen.jack</code></li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>到目前為止，這台 Hack 電腦還是「啞巴」——它會算數、會管理記憶體，但你什麼都看不到。要讓使用者「看到」程式在幹嘛，必須有螢幕輸出。Hack 的硬體（第四章、第五章）已經為我們準備了一塊<strong>記憶體映射螢幕（memory-mapped screen）</strong>：從位址 <code>SCREEN = 16384</code> 開始，連續 8192 個 16 位元字，對應到 256×512 的像素空間。</p>
+<p>但硬體只提供「把 16 位元寫進某個位址，螢幕上某些點就亮起」——它不提供「畫一條線」「畫一個圓」這種高階能力。這正是 OS 的 <code>Screen</code> 類別要做的：它把「裸的記憶體映射螢幕」包裝成程式設計師一呼叫就「畫線、畫圓、畫方塊」的繪圖 API。</p>
+<p>本節我們要寫出這個繪圖引擎。核心挑戰有兩個：</p>
+<ol>
+<li><strong>座標 ↔ 位址的換算</strong>：如何在 <code>(x, y)</code> 與「某一記憶體字的某一個位元」之間建立正確對應。</li>
+<li><strong>幾何演算法</strong>：只用整數運算，畫出平滑的字線與圓（因為 Hack 沒有浮點數、沒有硬體乘法「畫線處」，一切都得靠巧妙的整數演算法）。</li>
+</ol>
+<hr />
+<h2 id="1-screen-類別的-api">1. Screen 類別的 API</h2>
+<p><code>Screen</code> 提供的類別方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>簽名</th>
+<th>功能說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>init</code></td>
+<td><code>Screen.init()</code></td>
+<td>清空螢幕，設定預設顏色</td>
+</tr>
+<tr>
+<td><code>clearScreen</code></td>
+<td><code>Screen.clearScreen()</code></td>
+<td>把整個螢幕擦成背景色</td>
+</tr>
+<tr>
+<td><code>setColor</code></td>
+<td><code>Screen.setColor(boolean black)</code></td>
+<td>之後畫的所有圖形用黑色（black=true）或白色（black=false）</td>
+</tr>
+<tr>
+<td><code>drawPixel</code></td>
+<td><code>Screen.drawPixel(int x, int y)</code></td>
+<td>在 <code>(x,y)</code> 畫一個像素</td>
+</tr>
+<tr>
+<td><code>drawLine</code></td>
+<td><code>Screen.drawLine(int x1, int y1, int x2, int y2)</code></td>
+<td>從 <code>(x1,y1)</code> 到 <code>(x2,y2)</code> 畫一條直線</td>
+</tr>
+<tr>
+<td><code>drawRectangle</code></td>
+<td><code>Screen.drawRectangle(int x1, int y1, int x2, int y2)</code></td>
+<td>畫一個實心（填滿）矩形</td>
+</tr>
+<tr>
+<td><code>drawCircle</code></td>
+<td><code>Screen.drawCircle(int cx, int cy, int r)</code></td>
+<td>以 <code>(cx,cy)</code> 為圓心、半徑 <code>r</code> 畫一個實心圓</td>
+</tr>
+</tbody>
+</table>
+<p>Hack 螢幕規格：<strong>寬 512、高 256</strong>，座標 <code>(0,0)</code> 在左上角，<code>x</code> 向右增加、<code>y</code> 向下增加。座標若超出範圍，繪圖被忽略（或局限）。</p>
+<hr />
+<h2 id="2-像素與記憶體位址的對應">2. 像素與記憶體位址的對應</h2>
+<h3 id="2-1-螢幕記憶體映射">2.1 螢幕記憶體映射</h3>
+<p>回想第四章的硬體映射：</p>
+<ul>
+<li>螢幕對應到位址 <code>16384</code>（<code>SCREEN</code>）到 <code>16384 + 8192 - 1 = 24575</code>，共 <strong>8192 個 16 位元字</strong>。</li>
+<li>每個字 = 16 個像素（每個位元一個像素）。所以螢幕共有 <code>8192 × 16 = 131072 = 512 × 256</code> 個像素。吻合！</li>
+</ul>
+<p>佈局：螢幕被垂直切成 <strong>256 列（rows，<code>y=0..255</code>）</strong>，每一列佔 <strong>512/16 = 32 個字</strong>。所以：</p>
+<pre><code>記憶體位址   = SCREEN + y*32 + x/16
+該位址中位元 = x mod 16（也就是第 x % 16 位）
+</code></pre>
+<p>更精確地說，掃描線是<strong>從左到右、從上到下</strong>。第 <code>y</code> 列的第一個字（<code>y*32</code>）涵蓋 <code>x=0..15</code>，第二個字涵蓋 <code>x=16..31</code>，依此類推。</p>
+<h3 id="2-2-位元順序">2.2 位元順序</h3>
+<p>一個 16 位元字的<strong>第 j 個位元</strong>（<code>j=0..15</code>）對應到 <code>x = y*32 的那一列中，第 j 個像素</code>。Hack 約定：位元 <code>j</code> 是「由右向左」數——<code>bit 0</code> 是最低有效位（LSB），對應最左邊像素。這只是約定，重點是整個 OS 一致即可。</p>
+<p>所以「點亮 <code>(x,y)</code>」的步驟：</p>
+<ol>
+<li><code>wordAddr = SCREEN + y*32 + x/16</code></li>
+<li><code>bit = x % 16</code></li>
+<li><code>Memory.poke(wordAddr, Memory.peek(wordAddr) | (1 &lt;&lt; bit))</code>（設黑）或 <code>&amp; ~(1&lt;&lt;bit)</code>（設白）</li>
+</ol>
+<h3 id="2-3-為什麼用-16-位元一字的原因">2.3 為什麼用 16 位元一字的原因</h3>
+<p>一次可以處理 16 個水平像素，這讓「水平畫線」與「填充矩形」可以<strong>以字為單位</strong>快速處理（一次寫入一個字 = 畫 16 個像素），而不是逐像素慢慢寫。這是效率關鍵。</p>
+<blockquote>
+<p><strong>設計思路</strong>：因為 Hack 最小可定址單位是 16 位元，我們可以把「一條水平掃描線」切成「n 個完整字 + 兩個不完整的邊界位」。填充矩形時，<strong>中間的完整字一次寫入</strong>，兩端只改部分位元——這正是 <code>drawRectangle</code> 能「瞬間」填滿大面積的原因。</p>
+</blockquote>
+<hr />
+<h2 id="3-drawpixel-最基本的繪圖">3. drawPixel：最基本的繪圖</h2>
+<p>先把最底層的 <code>drawPixel</code> 寫好，其他所有繪圖都建立在它之上（或借鑑它的位元操作）。</p>
+<pre><code>// 在 (x,y) 畫一個點；用目前顏色 (color) 決定設黑或設白
+function void drawPixel(int x, int y) {
+    var int addr, bit;
+
+    // 範圍檢查：超出螢幕就忽略
+    if ((x &lt; 0) | (x &gt; 511) | (y &lt; 0) | (y &gt; 255)) {
+        return;
+    }
+    let addr = 16384 + y * 32 + x / 16;
+    let bit = 1 &lt;&lt; (x % 16);
+
+    if (color) {                       // 黑色
+        do Memory.poke(addr, Memory.peek(addr) | bit);
+    } else {                           // 白色（清除）
+        let bit = ~bit;                // 取反：該位為 0
+        do Memory.poke(addr, Memory.peek(addr) &amp; bit);
+    }
+    return;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：顏色用一個類別變數 <code>color</code>（boolean）儲存。畫黑 = 用 OR 把該位設 1；畫白 = 用 AND 把該位清 0。這是「位元塗鴉」的原理。</p>
+</blockquote>
+<p><code>x/16</code> 與 <code>x%16</code> 依賴 <code>Math</code> 庫的除法，這正是我們先寫好 <code>Math</code> 的原因。</p>
+<hr />
+<h2 id="4-drawline-bresenham-直線演算法">4. drawLine：Bresenham 直線演算法</h2>
+<h3 id="4-1-樸素畫線的致命問題">4.1 樸素畫線的致命問題</h3>
+<p>最樸素的畫線：<code>y = y1 + (y2-y1)*(x-x1)/(x2-x1)</code>，但這需要浮點除法（Hack 沒有浮點），而且對「陡峭」（斜率 &gt; 1）的線會斷裂。我們需要一個<strong>只用整數加法、加減與符號判斷</strong>的演算法——這就是 <strong>Bresenham 演算法</strong>。</p>
+<h3 id="4-2-bresenham-的核心思想">4.2 Bresenham 的核心思想</h3>
+<p>想像從 <code>(x1,y1)</code> 走到 <code>(x2,y2)</code>。在每一「步」（在較長的那個軸上前進一格），另一個軸的座標「該不該 +1」？Bresenham 用一個「誤差項（error term）」來決定：</p>
+<ul>
+<li>我們追蹤「理想的 y 位置」與「目前整數 y」之間的誤差；</li>
+<li>每走一 <code>x</code> 步，誤差加上「斜率」（以整數表示，避免浮點）；</li>
+<li>當誤差累積超過半格，就前進一個 <code>y</code>，並減去一格的誤差。</li>
+</ul>
+<p>誤差用「整數」表示：把斜率放大 <code>2</code>（或 <code>2*大軸長</code>），用 <code>error</code> 變數追蹤。</p>
+<h3 id="4-3-bresenham-的完整流程-處理四種象限">4.3 Bresenham 的完整流程（處理四種象限）</h3>
+<p>要處理任意方向的直線，我們先判斷「這條線是『比較陡』（<code>|dy| &gt; |dx|</code>）還是『比較平』」，並以<strong>主軸（major axis）</strong> 決定每步走哪裡。若以 <code>y</code> 為主軸，就是「每 <code>y</code> 步決定 <code>x</code> 是否 +1」。</p>
+<p>Nand2Tetris 官方先判斷主軸方向，統一成「從頭到尾沿著主軸遞增」，並維護誤差。下面是官方 <code>drawLine</code> 的可讀版本：</p>
+<pre><code>function void drawLine(int x1, int y1, int x2, int y2) {
+    var int dx, dy, sx, sy, err, e2;
+
+    // 計算各方向增量與步進方向 (+1 或 -1)
+    let dx = Math.abs(x2 - x1);
+    let dy = Math.abs(y2 - y1);
+    if (x1 &lt; x2) { let sx = 1; } else { let sx = -1; }
+    if (y1 &lt; y2) { let sy = 1; } else { let sy = -1; }
+
+    let err = dx - dy;    // 初使誤差
+
+    while ((x1 != x2) | (y1 != y2)) {
+        do drawPixel(x1, y1);
+        let e2 = err * 2;
+        if (e2 &gt; -dy) {
+            let err = err - dy;
+            let x1 = x1 + sx;
+        }
+        if (e2 &lt; dx) {
+            let err = err + dx;
+            let y1 = y1 + sy;
+        }
+    }
+    do drawPixel(x1, y1);   // 最後一個點
+    return;
+}
+</code></pre>
+<p><strong>這是標準的 Bresenham 直線演算法</strong>（任意斜率、任意方向，<code>dx</code>、<code>dy</code> 取絕對值，<code>sx</code>、<code>sy</code> 決定步進方向）。它是目前學界最經典、也最簡潔的整數直線畫法。</p>
+<p><strong>逐行解說</strong>：</p>
+<ul>
+<li><code>dx, dy</code>：兩個方向的絕對距離（恒非負）。</li>
+<li><code>sx, sy</code>：±1，決定從 <code>(x1,y1)</code> 往 <code>(x2,y2)</code> 的步進方向。</li>
+<li><code>err = dx - dy</code>：誤差項起始值，決定哪個軸「落後」。</li>
+<li>迴圈直到到達終點：
+<ul>
+<li>先畫目前的點；</li>
+<li><code>e2 = 2*err</code>：把誤差放大，避免中間除以 2；</li>
+<li>若 <code>e2 &gt; -dy</code>，代表「水平方向該走了」，就 <code>x1 += sx</code>，並調整誤差；</li>
+<li>若 <code>e2 &lt; dx</code>，代表「垂直方向該走了」，就 <code>y1 += sy</code>，並調整誤差。</li>
+</ul>
+</li>
+</ul>
+<p>不需要乘法、不需要除法、不需要浮點——Bresenham 只用加、減與比較，是嵌入式繪圖與低階系統的最愛。</p>
+<blockquote>
+<p><strong>設計思路</strong>：許多人誤以為「畫線 = 對每個 x 算一個 y」。Bresenham 的高明在於它<strong>根本不算 y</strong>，而是讓誤差項「自己決定」該不該在另一個軸上前進。這把「除法與浮點」徹底化為「加法與比較」，正是為無浮點硬體量身打造。</p>
+</blockquote>
+<hr />
+<h2 id="5-drawrectangle-實心矩形">5. drawRectangle：實心矩形</h2>
+<p>一個「實心」矩形的畫法很直接：<strong>把每一條水平掃描線填滿</strong>。但要有效率，我們不逐像素呼叫 <code>drawPixel</code>（那會很慢），而是<strong>以 16 位元字為單位</strong>處理每一列。</p>
+<p>官方 <code>drawRectangle</code> 的流程：對每一列 <code>y</code>（從 <code>y1</code> 到 <code>y2</code>），在 <code>x1..x2</code> 之間填滿。為了效率，它直接操作記憶體：一次寫一個字可畫 16 個像素。</p>
+<pre><code>function void drawRectangle(int x1, int y1, int x2, int y2) {
+    var int x, y, K;
+    // 標準化：確保 x1&lt;=x2, y1&lt;=y2
+    if (x1 &gt; x2) { let K = x1; let x1 = x2; let x2 = K; }
+    if (y1 &gt; y2) { let K = y1; let y1 = y2; let y2 = K; }
+
+    let y = y1;
+    while (y &lt;= y2) {
+        // 填滿從 x1..x2 這條水平線
+        // 作法：先在 x1 與 x2 呼叫 drawPixel 設好邊界，
+        //       中間的部分以「整個 16 位元字」填入
+        let x = x1;
+        while (x &lt;= x2) {
+            do drawPixel(x, y);
+            let x = x + 1;
+        }
+        let y = y + 1;
+    }
+    return;
+}
+</code></pre>
+<p>上面的版本正確且清晰（逐像素，慢但易懂）。<strong>官方更快的版本</strong>會直接以 <code>Memory.peek/poke</code> 填充「落在一整個 16 位元字內」的中間區段。對教學而言，逐像素版已能正確運作；對效能有要求的實作才會最佳化。我在「設計思路」中補充最佳化方法。</p>
+<blockquote>
+<p><strong>設計思路——最佳化</strong>：矩形內部有大量「連續 16 個像素 = 一個字」的區段。真正的實作會：</p>
+<ol>
+<li>找出左邊界所在的字與位元、右邊界所在的字與位元；</li>
+<li>中間「完整字」直接 <code>Memory.poke</code> 寫入全 1（黑）或全 0（白）；</li>
+<li>左右兩端只改部分位元。
+這樣一個矩形可以「每列一次寫入多個字」，比逐像素快 16 倍。本書列出逐像素版本以求清晰，實務上正式 OS 會採用上述最佳化。</li>
+</ol>
+</blockquote>
+<hr />
+<h2 id="6-drawcircle-實心圓">6. drawCircle：實心圓</h2>
+<h3 id="6-1-圓的方程式與對稱性">6.1 圓的方程式與對稱性</h3>
+<p>圓心 <code>(cx,cy)</code>、半徑 <code>r</code> 的圓滿足 <code>(x-cx)² + (y-cy)² = r²</code>。要畫<strong>實心</strong>圓，最直觀的方法是按列掃描：</p>
+<p>對每一列 <code>y</code>，算出該列起 <code>x</code> 的跨距：</p>
+<pre><code>對 y 從 (cy - r) 到 (cy + r):
+    dy = y - cy
+    dx = sqrt(r*r - dy*dy)     // 半寬
+    畫水平線從 (cx - dx, y) 到 (cx + dx, y)
+</code></pre>
+<p>這樣每列畫一條水平線，就把圓填滿了。它依賴 <code>Math.sqrt</code> 與 <code>Math.multiply</code>，正是我們第 12.1 節寫好的工具。</p>
+<h3 id="6-2-drawcircle-的-jack-實作">6.2 drawCircle 的 Jack 實作</h3>
+<pre><code>function void drawCircle(int cx, int cy, int r) {
+    var int dy, dx, y;
+
+    let dy = -r;                       // 從圓頂開始
+    while (dy &lt;= r) {
+        // 這種列 y = cy + dy 的半寬 dx = sqrt(r*r - dy*dy)
+        let dx = Math.sqrt(Math.multiply(r, r) - Math.multiply(dy, dy));
+        // 畫這條水平線
+        do drawLine(cx - dx, cy + dy, cx + dx, cy + dy);
+        let dy = dy + 1;
+    }
+    return;
+}
+</code></pre>
+<p><strong>非常短、非常美</strong>：每次計算該列新增的半寬 <code>dx</code>，用 <code>drawLine</code> 畫一條水平弦。由於 <code>drawLine</code> 已處理座標，圓就會一步步被「一層層的弦」填滿成實心圓。</p>
+<blockquote>
+<p><strong>設計思路</strong>：這裡「一次畫一條水平線」的技巧，讓 <code>drawCircle</code> 只需要 <code>2r+1</code> 次 <code>drawLine</code>，而不是逐像素作業。圓的對稱性（每一列左右對稱於 <code>cx</code>）讓我們能一次畫一條水平弦。若要畫「空心圓」，只要改用 <code>drawPixel(cx±dx, y)</code> 兩個點即可，不必填滿。</p>
+</blockquote>
+<h3 id="6-3-效能注意">6.3 效能注意</h3>
+<p><code>Math.multiply(r,r)</code> 在迴圈中每列重算（其實只要算一次），你可以把 <code>r²</code> 提出迴圈外：</p>
+<pre><code>var int r2;
+let r2 = Math.multiply(r, r);
+let dy = -r;
+while (dy &lt;= r) {
+    let dx = Math.sqrt(r2 - Math.multiply(dy, dy));
+    do drawLine(cx - dx, cy + dy, cx + dx, cy + dy);
+    let dy = dy + 1;
+}
+</code></pre>
+<p>這樣更省。這是「迴圈不變量提升（hoisting）」的微優化。</p>
+<hr />
+<h2 id="7-clearscreen-與-init">7. clearScreen 與 init</h2>
+<h3 id="7-1-init">7.1 init</h3>
+<p><code>init</code> 要做的：把整個螢幕記憶體全部歸零（變成白色 / 背景色），並把 <code>color</code> 設為預設值（黑色）。因為 <code>Memory</code> 要先初始化，<code>Screen.init</code> 通常呼叫 <code>Memory.init()</code>。</p>
+<pre><code>function void init() {
+    var int i;
+    // 清螢幕
+    let i = 0;
+    while (i &lt; 8192) {
+        do Memory.poke(16384 + i, 0);   // 全寫 0 = 白
+        let i = i + 1;
+    }
+    let color = true;                   // 預設畫黑色
+    return;
+}
+</code></pre>
+<h3 id="7-2-clearscreen">7.2 clearScreen</h3>
+<p>把整個螢幕變成背景色。若背景是白（0），就全填 0；若預設畫黑色則保持。通常 <code>clearScreen</code> 就是把全部 8192 個字清成 0：</p>
+<pre><code>function void clearScreen() {
+    var int i;
+    let i = 0;
+    while (i &lt; 8192) {
+        do Memory.poke(16384 + i, 0);
+        let i = i + 1;
+    }
+    return;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>clearScreen</code> 一次掃描 8192 個字直接清 0，比「先 <code>setColor(white)</code> 再畫一個大矩形」快得多，也最乾淨。</p>
+</blockquote>
+<hr />
+<h2 id="8-完整的-screen-jack-實作">8. 完整的 Screen.jack 實作</h2>
+<p>整合全部方法，寫成一個完整的 <code>Screen.jack</code>。請注意類別變數 <code>color</code> 需要在類別頂部以 <code>static boolean color;</code> 宣告。</p>
+<pre><code>// Screen.jack —— 螢幕繪圖引擎
+class Screen {
+
+    static boolean color;   // true = 黑, false = 白
+
+    // 初始化：清螢幕、設預設顏色
+    function void init() {
+        var int i;
+        let i = 0;
+        while (i &lt; 8192) {
+            do Memory.poke(16384 + i, 0);
+            let i = i + 1;
+        }
+        let color = true;
+        return;
+    }
+
+    // 清空整個螢幕為背景色
+    function void clearScreen() {
+        var int i;
+        let i = 0;
+        while (i &lt; 8192) {
+            do Memory.poke(16384 + i, 0);
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // 設定之後繪圖所用顏色
+    function void setColor(boolean black) {
+        let color = black;
+        return;
+    }
+
+    // 在 (x, y) 畫一個像素
+    function void drawPixel(int x, int y) {
+        var int addr, bit;
+        if ((x &lt; 0) | (x &gt; 511) | (y &lt; 0) | (y &gt; 255)) { return; }
+        let addr = 16384 + y * 32 + x / 16;
+        let bit = 1 &lt;&lt; (x % 16);
+        if (color) {
+            do Memory.poke(addr, Memory.peek(addr) | bit);
+        } else {
+            let bit = ~bit;
+            do Memory.poke(addr, Memory.peek(addr) &amp; bit);
+        }
+        return;
+    }
+
+    // Bresenham 直線演算法
+    function void drawLine(int x1, int y1, int x2, int y2) {
+        var int dx, dy, sx, sy, err, e2;
+        let dx = Math.abs(x2 - x1);
+        let dy = Math.abs(y2 - y1);
+        if (x1 &lt; x2) { let sx = 1; } else { let sx = -1; }
+        if (y1 &lt; y2) { let sy = 1; } else { let sy = -1; }
+        let err = dx - dy;
+        while ((x1 != x2) | (y1 != y2)) {
+            do drawPixel(x1, y1);
+            let e2 = err * 2;
+            if (e2 &gt; -dy) {
+                let err = err - dy;
+                let x1 = x1 + sx;
+            }
+            if (e2 &lt; dx) {
+                let err = err + dx;
+                let y1 = y1 + sy;
+            }
+        }
+        do drawPixel(x1, y1);
+        return;
+    }
+
+    // 實心矩形
+    function void drawRectangle(int x1, int y1, int x2, int y2) {
+        var int x, y, K;
+        if (x1 &gt; x2) { let K = x1; let x1 = x2; let x2 = K; }
+        if (y1 &gt; y2) { let K = y1; let y1 = y2; let y2 = K; }
+        let y = y1;
+        while (y &lt;= y2) {
+            let x = x1;
+            while (x &lt;= x2) {
+                do drawPixel(x, y);
+                let x = x + 1;
+            }
+            let y = y + 1;
+        }
+        return;
+    }
+
+    // 實心圓
+    function void drawCircle(int cx, int cy, int r) {
+        var int dy, dx, y, r2;
+        let r2 = Math.multiply(r, r);
+        let dy = -r;
+        while (dy &lt;= r) {
+            let dx = Math.sqrt(r2 - Math.multiply(dy, dy));
+            do drawLine(cx - dx, cy + dy, cx + dx, cy + dy);
+            let dy = dy + 1;
+        }
+        return;
+    }
+}
+</code></pre>
+<p>這個 <code>Screen.jack</code> 依賴 <code>Memory</code>（peek/poke）與 <code>Math</code>（abs、multiply、sqrt），全都在前面章節寫好了，形成一條完整的依賴鏈。</p>
+<hr />
+<h2 id="9-設計思路與實作步驟">9. 設計思路與實作步驟</h2>
+<h3 id="9-1-實作步驟">9.1 實作步驟</h3>
+<ol>
+<li><strong>寫 <code>init</code> + <code>clearScreen</code></strong>：清空 8192 個螢幕字，設定顏色。可以先用它驗證「螢幕能全黑/全白」。</li>
+<li><strong>寫 <code>drawPixel</code></strong>：這是最關鍵的一步——把 <code>(x,y)</code> 換算成「位址 + 位元」。先測試一個點、幾個點是否能正確亮起。</li>
+<li><strong>寫 <code>drawLine</code></strong>：實作 Bresenham。先用「水平線、垂直線、斜線」各別測試。</li>
+<li><strong>寫 <code>drawRectangle</code></strong>：先簡單逐像素，再考慮以字為單位最佳化。</li>
+<li><strong>寫 <code>drawCircle</code></strong>：利用 <code>Math.sqrt</code> 每列畫水平弦。</li>
+</ol>
+<h3 id="9-2-驗證策略">9.2 驗證策略</h3>
+<p>用一支 <code>ScreenTest.jack</code> 測試：</p>
+<pre><code>// ScreenTest 摘要
+do Screen.init();
+do Screen.setColor(true);
+// 畫一個框
+do Screen.drawLine(10, 10, 300, 10);   // 上緣（水平）
+do Screen.drawLine(10, 10, 10, 200);   // 左緣（垂直）
+do Screen.drawLine(300, 10, 300, 200); // 右緣
+do Screen.drawLine(10, 200, 300, 200); // 下緣
+// 畫斜線
+do Screen.drawLine(10, 10, 300, 200);  // 對角線
+// 畫矩形
+do Screen.drawRectangle(50, 50, 150, 100);
+// 畫圓
+do Screen.drawCircle(200, 100, 60);
+</code></pre>
+<p>在 CPU Emulator 上觀察：直線是否平滑無鋸齒孔洞、矩形是否實心、圓是否對稱飽滿。</p>
+<hr />
+<h2 id="10-本章小結">10. 本章小結</h2>
+<ul>
+<li>Hack 螢幕是<strong>記憶體映射</strong>：位址 <code>16384 + y*32 + x/16</code> 的第 <code>x mod 16</code> 個位元，即像素 <code>(x,y)</code>。</li>
+<li><code>drawPixel</code> 用 <code>OR</code>（黑）與 <code>AND </code>（白）做「位元塗鴉」，是其他所有繪圖的基石。</li>
+<li><code>drawLine</code> 用 <strong>Bresenham 演算法</strong>：只用整數加法、減法與符號判斷，以誤差項決定主軸每一步是否該在另一軸前進；任意斜率、任意方向皆可。</li>
+<li><code>drawRectangle</code> 填滿每一列的掃描線；可最佳化為「完整字一次寫入」以快 16 倍。</li>
+<li><code>drawCircle</code> 利用圓的對稱性：每列以 <code>dx = sqrt(r²-dy²)</code> 算出半寬、用 <code>drawLine</code> 畫一條水平弦，層層填成實心圓。</li>
+<li>所有幾何都建立在 <code>Math</code> 的 <code>abs</code> / <code>multiply</code> / <code>sqrt</code> 之上，再次印證「OS 各類別彼此依賴、形成一條完整的抽象鏈」。</li>
+</ul>
+<p>螢幕能畫圖了，但仍缺「把字打上去」與「讀鍵盤」。下一節，我們要為電腦裝上<strong>眼睛與嘴</strong>——撰寫 <code>Output</code>（輸出文字）與 <code>Keyboard</code>（讀取輸入），讓它真正能與人對話。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="12.2.html">⇦ 上一節</a><a class="nav-btn" href="12.4.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

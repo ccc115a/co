@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 3.4 章：程式計數器（Program Counter, PC）設計</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link active" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="3.3.html">⇦ 上一節</a></div>
+  <div class="title">第 3.4 章：程式計數器（Program Counter, PC）設計</div>
+  <div class="nav-right"><a class="nav-btn" href="4.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch03.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第-3-4-章-程式計數器-program-counter-pc-設計">第 3.4 章：程式計數器（Program Counter, PC）設計</h1>
+<h2 id="前言">前言</h2>
+<p>在前面的章節中，我們建構了暫存器（Register）和記憶體（RAM），它們提供了儲存資料和程式碼的能力。但電腦要執行程式，還需要一個關鍵問題的答案：<strong>「下一個要執行的指令在哪裡？」</strong></p>
+<p>這正是**程式計數器（Program Counter，簡稱 PC）**的職責。PC 是 CPU 中最小但最重要的控制元件之一——它追蹤著程式執行的進度，指示記憶體「下一個要讀取的指令位址」。每執行完一條指令，PC 就前進一步；遇到跳轉指令時，PC 就跳到指定的位址。</p>
+<p>PC 是組合邏輯、暫存器與控制邏輯的巧妙結合，理解 PC 的設計，將為我們完整理解 CPU 的指令週期打下基礎。</p>
+<hr />
+<h2 id="3-4-1-pc-的用途-追蹤下一條指令位址">3.4.1 PC 的用途：追蹤下一條指令位址</h2>
+<h3 id="程式執行的基本模型">程式執行的基本模型</h3>
+<p>電腦執行程式的過程可以概括為一個無限循環：</p>
+<pre><code></code></pre>
+<p>在這個循環中，PC 充當了<strong>程式執行進度的追蹤器</strong>：</p>
+<pre><code></code></pre>
+<h3 id="pc-的特性">PC 的特性</h3>
+<p>PC 本質上是一個<strong>特殊的 16-bit 暫存器</strong>，但具備一般暫存器沒有的能力：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>一般 Register</th>
+<th>PC</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>資料寬度</td>
+<td>16-bit</td>
+<td>16-bit</td>
+</tr>
+<tr>
+<td>寫入控制</td>
+<td><code>load</code> 信號</td>
+<td>多重控制（見下文）</td>
+</tr>
+<tr>
+<td>內建算術</td>
+<td>無</td>
+<td>內建 +1 功能（Inc16）</td>
+</tr>
+<tr>
+<td>重置能力</td>
+<td>無</td>
+<td>可歸零（reset）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-4-2-pc-的三個控制-load-inc-reset">3.4.2 PC 的三個控制：load、inc、reset</h2>
+<p>PC 需要支援三種不同的操作，由控制信號決定：</p>
+<table>
+<thead>
+<tr>
+<th>操作</th>
+<th>load</th>
+<th>inc</th>
+<th>reset</th>
+<th>PC 的變化</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>保持不變</strong></td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>PC ← PC</td>
+</tr>
+<tr>
+<td><strong>遞增</strong></td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>PC ← PC + 1</td>
+</tr>
+<tr>
+<td><strong>載入</strong></td>
+<td>1</td>
+<td>X</td>
+<td>0</td>
+<td>PC ← in</td>
+</tr>
+<tr>
+<td><strong>重置</strong></td>
+<td>X</td>
+<td>X</td>
+<td>1</td>
+<td>PC ← 0</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>注意</strong>：<code>reset</code> 優先級最高，只要 <code>reset=1</code>，不論其他信號為何，PC 都歸零。</p>
+</blockquote>
+<h3 id="控制信號的來源">控制信號的來源</h3>
+<p>在 nand2tetris 的 CPU 中，這些控制信號來自<strong>指令解碼器</strong>：</p>
+<ul>
+<li><strong>reset</strong>：來自 CPU 的復位信號（程式開始執行時）</li>
+<li><strong>inc</strong>：在正常執行（非跳轉）時自動為 1</li>
+<li><strong>load</strong>：當指令是跳轉指令且條件滿足時為 1</li>
+</ul>
+<h3 id="邏輯表-真值表">邏輯表（真值表）</h3>
+<pre><code></code></pre>
+<p>更精確地說，優先級為：<strong>reset &gt; load &gt; inc &gt; hold</strong></p>
+<hr />
+<h2 id="3-4-3-pc-的-hdl-實作">3.4.3 PC 的 HDL 實作</h2>
+<h3 id="設計思路">設計思路</h3>
+<p>PC 的建構使用我們已經學過的元件：</p>
+<pre><code></code></pre>
+<p>具體來說：</p>
+<ol>
+<li><strong>Inc16</strong> 模組計算 <code>PC + 1</code>（內建加法器）</li>
+<li><strong>Mux</strong>（4 選 1）根據控制信號選擇下一個值：
+<ul>
+<li>sel=00 → in（載入新位址）</li>
+<li>sel=01 → PC+1（遞增）</li>
+<li>sel=10 → 0（重置）</li>
+<li>sel=11 → PC（保持）</li>
+</ul>
+</li>
+<li><strong>Register</strong> 在時脈邊緣鎖存 Mux 選擇的值</li>
+</ol>
+<h3 id="hdl-實作">HDL 實作</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1">習題模擬</a></p>
+<blockquote>
+<p><strong>注意</strong>：上述寫法使用了兩層 Mux 來實現優先級。另一種更直觀的方式是使用 Mux4Way，但需要自行編碼控制信號的組合。以下是使用 Mux4Way 的替代實現：</p>
+</blockquote>
+<h3 id="替代實現-使用-mux4way">替代實現：使用 Mux4Way</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1">習題模擬</a></p>
+<h3 id="實用的分層-mux-方案-推薦">實用的分層 Mux 方案（推薦）</h3>
+<p>最清晰且最常用的實現方式是使用<strong>三層 Mux 並實現明確的優先級</strong>：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1">習題模擬</a></p>
+<h3 id="設計解析">設計解析</h3>
+<p>這個實現的精妙之處在於 <strong>Mux 的堆疊順序反映了優先級</strong>：</p>
+<pre><code></code></pre>
+<hr />
+<h2 id="3-4-4-程式執行的時序">3.4.4 程式執行的時序</h2>
+<h3 id="指令週期-instruction-cycle">指令週期（Instruction Cycle）</h3>
+<p>每個時脈週期，CPU 完成一個完整的<strong>指令週期</strong>：</p>
+<pre><code></code></pre>
+<h3 id="pc-在指令週期中的時序圖">PC 在指令週期中的時序圖</h3>
+<pre><code></code></pre>
+<h3 id="跳轉指令的時序">跳轉指令的時序</h3>
+<p>當遇到跳轉指令（如 <code>JMP</code> 或條件跳轉 <code>JNE</code>）時，PC 不是遞增而是載入目標位址：</p>
+<pre><code></code></pre>
+<hr />
+<h2 id="3-4-5-pc-與指令週期的關係">3.4.5 PC 與指令週期的關係</h2>
+<h3 id="cpu-中的-pc">CPU 中的 PC</h3>
+<p>在完整的 CPU 架構中，PC 連接如下：</p>
+<pre><code></code></pre>
+<h3 id="指令週期的微觀時序">指令週期的微觀時序</h3>
+<p>每個時脈週期內的微觀操作序列：</p>
+<pre><code></code></pre>
+<p>注意第 6 步和第 7 步之間的微妙之處：PC 的新值在<strong>當前週期</strong>就已經被計算好了（透過 Mux 電路），但要等到<strong>下一個時脈上升沿</strong>才會被鎖存到 Register 中。這確保了：</p>
+<ul>
+<li>在整個當前週期內，PC 輸出的位址是穩定不變的</li>
+<li>RAM 有足夠的時間讀取對應位址的指令</li>
+<li>不會出現「PC 還沒穩定就去讀指令」的問題</li>
+</ul>
+<h3 id="pc-的位址範圍">PC 的位址範圍</h3>
+<p>在 nand2tetris 中：</p>
+<pre><code></code></pre>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<p>本章完成了 CPU 中最關鍵的控制元件——程式計數器的設計：</p>
+<ol>
+<li>
+<p><strong>PC 的功能</strong>：追蹤下一條指令的記憶體位址，是程式自動執行的核心</p>
+</li>
+<li>
+<p><strong>PC 的三種控制模式</strong>：</p>
+<ul>
+<li><code>reset=1</code>：歸零（程式從頭開始）</li>
+<li><code>load=1</code>：載入指定的跳轉位址</li>
+<li><code>inc=1</code>：遞增（前進到下一條指令）</li>
+<li>以上都不滿足時：保持不變</li>
+</ul>
+</li>
+<li>
+<p><strong>PC 的實現</strong>：Inc16 + Mux + Register 的組合</p>
+<ul>
+<li>Inc16 計算 PC+1</li>
+<li>Mux 層級實現優先級選擇</li>
+<li>Register 鎖存最終的值</li>
+</ul>
+</li>
+<li>
+<p><strong>指令週期</strong>：Fetch → Decode → Execute → Write-back → 更新 PC</p>
+<ul>
+<li>正常情況：PC 自動 +1</li>
+<li>跳轉指令：PC 載入目標位址</li>
+<li>每個週期的 PC 值在時脈邊緣更新</li>
+</ul>
+</li>
+<li>
+<p><strong>PC 連接了記憶體與控制</strong>：它從 RAM 讀取指令位址，又根據指令結果決定自己的下一個值，形成了 CPU 執行的自動化迴圈</p>
+</li>
+</ol>
+<p>至此，我們已經完成了 nand2tetris 中所有暫存器層級的元件設計。從最底層的 DFF 出發，經過 Bit、Register、RAM、到 PC，我們建構了一個完整的記憶與控制體系。這些元件將在後續章節中被組裝成完整的 CPU，最終運行我們用 Hack 組合語言編寫的程式。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="3.3.html">⇦ 上一節</a><a class="nav-btn" href="4.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

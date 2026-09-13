@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2.1 二進位加法與半加器、全加器（Half/Full Adder）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link active" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="1.5.html">⇦ 上一節</a></div>
+  <div class="title">2.1 二進位加法與半加器、全加器（Half/Full Adder）</div>
+  <div class="nav-right"><a class="nav-btn" href="2.2.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch02.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="2-1-二進位加法與半加器-全加器-half-full-adder">2.1 二進位加法與半加器、全加器（Half/Full Adder）</h1>
+<blockquote>
+<p>在本節中，我們將踏出建造算術邏輯單元（ALU）的第一步：學會如何用最基本的邏輯閘做「加法」。加法看似平凡，卻是整台電腦一切「運算」的起點——無論是加法、減法、乘除法，甚至程式計數器的遞增，最後都要回到「加法」這個最基礎的動作。</p>
+</blockquote>
+<h2 id="前言">前言</h2>
+<p>在上一章，我們學會了用 Nand 閘拼出 Not、And、Or、Xor、Mux 等邏輯閘。這些閘處理的是「位元」——也就是 0 和 1。但一台電腦如果只能處理位元、卻不會把兩個位元「加起來」，那它也就只能算是個高級計算機，而非「計算機」。</p>
+<p>在本節，我們要引入電腦系統中最重要的一種電路：<strong>加法器（Adder）</strong>。首先從最基本的<strong>半加器（Half Adder）</strong> 開始，理解「和（sum）」與「進位（carry）」這兩個概念；接著擴充成能處理進位輸入的<strong>全加器（Full Adder）</strong>，為下一節的多位元加法器鋪路。</p>
+<p>這一段旅程的核心想法很簡單：<strong>加法是可以被分解成「逐位元相加」的</strong>，而每一個位元的相加都可以用幾個基本閘來完成。當我們把這件「小事」做好之後，就能拼接出能處理 16 位元、甚至更大數字的運算單元。</p>
+<h2 id="二進位加法規則">二進位加法規則</h2>
+<p>我們日常生活中用的是十進位。二進位（binary）則只使用 0 與 1 兩個數字。兩者相加的邏輯其實一模一樣，只是「進位」發生的時機不同：</p>
+<ul>
+<li>十進位：9+1 = 10，個位滿 10 進位到十位。</li>
+<li>二進位：1+1 = 10，個位滿 2 進位到更高位。</li>
+</ul>
+<p>二進位的加法規則可以整理成下面這張表：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">位元 A</th>
+<th style="text-align:center">位元 B</th>
+<th style="text-align:center">結果（和）</th>
+<th style="text-align:center">進位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+</tbody>
+</table>
+<p>請特別注意最後一行：<code>1 + 1</code> 在二進位等於 <code>10</code>。也就是說，該位元的「和」是 0，但多出一位「進位」1，必須送到下一個更高的位元去處理。</p>
+<p>我們可以把每一位的相加看成兩個獨立的輸出：</p>
+<ol>
+<li><strong>sum（和）</strong>：本位相加後留在原位的結果。</li>
+<li><strong>carry（進位）</strong>：是否「溢出」到更高的位元。</li>
+</ol>
+<p>舉一個具體的例子，把兩個 4 位元數字 <code>0101</code>（5）與 <code>0011</code>（3）相加：</p>
+<pre><code></code></pre>
+<p>從最低位（最右邊）開始逐位相加：<code>1+1 = 0 進位 1</code>，這個進位 1 必須再與右邊數來的第二位（0+1）一起計算，於是最終得到 <code>1000 = 8</code>，結果完全正確。</p>
+<blockquote>
+<p>這裡便出現了根本性問題：單獨一個「半加器」只能處理「兩個輸入位元」，但多位元加法中，每一位可能還要加上「來自低位的進位」。這正是我們需要「全加器」的原因。</p>
+</blockquote>
+<h2 id="半加器-half-adder">半加器（Half Adder）</h2>
+<p><strong>半加器（Half Adder）</strong> 是加法器最基本的單元。它接收兩個輸入位元 A 與 B，輸出兩個結果：</p>
+<ul>
+<li><strong>sum</strong>：本位的「和」。</li>
+<li><strong>carry</strong>：送到下一位的「進位」。</li>
+</ul>
+<p>半加器的名字中「半」字，是因為它<strong>無法接收來自低位的進位輸入</strong>——只能處理兩位相加，因此只用於加法電路的最低有效位（least significant bit, LSB）。</p>
+<h3 id="真值表">真值表</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">輸入 A</th>
+<th style="text-align:center">輸入 B</th>
+<th style="text-align:center">輸出 sum</th>
+<th style="text-align:center">輸出 carry</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="邏輯式推導">邏輯式推導</h3>
+<p>觀察真值表，我們可以分別為 sum 與 carry 寫出布林邏輯式：</p>
+<ul>
+<li><strong>carry</strong>：只有當 A=B=1 時才為 1，所以 <code>carry = A AND B</code>。</li>
+<li><strong>sum</strong>：當 A、B 相異時為 1（正常輸出 0），當 A、B 相同時為 0。這正是<strong>互斥或（XOR）</strong> 的行為，所以 <code>sum = A XOR B</code>。</li>
+</ul>
+<p>也就是說：</p>
+<pre><code></code></pre>
+<p>這兩個式子非常優雅：<strong>XOR 決定「本位的和」，AND 決定「是否進位」</strong>。</p>
+<h3 id="半加器-hdl">半加器 HDL</h3>
+<p>既然我們在第一章已經實作過 XOR 閘（Xor.hdl），現在就可以直接把它當成積木來使用。以下是半加器的完整 HDL 程式：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../02/HalfAdder.tst&amp;run=1">習題模擬</a></p>
+<p>注意 HDL 中的命名規則：<code>Xor(a=a, b=b, ...)</code> 中，等號左邊是子晶片的輸入/輸出腳位名稱，右邊是我們接到其上的內部訊號。因為我們的輸入腳位剛好也叫 <code>a</code>、<code>b</code>，所以字面上看起來會「同名相引」。</p>
+<h3 id="設計思路">設計思路</h3>
+<p>半加器的設計思路可以總結為一句話：<strong>把「加法」拆成兩個正交的問題——「本位算和」與「是否進位」</strong>。</p>
+<ul>
+<li>「本位算和」交給 XOR：因為相加後留在原位的結果，本質上就是「互斥或」。</li>
+<li>「是否進位」交給 AND：只有兩者皆為 1 時才需要進位。</li>
+</ul>
+<p>這種「先拆解、再組合」的思維，正是接下來設計全加器與 ALU 的核心方法論。</p>
+<h2 id="全加器-full-adder">全加器（Full Adder）</h2>
+<p><strong>全加器（Full Adder）</strong> 總共接收<strong>三個</strong>輸入：A、B 以及來自低位的進位 <code>c</code>（carry-in）。它輸出本位和 <code>sum</code> 以及向上位傳送的進位 <code>carry</code>（carry-out）。</p>
+<ul>
+<li>輸入 A、B：要相加的兩個位元。</li>
+<li>輸入 c：來自低位（右邊）的進位。</li>
+<li>輸出 sum：本位的和。</li>
+<li>輸出 carry：送往高位（左邊）的進位。</li>
+</ul>
+<p>之所以叫「全」加器，是因為它能完整處理「三個 1」的相加（1+1+1），而半加器最多只能處理「兩個 1」。</p>
+<h3 id="真值表">真值表</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">輸入 c</th>
+<th style="text-align:center">輸入 A</th>
+<th style="text-align:center">輸入 B</th>
+<th style="text-align:center">輸出 sum</th>
+<th style="text-align:center">輸出 carry</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+</tr>
+</tbody>
+</table>
+<p>請觀察最後一行：<code>1+1+1</code>，本位的和是 1（因為 3 的二進位是 <code>11</code>），並且進位也是 1。實際上，三個 1 相加的結果是十進位的 3，以二進位表示就是 <code>11</code>——低位 1 作為和，高位 1 作為進位。</p>
+<h3 id="邏輯式推導">邏輯式推導</h3>
+<p>我們可以透過「把三個輸入拆成兩次兩輸入相加」來理解全加器。以「先加 A、B」再「加 c」的順序思考：</p>
+<ul>
+<li><strong>先算 <code>A + B</code></strong>：得到臨時和 <code>s1</code> 與臨時進位 <code>c1</code>（可用半加器完成）。</li>
+<li><strong>再把 <code>s1 + c</code></strong>：得到最終和 <code>sum</code> 與臨時進位 <code>c2</code>。</li>
+<li><strong>最終進位</strong> <code>carry</code>：<code>c1</code> 與 <code>c2</code> 任何一個成立都會進位，所以 <code>carry = c1 OR c2</code>。</li>
+</ul>
+<p>這正是經典的「兩個半加器 + 一個 OR 閘」的全加器結構。也可以用卡諾圖（Karnaugh map）直接推導出布林式：</p>
+<pre><code></code></pre>
+<h3 id="全加器-hdl">全加器 HDL</h3>
+<p>根據上述「兩個半加器 + 一個 OR 閘」的設計，我們可以用兩個 HalfAdder 來組成全加器：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../02/FullAdder.tst&amp;run=1">習題模擬</a></p>
+<h3 id="設計思路與實作步驟">設計思路與實作步驟</h3>
+<p>全加器的實作可以分成清晰的三個步驟：</p>
+<ol>
+<li><strong>第一次半加</strong>：把 A、B 相加，得到「臨時和」<code>sum1</code> 與「第一個進位」<code>carry1</code>。</li>
+<li><strong>第二次半加</strong>：把 <code>sum1</code> 與低位進位 <code>c</code> 相加，得到「最終和」<code>sum</code> 與「第二個進位」<code>carry2</code>。</li>
+<li><strong>合併進位</strong>：用 OR 閘把 <code>carry1</code> 與 <code>carry2</code> 合併為最終進位 <code>carry</code>。因為兩個「半加器」不可能同時進位（為何？請思考：<code>carry1</code> 需要 A=B=1，而此時 <code>sum1=0</code>，<code>carry2</code> 需要 <code>sum1=1</code>，兩者互斥），所以直接 OR 即可，不必擔心衝突。</li>
+</ol>
+<p>這種「模組化」的組合方式——<strong>用小而可靠的單元拼出更大、更完整的單元</strong>——正是整個 Nand2Tetris 課程的核心哲學。</p>
+<h2 id="全加器與半加器的對比">全加器與半加器的對比</h2>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">特性</th>
+<th style="text-align:left">半加器 HalfAdder</th>
+<th style="text-align:left">全加器 FullAdder</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">輸入個數</td>
+<td style="text-align:left">2（a, b）</td>
+<td style="text-align:left">3（a, b, c）</td>
+</tr>
+<tr>
+<td style="text-align:left">是否接收低位進位</td>
+<td style="text-align:left">否</td>
+<td style="text-align:left">是</td>
+</tr>
+<tr>
+<td style="text-align:left">輸出</td>
+<td style="text-align:left">sum, carry</td>
+<td style="text-align:left">sum, carry</td>
+</tr>
+<tr>
+<td style="text-align:left">組合成本</td>
+<td style="text-align:left">1 個 XOR + 1 個 AND</td>
+<td style="text-align:left">2 個 HALF + 1 個 OR</td>
+</tr>
+<tr>
+<td style="text-align:left">用途</td>
+<td style="text-align:left">多位加法的 LSB</td>
+<td style="text-align:left">多位加法的其餘位元</td>
+</tr>
+</tbody>
+</table>
+<p>關鍵結論：<strong>要實現多位元加法，除最低位外，其餘每一位都需要「全加器」</strong>，因為它們都要接收來自低位的進位。</p>
+<h2 id="串接多位元加法概念">串接多位元加法概念</h2>
+<p>一個 16 位元（或其他 N 位元）加法器，就是把多個全加器「串成一排」：低位全加器的 <code>carry</code> 接到高一位全加器的 <code>c</code> 輸入，如此一來進位就能像「漣漪（ripple）」一樣從最低位一路傳到最高位。這種架構稱之為<strong>漣波進位加法器（Ripple-Carry Adder）</strong>。</p>
+<pre><code></code></pre>
+<p>其中最低位 FA0 的進位輸入 <code>c0</code> 通常固定為 0（或 <code>c0 = 0</code>），也就是說最低位可用半加器，亦可使用一個「c 固定為 0 的全加器」。</p>
+<p>這種「並排串接」的概念，將在下一節 2.2 完整實作成真正的 16 位元加法器 Add16 與增量器 Inc16。</p>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>二進位加法的核心</strong>是「本位算和」與「是否進位」兩個動作，滿 2 即進位。</li>
+<li><strong>半加器（HalfAdder）</strong>：<code>sum = A XOR B</code>、<code>carry = A AND B</code>，只能處理兩個位元。</li>
+<li><strong>全加器（FullAdder）</strong>：多了一個低位進位輸入 <code>c</code>，可用「兩個半加器 + 一個 OR 閘」組合實現。</li>
+<li><strong>多位元加法</strong>的原理是「串接全加器」：低位的 carry 一路漣漪式地傳到高位，形成漣波進位加法器。</li>
+<li>實作上最重要的思維是<strong>模組化（modularity）</strong>：用已驗證的小閘堆疊出可靠的大電路。</li>
+</ul>
+<p>下一節，我們將運用這些加法單元，實作能一次處理 16 位元的增量器 Inc16 與加法器 Add16。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="1.5.html">⇦ 上一節</a><a class="nav-btn" href="2.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.3 記憶體映射 I/O：螢幕與鍵盤的控制原理</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link active" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="4.2.html">⇦ 上一節</a></div>
+  <div class="title">4.3 記憶體映射 I/O：螢幕與鍵盤的控制原理</div>
+  <div class="nav-right"><a class="nav-btn" href="4.4.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch04.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="4-3-記憶體映射-i-o-螢幕與鍵盤的控制原理">4.3 記憶體映射 I/O：螢幕與鍵盤的控制原理</h1>
+<p>到目前為止，我們的程式只能「讀記憶體、算資料、存回記憶體」——如果記憶體背後掛的只是 RAM 晶片，那這台電腦就只是一個會算數但與世隔絕的離線機器。真實世界的電腦必須與外界溝通：把結果畫在螢幕上、接收使用者的按鍵。本節要揭曉 Hack 使用的解法——<strong>記憶體映射 I/O（Memory-Mapped I/O）</strong>：把螢幕與鍵盤「偽裝」成記憶體的某些位址，程式只要讀寫那幾個位址，就能控制真實的周邊裝置。這不但讓 I/O 的操作語法與記憶體完全一致，也讓我們的 CPU 完全不須知道螢幕與鍵盤的存在。</p>
+<h2 id="i-o-的兩個經典做法">I/O 的兩個經典做法</h2>
+<p>要讓 CPU 與周邊裝置溝通，硬體設計師有兩條路可走：</p>
+<table>
+<thead>
+<tr>
+<th>做法</th>
+<th>原理</th>
+<th>代表</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>獨立 I/O 埠（Port-Mapped I/O）</strong></td>
+<td>CPU 提供額外的 <code>IN/OUT</code> 指令與 I/O 匯流排，周邊有自己的編號位址</td>
+<td>x86 的 <code>in</code>/<code>out</code> 指令</td>
+</tr>
+<tr>
+<td><strong>記憶體映射 I/O（Memory-Mapped I/O）</strong></td>
+<td>周邊裝置被賦予一段記憶體位址，讀寫該位址即與裝置互動</td>
+<td>Hack、ARM、RISC-V 常用</td>
+</tr>
+</tbody>
+</table>
+<p>記憶體映射的關鍵好處是：<strong>對 CPU 而言，螢幕與鍵盤「不存在」</strong>。CPU 只知道自己在讀寫記憶體；真正把「位址 16384～24575」導到螢幕、「位址 24576」導到鍵盤電路的，是位址解碼器（第五章的 Memory 晶片負責做這件事）。因此：</p>
+<ul>
+<li>想讓螢幕顯示某個像素？→ 對對應的記憶體位址寫入位元就行。</li>
+<li>想知道使用者按了什麼鍵？→ 讀「鍵盤位址」這一格就行。</li>
+<li>完全不需要新增任何指令！畫面的輸出語法就是 <code>M=…</code>，鍵盤的輸入語法就是 <code>D=M</code>。</li>
+</ul>
+<p>資料流如下圖所示，硬體上所有的「裝置」都被閘在記憶體位址這道統一的介面後面：</p>
+<pre><code class="language-text"></code></pre>
+<h2 id="hack-記憶體空間總覽-ram-與-i-o-映射的完整地圖">Hack 記憶體空間總覽：RAM 與 I/O 映射的完整地圖</h2>
+<p>Hack 的記憶體位址空間共 32K 個字組（15 位元定址，位址 0～32767）。組譯器與作業系統共用這張地圖，其中一部分是真 RAM，兩段是 I/O 映射：</p>
+<table>
+<thead>
+<tr>
+<th>位址範圍</th>
+<th>大小</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0 – 15</code></td>
+<td>16 字組</td>
+<td>預先定義符號 R0～R15（其中 R0~R4 兼任 SP、LCL、ARG、THIS、THAT）</td>
+</tr>
+<tr>
+<td><code>16 – 255</code></td>
+<td>240 字組</td>
+<td>組譯器配置給「變數符號」的空間</td>
+</tr>
+<tr>
+<td><code>256 – 16383</code></td>
+<td>—</td>
+<td>程式資料區（堆疊、堆積、暫存工作區）</td>
+</tr>
+<tr>
+<td><code>16384 – 24575</code></td>
+<td><strong>8K 字組</strong></td>
+<td><strong>螢幕映射（Screen）</strong>：256 × 512 像素，16 像素/字組</td>
+</tr>
+<tr>
+<td><code>24576</code></td>
+<td>1 字組</td>
+<td><strong>鍵盤映射（KBD）</strong>：存放目前按下的鍵盤掃描碼</td>
+</tr>
+<tr>
+<td><code>24577 – 32767</code></td>
+<td>—</td>
+<td>未使用（保留給未來的擴充）</td>
+</tr>
+</tbody>
+</table>
+<p>預先定義的兩個 I/O 符號因此是：</p>
+<pre><code class="language-asm"></code></pre>
+<p>只要記得「<strong>螢幕從 16384 起占用 8K、鍵盤單獨掛在 24576</strong>」，整張地圖就凍結在你的腦海裡了。</p>
+<h2 id="螢幕記憶體映射-8k-對應-256-512-像素">螢幕記憶體映射：8K 對應 256×512 像素</h2>
+<h3 id="規格">規格</h3>
+<p>Hack 螢幕是一台黑白螢幕：</p>
+<ul>
+<li><strong>解析度</strong>：256 列（row）× 512 行（column）。</li>
+<li><strong>像素</strong>：每個像素 1 bit——<code>1</code> 表示<strong>黑</strong>，<code>0</code> 表示<strong>白</strong>。</li>
+<li><strong>記憶體預算</strong>：256 × 512 = 131,072 個像素 ÷ 每字組 16 bit = <strong>8,192</strong> 個字組（8K）——正好填滿 16384～24575。</li>
+</ul>
+<h3 id="映射公式">映射公式</h3>
+<p>螢幕記憶體以「列為主（row-major）」排列：同一列依序占用 512/16 = 32 個字組，下一列接著從第 33 個字組開始：</p>
+<pre><code class="language-text"></code></pre>
+<p>畫面上列 0 的 512 個像素被切成 32 組、每組 16 像素入一個字組。同一個字組內，<code>bit 0</code>（LSB）對應「該組最左邊那個像素」，<code>bit 15</code> 對應最右邊。想塗黑一組 16 像素，最偷懶的寫法就是把整格寫成 <code>-1</code>（16 個 1）。</p>
+<h3 id="像素操作範例">像素操作範例</h3>
+<p><strong>範例 A：把整個螢幕塗黑</strong>（把 8K 個字組全寫成 -1）：</p>
+<pre><code class="language-asm"></code></pre>
+<p><strong>範例 B：只點亮一個像素 (row=2, col=5)</strong>：</p>
+<pre><code class="language-text"></code></pre>
+<pre><code class="language-asm"></code></pre>
+<p>嚴格來說要做「把第 5 個位元設成 1」的位元寫入。但 Hack 沒有一般的 OR 指令運算元與記憶體同步的語法，所以教科書慣用的簡易做法是「整格覆寫」。只要我們知道該格原本只有這個像素在動，<code>@16448 / D=A / A=D / M=D</code> 這類操作就是可行的。更精確的位元設定通常會透過 <code>D|M</code> 的概念來完成：</p>
+<pre><code class="language-asm"></code></pre>
+<p>上面的 <code>M=D|M</code> 一次讀、一次算、一次寫，正是記憶體映射螢幕最常被使用的「read-modify-write」模式——因為螢幕背後就是真實的 RAM，讀回與覆寫都不花特別功夫。</p>
+<h2 id="鍵盤記憶體映射-keyboard-在位址-24576">鍵盤記憶體映射：Keyboard 在位址 24576</h2>
+<p>鍵盤的介面比螢幕更簡單——只有「一格」記憶體：<code>RAM[24576]</code>（符號 <code>KBD</code>）。</p>
+<ul>
+<li><strong>CPU 端</strong>：程式用普通的讀記憶體指令——<code>@KBD / D=M</code>——就能「看到」當前被按下的鍵。</li>
+<li><strong>鍵盤硬體端</strong>：按下一個鍵，鍵盤電路會把對應的掃描碼（scancode）寫進 <code>RAM[24576]</code>；放開所有鍵時，值回到 <code>0</code>。</li>
+</ul>
+<h3 id="掃描碼對照表">掃描碼對照表</h3>
+<table>
+<thead>
+<tr>
+<th>按鍵</th>
+<th>值</th>
+<th>按鍵</th>
+<th>值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>沒有按鍵</td>
+<td><code>0</code></td>
+<td>方向鍵 上↑</td>
+<td><code>131</code></td>
+</tr>
+<tr>
+<td><code>a</code>~<code>z</code></td>
+<td><code>97</code>~<code>122</code>（ASCII）</td>
+<td>方向鍵 下↓</td>
+<td><code>133</code></td>
+</tr>
+<tr>
+<td><code>A</code>~<code>Z</code></td>
+<td><code>65</code>~<code>90</code>（ASCII）</td>
+<td>方向鍵 左←</td>
+<td><code>130</code></td>
+</tr>
+<tr>
+<td><code>0</code>~<code>9</code></td>
+<td><code>48</code>~<code>57</code>（ASCII）</td>
+<td>方向鍵 右→</td>
+<td><code>132</code></td>
+</tr>
+<tr>
+<td>Enter（換行）</td>
+<td><code>128</code></td>
+<td>Home</td>
+<td><code>134</code></td>
+</tr>
+<tr>
+<td>Backspace</td>
+<td><code>129</code></td>
+<td>End</td>
+<td><code>135</code></td>
+</tr>
+<tr>
+<td>Esc</td>
+<td><code>140</code></td>
+<td>PageUp / PageDown</td>
+<td><code>136</code> / <code>137</code></td>
+</tr>
+<tr>
+<td>F1~F12</td>
+<td><code>141</code>~<code>152</code></td>
+<td>Insert / Delete</td>
+<td><code>138</code> / <code>139</code></td>
+</tr>
+</tbody>
+</table>
+<p>要特別強調的是：<strong>鍵盤只負責「寫入 RAM[24576]」</strong>，程式要自己不斷去輪詢（poll）這一格。以下範例展示「偵測按下的鍵並把它數值複製到 RAM[100]」：</p>
+<pre><code class="language-asm"></code></pre>
+<h2 id="cpu-如何-看到-螢幕與鍵盤-位址解碼與-memory-晶片">CPU 如何「看到」螢幕與鍵盤？—— 位址解碼與 Memory 晶片</h2>
+<p>記憶體映射成功的關鍵，是第五章要組裝的 <strong>Memory 晶片</strong>。它的本質是一台位址路由器：</p>
+<ol>
+<li><strong>位址 0～16383</strong> → 送到真實 RAM 的字組。</li>
+<li><strong>位址 16384～24575</strong> → 送到螢幕的 8K 暫存器陣列（這些暫存器同時也是畫面像素的內容）。</li>
+<li><strong>位址 24576</strong> → 送到鍵盤電路的輸出鎖存器（latch）。</li>
+<li>對於鍵盤，記憶體晶片只做「讀」的轉接；對於螢幕，只做「寫」的轉接。</li>
+</ol>
+<p>因為 CPU 整個「人生」只見過「位址 + 資料」兩種訊號，它完全不需要知道：自己對 20000 寫進去的 <code>-1</code>，其實是在把一排像素塗黑；自己從 24576 讀出來的值，其實是使用者剛按下的鍵。<strong>「記憶體映射」把裝置與 CPU 的耦合徹底切開</strong>，這也是它能成為現代 CPU 主流作法的主因。</p>
+<h2 id="完整程式-依按鍵動態塗色的互動示範">完整程式：依按鍵動態塗色的互動示範</h2>
+<p>把螢幕與鍵盤的映射合起來，就能寫出第一個「互動」程式：按住任意鍵螢幕全黑，放開後螢幕全白，一直重複偵測——經典的 <strong>Fill.asm</strong>：</p>
+<pre><code class="language-asm"></code></pre>
+<p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20Runs%20an%20infinite%20loop%20that%20listens%20to%20the%20keyboard%20input.%0A%2F%2F%20When%20a%20key%20is%20pressed%20(any%20key)%2C%20the%20program%20blackens%20the%20screen.%0A%2F%2F%20When%20no%20key%20is%20pressed%2C%20the%20program%20clears%20the%20screen.%0A%0A(FOREVER)%0A%2F%2F%20arr%20%3D%20SCREEN%0A%40SCREEN%0AD%3DA%0A%40arr%0AM%3DD%0A%0A%2F%2F%20n%3D8192%0A%408192%0AD%3DA%0A%40n%0AM%3DD%0A%2F%2F%20i%20%3D%200%0A%40i%0AM%3D0%0A(LOOP)%0A%2F%2F%20if%20(i%3D%3Dn)%20goto%20ENDLOOP%0A%40i%0AD%3DM%0A%40n%0AD%3DD-M%0A%40ENDLOOP%0AD%3BJEQ%0A%0A%2F%2F%20if%20(*KBD%20!%3D%200)%0A%40KBD%0AD%3DM%0A%40ELSE%0AD%3BJEQ%0A%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%20-1%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D-1%0A%0A%40ENDIF%0A0%3BJMP%0A(ELSE)%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%200%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D0%0A%0A(ENDIF)%0A%2F%2F%20i%2B%2B%0A%40i%0AM%3DM%2B1%0A%0A%40LOOP%0A0%3BJMP%0A%0A(ENDLOOP)%0A%40FOREVER%0A0%3BJMP">習題模擬</a></p>
+<p>比起整螢幕 8192 個字組，本範例只塗 512 個字組（前 16 列），好讓你在模擬器上立刻看到「按鍵 → 上方一條黑帶」的即時反應。把它改成 <code>@8192</code> 就是全螢幕塗黑/塗白。這個程式同時示範了本節所有核心技能：位址計算（<code>@SCREEN</code>）、指標走訪（<code>@addr / A=M</code>）、鍵盤輪詢（<code>@KBD / D=M</code>）與條件跳躍。</p>
+<h2 id="設計思路與實作步驟">設計思路與實作步驟</h2>
+<p>設計與驗收記憶體映射 I/O 的完整流程：</p>
+<ol>
+<li><strong>決定位址配置</strong>：在 32K 空間中，把 16384～24575 劃給螢幕（8K 恰好匹配 256×512 像素）、24576 劃給鍵盤，兩者都落在 A-指令可定址範圍內。</li>
+<li><strong>設計螢幕排列</strong>：列為主、每列 32 字組、每字組 16 像素由左而右以 LSB→MSB 對應；列出公式 <code>位址 = 16384 + row×32 + col/16</code>。</li>
+<li><strong>確認像素語意</strong>：訂下 <code>1=黑、0=白</code>，讓 <code>M=-1</code> 直接對應全黑、<code>M=0</code> 對應全白，方便程式塗色。</li>
+<li><strong>設計鍵盤行為</strong>：訂下掃描碼表格與「無鍵=0」的規約，鍵盤電路只在值變化時更新 RAM[24576]。</li>
+<li><strong>寫測試程式</strong>：先跑「塗黑一整列」再跑「輪詢鍵盤」，用來驗證位址公式是否逐像素正確。</li>
+<li><strong>在 CPU 模擬器驗收</strong>：載入 Fill 這類互動程式，用模擬器內建的鍵盤與螢幕視窗確認輸入輸出行為；第五章再用 Memory 晶片在硬體層把位址解碼出來。</li>
+</ol>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>記憶體映射 I/O</strong>：把螢幕與鍵盤掛在記憶體位址空間上，程式以一般的讀寫指令即可控制裝置，CPU 不需認識任何裝置。</li>
+<li><strong>Hack 記憶體地圖</strong>：<code>0–16383</code> 為 RAM 資料區、<code>16384–24575</code> 為螢幕映射（8K 字組）、<code>24576</code> 為鍵盤映射，預先定義符號 <code>SCREEN=16384</code> 與 <code>KBD=24576</code>。</li>
+<li><strong>螢幕規格</strong>：256×512 黑白像素，<code>1=黑、0=白</code>；<code>像素(row,col)</code> 落在 <code>16384 + row×32 + col/16</code> 的 <code>col MOD 16</code> 位元上；<code>M=-1</code> 即可一次塗黑 16 個像素。</li>
+<li><strong>鍵盤規格</strong>：<code>RAM[24576]</code> 存放目前按鍵的掃描碼（ASCII 或 128 以上的特殊鍵碼），無鍵為 <code>0</code>；程式必須主動輪詢。</li>
+<li><strong>位址解碼的幕後功臣</strong>：Memory 晶片把位址路由到 RAM、螢幕或鍵盤，I/O 介面在硬體層面被完全隔離。</li>
+<li><strong>實作成果</strong>：一個不到 30 行的 Fill 程式，就能做到「按住 → 塗黑、放開 → 塗白」的即時互動。</li>
+</ul>
+<p>至此，我們已經備齊全部的工具——兩類指令 + 記憶體映射。下一節就把這些零件組合成真正的程式，正式開始在 CPU 模擬器上寫與執行 Hack 組合語言。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="4.2.html">⇦ 上一節</a><a class="nav-btn" href="4.4.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

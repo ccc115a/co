@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link active" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="1.3.html">⇦ 上一節</a></div>
+  <div class="title">第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bi</div>
+  <div class="nav-right"><a class="nav-btn" href="1.5.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch01.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第-1-4-節-多路復用與多通道邏輯閘-mux-demux-multi-bit">第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</h1>
+<h2 id="前言-讓訊號聽從指揮">前言：讓訊號聽從指揮</h2>
+<p>到目前為止，我們手上的閘都只會做一件事：把輸入「固定地」轉成輸出。但是一台電腦絕不能如此死板——同一個電路往往需要<strong>在不同時刻處理不同的訊號</strong>。例如 CPU 想要在「加上數字 A」與「加上數字 B」之間切換；螢幕想決定「這 16 個 bit 到底是畫素資料還是字元碼」。最簡單的解決方法，就是哪個訊號被用到……它的道路就由一個<strong>選擇開關</strong>來決定。</p>
+<p>這個開關正是本節的主角——<strong>Mux（Multiplexer，多路復用器）</strong>。它就像火車站的轉轍員，用一根小小的控制桿（Sel），把資料引導到正確的軌道。它的孿生兄弟 **Demux（Demultiplexer，多路解復用器）**則把單一輸入分配到多條輸出軌道之一。</p>
+<p>然而，僅有轉轍員還不夠。真正的電腦資料是 <strong>16 bits 並行移動</strong>的——一位元資料在 Hack 世界裡一次移動 16 個 bit。所以本節後半，我們要學會把 1.3 節的國產閘「<strong>一次處理 16 個位元</strong>」，再升級成能「<strong>在 4 條、8 條 16-bit 匯流排中選擇</strong>」的多路版本。未來的 CPU、ALU、記憶體，全都仰賴這些基礎設施。</p>
+<h2 id="1-4-1-mux-兩路合一-控制桿決定一切">1.4.1 Mux：兩路合一，控制桿決定一切</h2>
+<h3 id="真值表">真值表</h3>
+<p>Mux 有<strong>三個</strong>輸入：兩條資料輸入 <code>a</code>、<code>b</code>，以及一條選擇訊號 <code>sel</code>。規則很簡單：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">a</th>
+<th style="text-align:center">b</th>
+<th style="text-align:center">sel</th>
+<th style="text-align:center">Mux(a,b,sel)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>0</strong>（選 a）</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong>（選 a）</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong>（選 a）</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>1</strong>（選 b）</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>0</strong>（選 b）</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>1</strong>（選 b）</td>
+</tr>
+</tbody>
+</table>
+<p>規律一言以蔽之：<strong><code>sel=0</code> 輸出 <code>a</code>；<code>sel=1</code> 輸出 <code>b</code>。</strong></p>
+<div class="math-display">$$
+Mux(a,b,sel) = \begin{cases} a &amp; \text{if } sel = 0 \\ b &amp; \text{if } sel = 1 \end{cases}
+$$</div>
+<h3 id="布林代數式">布林代數式</h3>
+<p>用 AND/OR/NOT 把上面「二分」的思維寫下來：a 要不要過，取決於 <code>sel=0</code>；b 要不要過，取決於 <code>sel=1</code>。</p>
+<div class="math-display">$$
+\boxed{Mux(a,b,sel) = (\bar{sel} \cdot a) \ + \ (sel \cdot b)}
+$$</div>
+<p>拆解：</p>
+<ul>
+<li><code>¬sel · a</code>：當 <code>sel=0</code> 時這項等於 <code>a</code>，否則為 0；</li>
+<li><code>sel · b</code>：當 <code>sel=1</code> 時這項等於 <code>b</code>，否則為 0。</li>
+<li>兩項互斥（不可能同時為 1），OR 在一起即得唯一答案。</li>
+</ul>
+<h3 id="設計思路">設計思路</h3>
+<p>把布林式直接翻譯成示意圖式電路，需要三件我們已握有的工具：</p>
+<ol>
+<li>一個 <code>Not(sel)</code> 產生 <code>¬sel</code>；</li>
+<li>兩顆 <code>And</code>：<code>And(¬sel, a)</code> 與 <code>And(sel, b)</code>；</li>
+<li>一顆 <code>Or</code> 把兩者相加。</li>
+</ol>
+<p>「建 Mux」與「拆 Mux」是密不可分的兩件事：拆 Mux 的秘訣是<strong>記住它的布林式</strong>，因為布林式直接告訴你零件怎麼接。</p>
+<h3 id="hdl-程式碼">HDL 程式碼</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Mux.tst&amp;run=1">習題模擬</a></p>
+<p>可以看到：這份 HDL 沒有任何新知識，只是把四個己知零件按布林式拼接。<strong>「先寫出布林式，再照著接線」是實作任何組合電路最可靠的流程。</strong></p>
+<h2 id="1-4-2-demux-mux-的逆向工程">1.4.2 Demux：Mux 的逆向工程</h2>
+<h3 id="真值表與功能陳述">真值表與功能陳述</h3>
+<p>Demux 只有 <strong>一個資料輸入</strong> <code>in</code> 與一個選擇訊號 <code>sel</code>，但它有<strong>兩個輸出</strong> <code>a</code>、<code>b</code>。功能是把 <code>in</code> 導向任一條輸出軌道：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">in</th>
+<th style="text-align:center">sel</th>
+<th style="text-align:center">a</th>
+<th style="text-align:center">b</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong></td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+</tbody>
+</table>
+<p>規律：「<code>sel=0</code> 時 <code>a=in</code>、<code>b=0</code>；<code>sel=1</code> 時 <code>a=0</code>、<code>b=in</code>」。</p>
+<h3 id="布林代數式">布林代數式</h3>
+<p>兩條輸出各自獨立成布林式：</p>
+<div class="math-display">$$
+\boxed{a = in \cdot \bar{sel}, \qquad b = in \cdot sel}
+$$</div>
+<p>驗證：<code>sel=0</code> 時 <code>a=in·1=in</code>、<code>b=in·0=0</code>；<code>sel=1</code> 時 <code>a=in·0=0</code>、<code>b=in·1=in</code>。完全符合真值表。</p>
+<h3 id="設計思路">設計思路</h3>
+<p>這個電路結構上「比 Mux 更簡單」：只需要一個 Not 與兩顆 And，不需要 Or——因為兩條路徑原本就互斥。</p>
+<h3 id="hdl-程式碼">HDL 程式碼</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/DMux.tst&amp;run=1">習題模擬</a></p>
+<p>思考題：能不能用一顆 Mux 建出 DMux？提示——讓 <code>a</code> 只送出 <code>in</code> 而 <code>b</code> 永遠送 0，把 <code>sel</code> 接去哪裏？答案是：<code>a</code> 是 <code>Mux(in, 0, sel)</code>、<code>b</code> 是 <code>Mux(0, in, sel)</code>。讀者可以自行比較兩種版本的零件數。</p>
+<h2 id="1-4-3-16-bit-版本-not16-and16-or16-mux16">1.4.3 16-bit 版本：Not16, And16, Or16, Mux16</h2>
+<p>電腦的資料是並列的。一個 <strong>16-bit 匯流排（bus）</strong> 就是 16 條導線綁在一起，同時傳送一個 16 位元的數字（例如 Hack 的 <code>D</code> 暫存器值、螢幕位址等）。因此我們需要「<strong>一次對 16 個 bit 各自做運算</strong>」的版本。</p>
+<p>以 And16 為例，它的規格是：</p>
+<div class="math-display">$$
+
+And16\begin{bmatrix}a_{15} &amp; a_{14} &amp; \cdots &amp; a_0 \\ b_{15} &amp; b_{14} &amp; \cdots &amp; b_0\end{bmatrix}
+\ =\ \begin{bmatrix} a_{15}\cdot b_{15} &amp; a_{14}\cdot b_{14} &amp; \cdots &amp; a_{0}\cdot b_{0} \end{bmatrix}
+
+$$</div>
+<p>也就是**逐位元（bitwise）**執行：第 i 個輸出 bit 只由第 i 個輸入 bit 決定,位元之間老死不相往來。這正是「多通道閘」的意義。</p>
+<h3 id="實現方法一-複製貼上-官方推薦的練習">實現方法一：複製貼上（官方推薦的練習）</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Not16.tst&amp;run=1">習題模擬</a></p>
+<p>這裡引進第一個新語法：<strong>匯流排宣告 <code>in[16]</code></strong>。<code>in[0]</code> 是最低有效位元（LSB），<code>in[15]</code> 是最高有效位元（MSB）。每一條 <code>in[i]</code> 都是一條獨立的單 bit 導線，「只是」把它們並排包裝成一個向量。</p>
+<p>And16、Or16 的做法一模一樣，只是內部換成 <code>And(a=in[i], b=in[i+16]...)</code>——等等，匯流排只有 16 條、索引到 15 為止，所以正確寫法是：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/And16.tst&amp;run=1">習題模擬</a></p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Or16.tst&amp;run=1">習題模擬</a></p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Mux16.tst&amp;run=1">習題模擬</a></p>
+<p>注意 <strong>Mux16 只有一個 <code>sel</code></strong>，它同時控制全部 16 個位元「一起選擇 a 或 b」—— 16 條軌道共軌轉轍。</p>
+<h3 id="實現方法二-匯流排切割語法-現代簡潔寫法">實現方法二：匯流排切割語法（現代簡潔寫法）</h3>
+<p>上面的寫法重複 16 次，雖然清楚但略顯囉嗦。HDL 還允許你對匯流排「切片」，一次接一條或一組位元。例如 Mux16 可以改寫成：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Mux16.tst&amp;run=1">習題模擬</a></p>
+<p>（對只打單一位元用 <code>a[3]</code>，對一段連續範圍用 <code>a[8..15]</code>，也可用 <code>a[0]</code> 與 <code>a[0..0]</code> 混用。模擬器版本不同支援度略有差異，read 到 <code>.hdl</code> 時以你的工具版本為準。）提供兩種寫法，是為了讓你理解 <code>a[i]</code> 語法背後「位元組向量」的本質——<strong><code>a[16]</code> 不是一個 16 位元的數，而是 16 條並行的 1-bit 導線。</strong></p>
+<h2 id="1-4-4-多路版本-mux4way16-與-mux8way16">1.4.4 多路版本：Mux4Way16 與 Mux8Way16</h2>
+<p>單一 Mux 只能二選一。但電腦常需要在 <strong>4 條、8 條匯流排</strong> 之間選擇。例如 RAM 位址 <code>00/01/10/11</code> 要挑出四個暫存器之一。此時選擇訊號就不再是一個 bit，而是需要其中的 <strong>sel 變寬</strong>：4 選 1 需要 2 bits，8 選 1 需要 3 bits。</p>
+<h3 id="mux4way16">Mux4Way16</h3>
+<p>規格：<code>a, b, c, d</code> 各 16 bits，<code>sel[2]</code> 選出其一。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">sel[1]</th>
+<th style="text-align:center">sel[0]</th>
+<th style="text-align:center">輸出</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">a</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">b</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">c</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">d</td>
+</tr>
+</tbody>
+</table>
+<p>設計思路——<strong>兩階段篩選法（樹狀結構）</strong>：</p>
+<ol>
+<li><strong>第一層</strong>：讓 <code>sel[0]</code> 從「a、b 之中」二選一，又從「c、d 之中」二選一：
+<ul>
+<li><code>t1 = Mux(a, b, sel[0])</code></li>
+<li><code>t2 = Mux(c, d, sel[0])</code></li>
+</ul>
+</li>
+<li><strong>第二層</strong>：讓 <code>sel[1]</code> 在 t1、t2 之間二選一：
+<ul>
+<li><code>out = Mux(t1, t2, sel[1])</code></li>
+</ul>
+</li>
+</ol>
+<p>這正是「選擇訊號的 bit 高高低低」的直覺：低位元先在每一對內部挑，高位元再挑最終的那一對。</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Mux4Way16.tst&amp;run=1">習題模擬</a></p>
+<p>注意 <code>t1</code>、<code>t2</code> 是 <strong>16-bit 內部匯流排</strong>，它們把第一階段的結果「向上傳遞」。整個電路其實就是一棵深度 2 的選擇樹。</p>
+<h3 id="真值表驗證範例-取二例">真值表驗證範例（取二例）</h3>
+<ul>
+<li><code>sel = 00</code>：<code>sel[0]=0</code> ⟹ <code>t1=a, t2=c</code>；<code>sel[1]=0</code> ⟹ <code>out=t1=a</code>。✓</li>
+<li><code>sel = 11</code>：<code>sel[0]=1</code> ⟹ <code>t1=b, t2=d</code>；<code>sel[1]=1</code> ⟹ <code>out=t2=d</code>。✓</li>
+</ul>
+<h3 id="mux8way16">Mux8Way16</h3>
+<p>規格：<code>a..h</code> 共 8 條輸入匯流排，<code>sel[3]</code>（三位元，值 0~7）選出其一。樹高再加一層即可：第一層用 <code>sel[0]</code> 做出四組兩兩選擇 <code>t1..t4</code>，第二層用 <code>sel[1]</code> 做出兩組最終選擇 <code>m1, m2</code>，第三層用 <code>sel[2]</code> 收尾。</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Mux8Way16.tst&amp;run=1">習題模擬</a></p>
+<h3 id="樹狀結構的一般化">樹狀結構的一般化</h3>
+<p>你已經掌握了 Mux 家族的全部邏輯。規律是：<strong><code>2^N</code> 路選擇需要 N bits 的 sel，使用深度 N 的二元選擇樹</strong>。第 3 章設計 RAM 的位址解碼電路時，這套思路會以「位址譯碼器」的形式再次登場。</p>
+<p>###（類比：資料訊號的「匯流排」與控制訊號的「個別 bit」）
+留意本節所有 Mux 版本的一個重要不對稱：<strong>資料輸入是 16-bit 匯流排，選擇訊號是 1~3 bit 的個別導線</strong>。選擇訊號是「指揮」，資料是「被指揮的士兵」——指揮者的 bit 寬度由「有幾條路」決定（<code>log2(路數)</code>），與資料本身多寬完全無關。這個區分一旦清晰，之後理解 CPU 控制位（ALU 的 zx/nx 等等）會輕而易舉。</p>
+<h2 id="1-4-5-多對一與一對多-dmux4way-與-dmux8way">1.4.5 多對一與一對多：DMux4Way 與 DMux8Way</h2>
+<p>有正就有反。既然 Mux 可以把多路收斂成一線，Demux 就能把一線<strong>展開</strong>到多路。當你需要「把同一張圖寫進 4 個暫存器之一」、或「把同一個時脈訊號導向其中一顆記憶體晶片」時，就會用到它們。</p>
+<h3 id="dmux4way">DMux4Way</h3>
+<p>規格：<code>in</code> 輸入，<code>sel[2]</code> 決定它前往 <code>a, b, c, d</code> 中的哪一條，其他三條輸出 0。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">sel[1]</th>
+<th style="text-align:center">sel[0]</th>
+<th style="text-align:center">a</th>
+<th style="text-align:center">b</th>
+<th style="text-align:center">c</th>
+<th style="text-align:center">d</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">in</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">in</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">in</td>
+<td style="text-align:center">0</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">in</td>
+</tr>
+</tbody>
+</table>
+<p>布林式（直接依 <code>sel</code> 拆解）：</p>
+<div class="math-display">$$
+a = in \cdot \bar{sel_1} \cdot \bar{sel_0}
+$$</div>
+<div class="math-display">$$
+b = in \cdot \bar{sel_1} \cdot sel_0
+$$</div>
+<div class="math-display">$$
+c = in \cdot sel_1 \cdot \bar{sel_0}
+$$</div>
+<div class="math-display">$$
+d = in \cdot sel_1 \cdot sel_0
+$$</div>
+<p>設計思路——<strong>先粗分再細分（多段 Demux）</strong>：先用 <code>sel[1]</code> 決定走「左半（a/b）」還是「右半（c/d）」，再用 <code>sel[0]</code> 在各自半區內定位：</p>
+<ol>
+<li><code>L = DMux(in, sel[1])</code> ⟹ <code>L.a</code> 通往 a、b 的「上半流」，<code>L.b</code> 通往 c、d 的「下半流」。</li>
+<li><code>a, b = DMux(L.a, sel[0])</code>；<code>c, d = DMux(L.b, sel[0])</code>。</li>
+</ol>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/DMux4Way.tst&amp;run=1">習題模擬</a></p>
+<p>這裡 <code>lo, hi</code> 是 1-bit 內部導線。務必注意命名含意：<code>lo</code> 是「<code>sel[1]=0</code> 的那支流」內的訊號——當 <code>sel[1]=0</code> 時 <code>lo=in</code>、<code>hi=0</code>，第二顆 DMux 再把 <code>in</code> 送去 a 或 b。</p>
+<h3 id="dmux8way">DMux8Way</h3>
+<p>同理，用三顆 DMux 組成三段分流的樹：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/DMux8Way.tst&amp;run=1">習題模擬</a></p>
+<p>（讀者可自行推導中間訊號 s1~s6 的定義——這其實就是在畫一棵 3 層的分配樹；每一層的「左枝」代表該 bit 為 0 的分支。）</p>
+<h2 id="1-4-6-多輸入單輸出-or8way-與-and-家族">1.4.6 多輸入單輸出：Or8Way 與 And 家族</h2>
+<p>生活不只有二選一。CPU 常問的一個問題是：「<strong>這 8 個 bit 裡，有沒有任何一個是 1？</strong>」——例如偵測「ALU 結果是否為零」、或判斷「位址是否命中某段」。這就是 Or8Way 的工作。</p>
+<h3 id="or8way">Or8Way</h3>
+<p>規格：8 個輸入 <code>in[8]</code>，輸出 <code>out</code>：<strong>只要任何一位輸入是 1，輸出就是 1</strong>。</p>
+<p>真值表太大了（<span class="math-inline">$2^8$</span> 列），我們用規則陳述：
+<div class="math-display">$$
+\boxed{out = in[0]+in[1]+\cdots+in[7]}
+$$</div>
+</p>
+<p>設計思路——<strong>平衡 OR 樹</strong>：把 8 個輸入兩兩 OR、合成的結果再兩兩 OR、最後一顆 OR 收尾。剛好湊成 7 顆 Or（<span class="math-inline">$8 \to 4 \to 2 \to 1$</span>）。</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../01/Or8Way.tst&amp;run=1">習題模擬</a></p>
+<p>連結串也正確（<code>Or(a=out1, b=in[2], ...)</code>），但樹狀版延遲更短、結構更對稱——數位設計中「平衡」是減少傳播延遲的通用美感。</p>
+<h3 id="反向思考-and8way-mux4way">反向思考：And8Way？ Mux4Way?</h3>
+<ul>
+<li><strong>And8Way</strong>（每位都必須為 1 才輸出 1）：把 Or 換成 And，同構複製即可——出題給你，當練習。</li>
+<li>值得一提的是，Hack 的 Nand2Tetris 官方專案中並未要求 And8Way，它往往被 <code>zero</code> 偵測電路繞過；但理解「OR 樹 ⇄ AND 樹」的對偶性，能讓你熟練運用 De Morgan 對偶——正如 <code>Or8Way(out)</code> 等價於 <code>Not(And8Way(Not(in)))</code>。</li>
+</ul>
+<h2 id="1-4-7-設計思路總結-這一個選擇樹家族給我們什麼">1.4.7 設計思路總結：這一個選擇樹家族給我們什麼</h2>
+<table>
+<thead>
+<tr>
+<th>晶片</th>
+<th>功能一句話</th>
+<th>關鍵結構</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Mux</td>
+<td>從 2 條輸入依 <code>sel</code> 選 1</td>
+<td>布林式：<code>(¬sel·a)+(sel·b)</code></td>
+</tr>
+<tr>
+<td>DMux</td>
+<td>依 <code>sel</code> 把單一輸入導向 2 條輸出之一</td>
+<td>布林式：<code>a=in·¬sel</code></td>
+</tr>
+<tr>
+<td>Not16 / And16 / Or16</td>
+<td>16 線並行、逐位元運算</td>
+<td>16 份單 bit 閘並列</td>
+</tr>
+<tr>
+<td>Mux16</td>
+<td>兩條 16-bit 匯流排依 1 bit sel 選一</td>
+<td>16 份 Mux 共用一個 sel</td>
+</tr>
+<tr>
+<td>Mux4Way16 / Mux8Way16</td>
+<td>4 / 8 條匯流排中選一條</td>
+<td>二元選擇樹，深度 = log₂(路數)</td>
+</tr>
+<tr>
+<td>DMux4Way / DMux8Way</td>
+<td>一進多出、依 sel 指派</td>
+<td>多段 Demux 樹</td>
+</tr>
+<tr>
+<td>Or8Way</td>
+<td>檢查多位中是否有任何 1</td>
+<td>平衡 OR 樹</td>
+</tr>
+</tbody>
+</table>
+<p>歸納出三條可遷移的心法：</p>
+<ol>
+<li><strong>先寫布林式，再照著接線</strong>：布林式是電路最精確的藍圖。</li>
+<li><strong>樹狀結構是「多進一出」的天生解法</strong>：每加一層 bit，路數翻倍。</li>
+<li><strong>一律只用基本閘（最終可追到 Nand）</strong>：本節所有元件都可繼續往 1.3 節展開，沒有任何「魔法」。</li>
+</ol>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>Mux</strong> 是資料流的轉轍員：<code>sel=0</code> 放行 a、<code>sel=1</code> 放行 b，布林式為 <code>(¬sel·a)+(sel·b)</code>。</li>
+<li><strong>DMux</strong> 是 Mux 的逆向：<code>sel=0</code> 把 <code>in</code> 導向 a、<code>sel=1</code> 導向 b，其餘輸出為 0。</li>
+<li>用匯流排語法 <code>in[16]</code> 把單 bit 閘擴充成 <strong>Not16 / And16 / Or16 / Mux16</strong>——逐位元運算、共用控制訊號。</li>
+<li>用「二元選擇樹」建造 <strong>Mux4Way16 / Mux8Way16</strong>，選擇訊號位元寬度 = <code>log₂(路數)</code>。</li>
+<li>用「多段分流樹」建造 <strong>DMux4Way / DMux8Way</strong>。</li>
+<li>用「平衡 OR 樹」建造 <strong>Or8Way</strong>，其對偶版 And8Way 同理可得。</li>
+</ul>
+<p>這些「交通警察」與「擴音系統」將在第二章的 ALU（選擇加法或邏輯運算）、第三章的 RAM 位址解碼，以及 CPU 的控制訊號生成中反覆登場。但在此之前，我們還欠讀者一件至關重要的事：<strong>這些 HDL 到底要怎麼實際跑起來、測起來？</strong> 下一節，我們將打開 Hardbware Simulator，撰寫測試腳本，讓這堆理論程式碼真正在模擬器裡「亮起燈號」。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="1.3.html">⇦ 上一節</a><a class="nav-btn" href="1.5.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

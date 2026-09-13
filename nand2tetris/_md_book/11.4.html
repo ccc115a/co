@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11.4 完工：將 Jack 源碼直接編譯為 VM 代碼</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link active" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="11.3.html">⇦ 上一節</a></div>
+  <div class="title">11.4 完工：將 Jack 源碼直接編譯為 VM 代碼</div>
+  <div class="nav-right"><a class="nav-btn" href="12.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch11.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="11-4-完工-將-jack-源碼直接編譯為-vm-代碼">11.4 完工：將 Jack 源碼直接編譯為 VM 代碼</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明完整的編譯器管線：詞法分析 → 語法分析 → 代碼生成，如何整合為一個可運作的程式</li>
+<li>說明如何一次編譯整個專案（多個 <code>.jack</code> 檔案），並產生對應的 <code>.vm</code> 檔案</li>
+<li>說明編譯器產出的 <code>.vm</code> 如何與第 8 章的 VM translator 對接，一路跑到 Hack 硬體</li>
+<li>用 nand2tetris 工具鏈（編譯 → 組譯 → 執行）完整跑通一個 Jack 程式</li>
+<li>掌握測試與除錯編譯器的方法（逐步輸出、比對、單元測試）</li>
+<li>理解完整編譯器的程式碼實作策略與模組分工</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>恭喜，我們走到第 11 章的最後一哩路。前面三節我們已經把三塊拼圖備齊：符號表（11.1）、物件翻譯（11.2）、陣列與指標（11.3）。現在，是時候把它們和「詞法分析」與「語法分析」焊接在一起，交付一整台<strong>能真正工作的 Jack 編譯器</strong>。</p>
+<p>回顧整趟旅程：第 6 章組譯器把組語翻成機器碼，第 8 章 VM translator 把 VM 翻成組語，而第 10 章＋本章的編譯器把 <strong>Jack（高階語言）</strong> 一路翻成組語可執行的形式。到這一刻，我們擁有了一條完整的流水線：</p>
+<pre><code>    Jack 源碼 ──► [Jack 編譯器] ──► VM ──► [VM translator] ──► 組語 ──► [組譯器] ──► 機器碼 ──► Hack 電腦
+</code></pre>
+<p>本節要做的，就是讓「Jack 編譯器」這一環真正成真：它吃下一整個專案的所有 <code>.jack</code> 檔案，吐出等量的 <code>.vm</code> 檔案，然後我們把它餵給現成的工具鏈，親眼看著自己的高階語言程式在模擬器上執行。</p>
+<hr />
+<h2 id="1-編譯器管線總覽-四大模組">1. 編譯器管線總覽：四大模組</h2>
+<p>一個完整的 Jack 編譯器由四個層次分明、可獨立測試的模組構成：</p>
+<pre><code>                 ┌──────────────────────┐
+   Jack 原始碼   │   1. JackTokenizer    │  詞法分析：切成 token 串流
+                 └──────────────────────┘
+                            │ token 串流
+                 ┌──────────────────────┐
+                 │   2. CompilationEngine│  語法分析 + 代碼生成（遞迴下降）
+                 └──────────────────────┘
+                            │ .vm 指令
+                 ┌──────────────────────┐
+                 │   3. SymbolTable      │  11.1 節：查名字、得段與偏移
+                 └──────────────────────┘
+                 ┌──────────────────────┐
+                 │   4. VMWriter         │ 把抽象動作寫成 .vm 文字
+                 └──────────────────────┘
+                            ▼
+                        .vm 檔案
+</code></pre>
+<ul>
+<li><strong>JackTokenizer（詞法分析）</strong>：把原始碼切成一顆顆 token，過濾空白與註解。這是第 10 章已經做好的部分，直接用。</li>
+<li><strong>CompilationEngine（語法分析＋代碼生成）</strong>：按文法走訪 token，同時<strong>邊剖析邊發 VM 指令</strong>。這是本章的主力模組，採用「編譯後端（syntax-directed translation）」——剖析的同時就把動作吐出來，不必先建一整棵樹。</li>
+<li><strong>SymbolTable（符號表）</strong>：11.1 節那張能查名字、得段與偏移的表。</li>
+<li><strong>VMWriter（VM 寫入器）</strong>：把「push/pop/call/function……」這些抽象動作寫進輸出檔的薄介面。它接受 <code>push(&quot;local&quot;, 3)</code> 之類的高階呼叫，內部轉成 <code>push local 3</code> 的實體文字。</li>
+</ul>
+<blockquote>
+<p><strong>設計思路</strong>：把 writer 獨立出來，是為了讓 CompilationEngine 不必管「VM 指令長什麼字面樣」——Engine 只說「我要 <code>push</code> 一個 local 3、<code>call</code> 一個 <code>Math.multiply</code> 吃兩個參數」，writer 負責排版。這種「發令者」與「執行細務」的分離，讓整隻編譯器好讀、好改、好測。</p>
+</blockquote>
+<hr />
+<h2 id="2-從-token-到-vm-語法在前-動作在後">2. 從 token 到 VM：語法在前、動作在後</h2>
+<p>CompilationEngine 是關鍵。它採用<strong>遞迴下降</strong>（recursive descent）的方式，針對 Jack 文法中的每個產生式（rule）寫一個對應的剖析方法。例如 Jack 的 assign 陳述式：</p>
+<pre><code>statements: statement*
+statement : letStatement | ifStatement | whileStatement | doStatement | returnStatement
+letStatement: 'let' varName ('[' expression ']')? '=' expression ';'
+</code></pre>
+<p>Engine 就有 <code>compileStatements()</code>、<code>compileLet()</code>、<code>compileIf()</code>、<code>compileExpression()</code>……每個方法先依文法取 token，再在適當時機呼叫 VMWriter 發指令。</p>
+<p>一個最有代表性的對照：<strong><code>term</code> 遇見 <code>varName</code> 時</strong>，得判斷它是普通變數、陣列元素，還是字串常數。這就是 11.1、11.3 的符號表與指標技巧真正發光發熱的地方：</p>
+<pre><code class="language-python">def compile_term(self):
+    token, kind, value = self.tokenizer.peek()
+    if token == 'identifier':
+        if self.tokenizer.peek(1) == '[':       # 陣列元素：a[i]
+            self.compile_array_read()            # (11.3：base+index→that→push that 0)
+        else:
+            self.compile_var_push()              # 查符號表 → push segment index
+    elif token == 'integerConstant':
+        self.writer.write_push('constant', value)
+    # ... 其餘：字串、運算子括號、subroutine call……
+</code></pre>
+<p>如此一來，整隻編譯器的工作就變成：「<strong>沿文法走，遇到該『取值』時 push、該『存值』時 pop、該『呼叫』時 call</strong>」。</p>
+<hr />
+<h2 id="3-編譯整個專案-多個-jack-檔案">3. 編譯整個專案：多個 .jack 檔案</h2>
+<p>Jack 專案通常由多個類別組成，例如一個猜數字遊戲可能是：</p>
+<pre><code>Main.jack
+Game.jack
+Player.jack
+</code></pre>
+<p>nand2tetris 的作業規定：<strong>每個 <code>.jack</code> 檔對應一個 <code>.vm</code> 檔</strong>。編譯器要：</p>
+<ol>
+<li>掃描目錄，找出所有 <code>.jack</code> 檔案</li>
+<li>對每個 <code>.jack</code> 檔，把內容丟給 tokenizer → engine 走一遍</li>
+<li>產出同名的 <code>.vm</code> 檔（例如 <code>Main.jack → Main.vm</code>）</li>
+</ol>
+<p>在 Python 主程式裡大概是：</p>
+<pre><code class="language-python">import os, sys
+from jack_tokenizer import JackTokenizer
+from compilation_engine import CompilationEngine
+
+def compile_file(jack_path, vm_path):
+    tk = JackTokenizer(jack_path)
+    engine = CompilationEngine(tk, vm_path)   # 邊剖析邊寫
+    engine.compile_class()                     # 剖析整類並輸出 VM
+    engine.close()
+
+def main(dir_path):
+    for name in sorted(os.listdir(dir_path)):
+        if name.endswith(&quot;.jack&quot;):
+            base = name[:-5]                   # 去掉 .jack
+            compile_file(
+                os.path.join(dir_path, name),
+                os.path.join(dir_path, base + &quot;.vm&quot;),
+            )
+
+if __name__ == &quot;__main__&quot;:
+    main(sys.argv[1])
+</code></pre>
+<p>每個 <code>.jack</code> 的編譯就是呼叫一次 <code>compile_class()</code>——它會開一張新的類別符號表，然後依序處理 static/field 宣告與所有 subroutine。</p>
+<hr />
+<h2 id="4-產出的-vm-如何與-vm-translator-對接">4. 產出的 .vm 如何與 VM translator 對接</h2>
+<p>編譯產物是一堆 <code>.vm</code> 檔。下一站是我們第 8 章親手打造的 <strong>VM translator</strong>：它接收一個目錄（或單一 .vm 檔），把所有 <code>.vm</code> 合併產生一個單一的 <code>.asm</code> 檔，其中的 <code>function/call/return</code> 都會被翻譯成真正的 Hack 組語（包含 C_ALLOC 這類的記憶體初始化）。</p>
+<p>一個「完整可執行」的 Jack 程式，還需要 <strong>Jack OS</strong>（<code>Sys.jack</code> 等作業系統類別）一同編譯。整個 apps 資料夾的標準布局例如：</p>
+<pre><code>Main.jack      ← 主程式（Sys.init 會對其呼叫）
+...其他.jack
+Sys.jack       ← OS：Sys.init、Memory、Math、Output、Keyboard、String、Array、Screen…
+</code></pre>
+<p>Sys.init 是程式入口，它會 <code>call Main.main</code> 去啟動使用者程式。所以「完整跑通」的順序是：</p>
+<ol>
+<li><strong>編譯</strong>：把所有 <code>.jack</code>（含 Sys 與你的類別）統統編成 <code>.vm</code>。</li>
+<li><strong>翻譯</strong>：VM translator 把整個 <code>.vm</code> 資料夾合成 <code>.asm</code>。</li>
+<li><strong>組譯</strong>：第 6 章的組譯器把 <code>.asm</code> 變成 <code>.hack</code>。</li>
+<li><strong>執行</strong>：第 5 章（或模擬器 / CPU emulator）載入 <code>.hack</code> 執行。</li>
+</ol>
+<p>在 nand2tetris 提供的 <strong>CPU Emulator</strong> 網頁工具裡，甚至可以「直接載入資料夾的 .vm」，由內建 translator 現場翻譯執行——非常適合快速驗證「編譯器輸出正確與否」。</p>
+<hr />
+<h2 id="5-用-nand2tetris-工具鏈完整跑通">5. 用 nand2tetris 工具鏈完整跑通</h2>
+<p>以下是以官方提供的工具鏈（Software Suite）跑一個專案的標準流程：</p>
+<p><strong>假設目錄</strong> <code>projects/11/Pong/Pong.jack</code>（含其他 .jack）。目標：把 Pong 編譯 → 執行。</p>
+<h3 id="步驟-1-編譯-你的編譯器">步驟 1：編譯（你的編譯器）</h3>
+<pre><code class="language-bash">python3 my_compiler.py projects/11/Pong
+</code></pre>
+<p>得到一堆 <code>.vm</code>。你也可以用官方的 <strong>JackCompiler</strong> 交叉比對：</p>
+<pre><code class="language-text">命執行 JackCompiler 於資料夾 → 也產生 .vm，供兩邊 diff 比對
+</code></pre>
+<h3 id="步驟-2-翻譯-組譯">步驟 2：翻譯 + 組譯</h3>
+<p>用 <strong>VM Emulator</strong> 或 <strong>CPU Emulator</strong> 的圖形工具開啟 <code>.vm</code> 資料夾，工具鏈會自動完成 <code>.vm → .asm → 執行</code>。</p>
+<p>或者走命令列完整鏈：</p>
+<pre><code class="language-bash"># 步驟 A：VM→組語（VM translator）
+python3 vm_translator.py /path/to/Pong       # 產生 Pong.asm
+# 步驟 B：組語→機器碼（組譯器）
+python3 assembler.py Pong.asm                # 產生 Pong.hack
+# 步驟 C：載入 CPU Emulator 執行 Pong.hack
+</code></pre>
+<h3 id="步驟-3-驗證">步驟 3：驗證</h3>
+<p>在 CPU Emulator 中，應該能看到 Pong 遊戲畫面出現、球反彈、記分。若畫面錯誤，多半要回到編譯器找 bug。</p>
+<blockquote>
+<p><strong>設計思路</strong>：nand2tetris 工具鏈的最大好處是把「硬體執行」與「編譯正確性」解耦。你的編譯器只要產出<strong>語意正確的 .vm</strong>，剩下的交給成熟的 translator＋emulator 即可。所以你的除錯重心應完全放在 .vm 的內容上。</p>
+</blockquote>
+<hr />
+<h2 id="6-測試與除錯編譯器的方法">6. 測試與除錯編譯器的方法</h2>
+<p>編譯器出錯才是最痛苦的除錯，因為「第一行程式碼看起來對、但整支程式卻跑不出來」。以下是務實的策略，由淺入深。</p>
+<h3 id="6-1-逐步輸出-tracing">6.1 逐步輸出（tracing）</h3>
+<p>在 <code>compile_*</code> 方法裡加入可選的 print，觀察剖析流程：</p>
+<pre><code class="language-python">def compile_let(self):
+    print(&quot;[compileLet]&quot;)          # 可選除錯輸出
+    self.tokenizer.advance()       # 吃掉 'let'
+    # ...
+</code></pre>
+<p>這是了解「剖析走到哪、token 是哪顆」的最快方式。</p>
+<h3 id="6-2-與官方編譯器-diff-比對">6.2 與官方編譯器 diff 比對</h3>
+<p>這是最強的一招。對同一個 <code>.jack</code>：</p>
+<ol>
+<li>用<strong>官方 JackCompiler</strong> 編譯出 <code>official.vm</code></li>
+<li>用自己的編譯器編譯出 <code>mine.vm</code></li>
+<li><code>diff</code> 兩者</li>
+</ol>
+<pre><code class="language-bash">diff official.vm mine.vm
+</code></pre>
+<p>兩者雖不保證逐字相同（例如 while 的標號命名、常數處理方式），但只要語意一致，大體結構應相似。靠著這招，可以把錯誤範圍迅速縮小到「某一種陳述式」甚至「某一小段指令」。</p>
+<h3 id="6-3-用測試檔案逐特性驗證">6.3 用測試檔案逐特性驗證</h3>
+<p>nand2tetris 官方提供了一系列 <code>.jack</code> 測試檔，每個針對一種語法特性（ExpressionLessSquare、Square、ArrayTest、StatementsTest 等）。對每個測試檔：</p>
+<ul>
+<li>先用官方編譯器編譯，取得 <code>.vm.tst</code> 的「期望對照輸出」</li>
+<li>再跑自己的編譯器，看能不能通過官方附的 <code>.tst</code> 測試腳本</li>
+</ul>
+<p>這叫做<strong>黃金級（golden）對照測試</strong>——拿標準答案當標尺。</p>
+<h3 id="6-4-在-vm-emulator-上單步">6.4 在 VM Emulator 上單步</h3>
+<p>VM Emulator 可以一步步執行你的 .vm，看 stack、段、指標的變化。對照官方解法跑同一組動作，若某個 <code>pop this 0</code> 之後值不對，就回溯到「那條指令的產生邏輯」去修。</p>
+<h3 id="6-5-常見-bug-樣板">6.5 常見 bug 樣板</h3>
+<p>編譯器除錯時特別留意這幾類慣犯：</p>
+<ul>
+<li><strong>this 沒設好</strong>：method prologue 忘了 <code>argument 0 → pointer 0</code>，導致 field 全部指向錯誤位址。</li>
+<li><strong>constructor 沒回 this</strong>：少了結尾 <code>push pointer 0</code>，呼叫者拿到垃圾位址。</li>
+<li><strong>該 pop temp 卻留著回傳值</strong>：<code>do</code> 陳述式呼叫後沒丟棄回傳值，污染 stack。</li>
+<li><strong>while 標號跳錯</strong>：<code>if-goto</code> 的條件方向搞反（<code>not</code> 多/少一次）。</li>
+<li><strong>符號表沒在 subroutine 邊界重設</strong>：subroutine 符號表跨了界，index 錯亂，陣列/參數全錯位。</li>
+</ul>
+<p>掌握這些樣板，能大幅縮短你「看到壞輸出→找到壞函式」的距離。</p>
+<hr />
+<h2 id="7-完整編譯器程式碼實作策略">7. 完整編譯器程式碼實作策略</h2>
+<p>最後，整理一份「從零到可用」的實作策略，依照依賴順序推出：</p>
+<ol>
+<li><strong>先有 JackTokenizer</strong>（第 10 章）：確認它能吐出一串 token。</li>
+<li><strong>建立 VMWriter</strong>：提供 <code>write_push(seg, index)</code>、<code>write_pop</code>、<code>write_arithmetic(op)</code>、<code>write_label</code>、<code>write_goto</code>、<code>write_if</code>、<code>write_call(name, nArgs)</code>、<code>write_function(name, nVars)</code>、<code>write_return</code>、<code>close()</code>。</li>
+<li><strong>建立 SymbolTable</strong>（11.1）：能 <code>start_subroutine/define/var_count/kind_of/type_of/index_of</code>。</li>
+<li><strong>寫 CompilationEngine 的 <code>compile_class</code></strong>：開類別符號表 → static/field → 各 subroutine。</li>
+<li><strong>依序實作 subroutine 三種</strong>：constructor（alloc 回 this）、method（this 設 THIS）、function。</li>
+<li><strong>再實作 statements 與 expression</strong>：let/if/while/do/return；term 依 11.2/11.3 處理物件呼叫與陣列。</li>
+<li><strong>用官方測試檔逐一過關</strong>，與官方 <code>.vm</code> diff，修正差異。</li>
+<li><strong>合併成主程式</strong>（編譯整個資料夾）並接上工具鏈跑通完整專案（如 Pong）。</li>
+</ol>
+<p>對照官方 Java 版的典型類別命名，你的 Python 版大致是：</p>
+<pre><code>JackTokenizer.py        # 詞法
+SymbolTable.py          # 符號表
+VMWriter.py             # 寫 VM
+CompilationEngine.py    # 遞迴下降剖析 + 發指令
+JackCompiler.py         # 主程式：掃描資料夾、串接各模組
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：關鍵心法是<strong>由上而下切、由下而上組</strong>。剖析規則（文法）定義「怎麼走」，符號表與 VMWriter 定義「走到後做什麼」，兩者透過 CompilationEngine 咬合。任何一層都保持清晰單一職責，之後想支援更多語法（例如 JC）時，只要在對應的 compile_* 方法動手，其餘不動。</p>
+</blockquote>
+<hr />
+<h2 id="8-本章小結-本節">8. 本章小結（本節）</h2>
+<ul>
+<li>完整編譯器 = <strong>詞法（tokenizer）＋ 語法/代碼生成（engine）＋ 符號表 ＋ 寫入器（writer）</strong>。</li>
+<li>CompilationEngine 用<strong>遞迴下降</strong>邊剖析邊發 VM 指令（syntax-directed translation），不必先建整棵樹。</li>
+<li>編譯一個專案＝對每個 <code>.jack</code> 產生對應的 <code>.vm</code>；主程式只要掃描資料夾、逐一呼叫 <code>compile_class()</code>。</li>
+<li>產出的 <code>.vm</code> 交由 VM translator → 組譯器 → Hack 電腦執行；標準 nand2tetris 工具鏈（CPU Emulator / VM Emulator）可快速驗證。</li>
+<li>完整跑通 = <strong>編譯 → 翻譯 → 組譯 → 載入執行</strong>，可搭配官方工具縮短驗證迴路。</li>
+<li>除錯策略：逐步輸出、與官方 <code>.vm</code> diff、官方黃金測試檔、VM Emulator 單步、熟記常見 bug 樣板。</li>
+<li>實作次序：先讓 tokenizer 穩定，再 writer → symbol table → engine → 主程式，最後用測試檔逐特性的關閉缺口。</li>
+</ul>
+<p>到這裡，你已經擁有了一把完整的魔法棒：<strong>從一行高階的 Jack 程式，到最終在 Hack 硬體上跳動的 0 與 1</strong>。第 6、8、10 章與本章的四把鑰匙，終於湊齊了整套「從原始碼到機器碼」的編譯工具鏈。接下來，你可以把玩你自己的高階語言、寫自己的遊戲（如 Pong、Tetris、甚至迷你作業系統），真正體會「從無到有，手寫一台電腦」的完整奇幻旅程。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="11.3.html">⇦ 上一節</a><a class="nav-btn" href="12.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

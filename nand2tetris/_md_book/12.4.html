@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12.4 字型與輸入：Output &amp; Keyboard</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link active" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="12.3.html">⇦ 上一節</a></div>
+  <div class="title">12.4 字型與輸入：Output &amp; Keyboard</div>
+  <div class="nav-right"><a class="nav-btn" href="12.5.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch12.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="12-4-字型與輸入-output-amp-keyboard">12.4 字型與輸入：Output &amp; Keyboard</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明 <code>Output</code> 類別的 API：打印字元、打印字串、換行、游標控制</li>
+<li>解釋<strong>字型表（font map）</strong> 的結構：每個字元如何由 11 行 × 8 位元的位元圖表示</li>
+<li>說明如何把一個字元「畫」上螢幕（把字元代碼換成字型位元圖，再逐行寫入螢幕記憶體）</li>
+<li>說明 <code>Keyboard</code> 類別的 API：<code>keyPressed</code>、<code>readChar</code>、<code>readLine</code>、<code>readInt</code></li>
+<li>解釋鍵盤掃描碼（keyboard scan code）的處理流程與字元映射</li>
+<li>讀懂並維護完整的 <code>Output.jack</code> 與 <code>Keyboard.jack</code></li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>上一節，我們學會讓 Hack 在螢幕上畫圖——但那是像素的世界。人類要讀的是<strong>文字</strong>。想像你在玩一個數獨遊戲：畫格線很簡單（<code>drawLine</code> 就能畫），但「把數字 5 寫進格子裡」就麻煩了——除非有文字引擎。</p>
+<p>同樣地，讓使用者輸入也不是硬體直接給的。Hack 的鍵盤是<strong>記憶體映射</strong>的：某個位址存著「剛剛按下的鍵的掃描碼」，掃描碼是數字（如 <code>97</code> 表示 <code>a</code>），不是「字元」本身。我們需要 <code>Output</code>（把文字畫上螢幕）與 <code>Keyboard</code>（把鍵盤掃描碼讀成可用的字元/字串/整數）這兩個類別。</p>
+<p>本節我們做兩件事：</p>
+<ol>
+<li><strong><code>Output</code></strong>：管理一個「文字游標」，把字元（透過字型表）逐字畫到螢幕上，處理換行、捲動。</li>
+<li><strong><code>Keyboard</code></strong>：讀取鍵盤狀態，把掃描碼映射成字元，並提供 <code>readChar</code> / <code>readLine</code> / <code>readInt</code> 等高階輸入。</li>
+</ol>
+<p>兩者搭配，電腦終於能「說人話、聽人話」。</p>
+<hr />
+<h2 id="1-output-類別的-api">1. Output 類別的 API</h2>
+<p><code>Output</code> 提供的類別方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>簽名</th>
+<th>功能說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>init</code></td>
+<td><code>Output.init()</code></td>
+<td>初始化文字輸出位置到左上角</td>
+</tr>
+<tr>
+<td><code>moveCursor</code></td>
+<td><code>Output.moveCursor(int row, int column)</code></td>
+<td>把游標移到第 <code>row</code> 列、第 <code>column</code> 欄</td>
+</tr>
+<tr>
+<td><code>printChar</code></td>
+<td><code>Output.printChar(char c)</code></td>
+<td>在游標位置打印字元 <code>c</code>，並前進游標</td>
+</tr>
+<tr>
+<td><code>printString</code></td>
+<td><code>Output.printString(String s)</code></td>
+<td>依序打印字串 <code>s</code> 的每個字元</td>
+</tr>
+<tr>
+<td><code>printInt</code></td>
+<td><code>Output.printInt(int i)</code></td>
+<td>打印整數 <code>i</code> 的十進位表示</td>
+</tr>
+<tr>
+<td><code>println</code></td>
+<td><code>Output.println()</code></td>
+<td>換行（新行）</td>
+</tr>
+<tr>
+<td><code>backSpace</code></td>
+<td><code>Output.backSpace()</code></td>
+<td>後退一格（擦掉一個字元）</td>
+</tr>
+</tbody>
+</table>
+<p>螢幕是 256 列 × 512 欄像素；若每個字元佔 <strong>8 像素寬 × 11 像素高</strong>，則可以容納的「字元格」是：</p>
+<ul>
+<li>水平：<code>512 / 8 = 64</code> 個欄位（columns，0..63）</li>
+<li>垂直：<code>256 / 11 = 23</code> 個列（rows，0..22）</li>
+</ul>
+<p>所以 <code>moveCursor(row, column)</code> 的 <code>row</code> 在 0..22、<code>column</code> 在 0..63。</p>
+<hr />
+<h2 id="2-字型表-每個字元-11-行-8-位元">2. 字型表：每個字元 11 行 × 8 位元</h2>
+<h3 id="2-1-什麼是字型表">2.1 什麼是字型表</h3>
+<p>為了把字元 <code>A</code> 畫上螢幕，我們需要知道「<code>A</code> 長什麼樣」。這就是<strong>字型表（font map）</strong> 的用途：一張「字元 → 位元圖」的對照表。</p>
+<p>每個字元在螢幕上佔 <strong>8 像素寬 × 11 像素高</strong>。Nand2Tetris 用<strong>每字元 11 個 16 位元字</strong>來表示，但只用到每字元的低 8 位（8 像素寬）。也就是說：</p>
+<pre><code>字元 'A' 由 11 行組成，每一行是一個 8 位元的 bit-map：
+  行 0:  00010000   (最上方一列，只有中間一個點)
+  行 1:  00111000
+  行 2:  01101100
+  ...
+  行 10: 00000000
+</code></pre>
+<h3 id="2-2-位元圖的意義">2.2 位元圖的意義</h3>
+<p>每一行的 8 個位元（bit 0..bit 7）對應該行「左到右」的 8 個像素。位元為 1 → 該像素是前景色（黑），0 → 背景（白）。</p>
+<p>Nand2Tetris 的字型表 <code>Output.font[]</code> 是一個 <code>Array</code>，每個字元佔 11 個連續項目。字元 <code>c</code> 的第 <code>i</code> 行，就存放在 <code>Output.font[c * 11 + i]</code>。</p>
+<h3 id="2-3-字型表怎麼畫">2.3 字型表怎麼畫</h3>
+<p>把字元畫上螢幕的步驟：</p>
+<ol>
+<li>取出該字元的 11 行位元圖。</li>
+<li>對每一行 <code>i</code>（0..10），把它畫到螢幕的 <code>(row*11 + i)</code> 那一列像素、<code>column*8</code> 那一段 8 像素範圍。</li>
+<li>位元 <code>j</code> 為 1 → 把該像素畫黑；為 0 → 畫白（或忽略，視背景）。</li>
+</ol>
+<p>例如在格子 <code>(row, column)</code> 畫 <code>A</code> 的第一行：像素 <code>y = row*11 + 0</code>，像素 <code>x0 = column*8</code> 起，往右最多 8 個像素對應 8 個位元。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼 8 像素寬卻用 16 位元存放？因為 Hack 的字是 16 位元，用整個字存一行（只用低 8 位）比「一個位元一個位元擠」更簡單，且 16 位元字剛好對齊記憶體存取。這是以些微空間換取存取簡單的設計。</p>
+</blockquote>
+<p>下面畫「字元的第一個像素列」的示意（<code>A</code>，寬 8、高 11）：</p>
+<pre><code>Column:  0 1 2 3 4 5 6 7
+行0:     0 0 0 1 0 0 0 0     → 0x08
+行1:     0 0 1 1 1 0 0 0     → 0x1C
+行2:     0 1 1 0 1 1 0 0     → 0x36
+行3:     1 0 0 0 0 0 1 0     → 0x82
+行4:     1 1 1 1 1 1 1 0     → 0xFE   ← 中間橫槓
+行5:     1 0 0 0 0 0 1 0     → 0x82
+行6:     1 0 0 0 0 0 1 0     → 0x82
+行7:     1 0 0 0 0 0 1 0     → 0x82
+行8:     1 0 0 0 0 0 1 0     → 0x82
+行9:     1 0 0 0 0 0 1 0     → 0x82
+行10:    0 0 0 0 0 0 0 0     → 0x00
+</code></pre>
+<p>把這 11 個位元組（0x08, 0x1C, 0x36, 0x82, 0xFE, ...）依序放進字型表，就定義了 <code>A</code>。</p>
+<h3 id="2-4-jack-語言的字元表示">2.4 Jack 語言的字元表示</h3>
+<p>Jack 需要把字元 <code>&#x27;A&#x27;</code> 轉成它的 ASCII 碼 65。Jack 提供內建的字元常數 <code>&#x27;A&#x27;</code>，並用 <code>String</code> 類別的操作（<code>charAt</code>）取得字元。字元在 Jack 中其實就是 0..127 的整數（ASCII）。</p>
+<hr />
+<h2 id="3-把字元畫上螢幕-printchar">3. 把字元畫上螢幕：printChar</h2>
+<p><code>printChar</code> 是 Output 的核心。它把字元畫在目前游標所在格子，並把游標向右移動一格（或換行）。</p>
+<pre><code>function void printChar(char c) {
+    var int i, j, charAddr, line, x, y;
+    var int column, row;
+
+    // 取得目前游標位置（row: 0..22, column: 0..63）
+    let row = cursorRow;
+    let column = cursorCol;
+
+    // 取得這個字元的字型表起始位址
+    let charAddr = font + c * 11;   // 字元 c 的第 0 行
+
+    // 對每一行（垂直）
+    let i = 0;
+    while (i &lt; 11) {
+        let line = Memory.peek(charAddr + i);   // 這行的 16 位元位元圖
+        // 畫 8 個像素
+        let x = column * 8;
+        let y = row * 11 + i;
+        let j = 0;
+        while (j &lt; 8) {
+            // 檢查第 j 個位元（由左到右）
+            let bitMask = 1 &lt;&lt; (7 - j);   // bit7 = 最左
+            if (line &amp; bitMask) {
+                do Screen.drawPixel(x + j, y);
+            }
+            let j = j + 1;
+        }
+        let i = i + 1;
+    }
+
+    // 換行 / 捲動處理
+    // 若此格是最後一欄，則換行
+    if (column = 63) {
+        do println();
+    } else {
+        // 直接把游標前進一格
+        let cursorCol = column + 1;
+    }
+    return;
+}
+</code></pre>
+<p>為了效率，真正的 <code>Output</code> 不會逐像素呼叫 <code>drawPixel</code>，而是直接寫入螢幕記憶體（一次寫一個 16 位元字的前 8 位）。但上述「逐像素」版本清楚地展示了「字元如何變成螢幕上的點」，是理解原理的最好切入點。官方版本會用 <code>Memory.poke</code> 直接寫，速度更快。</p>
+<h3 id="3-1-涵蓋-印出控制字元">3.1 涵蓋「印出控制字元」</h3>
+<p><code>printChar</code> 也要處理特殊字元：</p>
+<ul>
+<li><code>&#x27;\n&#x27;</code>（換行碼 10? 或 <code>&#x27;\n&#x27;</code>）：實際上的換行由 <code>println()</code> 處理；若 <code>printChar</code> 收到換行符，就呼叫 <code>println</code>。</li>
+<li><code>&#x27;\b&#x27;</code>（倒退碼）：呼叫 <code>backSpace</code>。</li>
+</ul>
+<p>官方 <code>Output.printChar</code> 開頭會判斷：</p>
+<pre><code>if (c = '\n') { do println(); return; }
+if (c = '\b') { do backSpace(); return; }
+</code></pre>
+<p>這樣高階的 <code>printString</code> 才能處理字串中的換行與倒退。</p>
+<hr />
+<h2 id="4-printstring-printint-println-backspace-movecursor">4. printString、printInt、println、backSpace、moveCursor</h2>
+<h3 id="4-1-printstring">4.1 printString</h3>
+<p>逐字元呼叫 <code>printChar</code>：</p>
+<pre><code>function void printString(String s) {
+    var int i, len, c;
+    let len = s.length();
+    let i = 0;
+    while (i &lt; len) {
+        let c = s.charAt(i);
+        do printChar(c);
+        let i = i + 1;
+    }
+    return;
+}
+</code></pre>
+<h3 id="4-2-printint">4.2 printInt</h3>
+<p>把整數的十進位數字依序打印。方法是「從最高位到個位」：可以先算出位數，或利用除法逐步取出每一位。</p>
+<pre><code>function void printInt(int i) {
+    var int n, digit, pow, d;
+
+    if (i &lt; 0) {
+        do printChar('-');
+        let i = -i;
+    }
+    // 找出最大位數權重：10^k &lt;= i
+    let pow = 1;
+    let n = i;
+    while (n &gt;= 10) {     // 小心：n 可能為負/溢位，見下方說明
+        let pow = pow * 10;
+        let n = n / 10;
+    }
+    // 從最高位印到個位
+    let n = i;
+    while (pow &gt; 0) {
+        let digit = n / pow;          // 目前最高位的數字
+        do printChar(digit + 48);     // 轉成 ASCII 數字（'0' = 48）
+        let n = n - digit * pow;
+        let pow = pow / 10;
+    }
+    return;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>digit + 48</code> 因為 ASCII 中 <code>&#x27;0&#x27;</code>=48、<code>&#x27;1&#x27;</code>=49、... <code>&#x27;9&#x27;</code>=57，所以「數字 digit」+ 48 就得到對應 ASCII。<code>printInt</code> 依賴 <code>Math</code> 的除法，再一次說明 OS 類別間的依賴鏈。<strong>注意 16 位元溢位問題</strong>：極大數值的 <code>pow*10</code> 可能溢位，實務上需小心，這裡先掌握原理。</p>
+</blockquote>
+<h3 id="4-3-println">4.3 println</h3>
+<p>把游標移到下一列開頭；若已是最後一列（row=22），則<strong>捲動</strong>（把整份文字上移一列，最下面清空）。簡化版：</p>
+<pre><code>function void println() {
+    var int row, col;
+    let row = cursorRow;
+    let col = cursorCol;
+    // 若已在最下一列，捲動螢幕
+    if (row &lt; 22) {
+        let cursorRow = row + 1;
+    } else {
+        // 捲動：把第 1..22 列往上移，清空最後一列
+        do scrollUp();
+        // cursorRow 不變（仍在最後一列，但內容已上移）
+    }
+    let cursorCol = 0;
+    return;
+}
+</code></pre>
+<h3 id="4-4-backspace">4.4 backSpace</h3>
+<p>把游標往回一格，並擦掉那個字元：</p>
+<pre><code>function void backSpace() {
+    var int col, row;
+    let row = cursorRow;
+    let col = cursorCol;
+    if (col &gt; 0) {
+        // 往回一欄
+        let cursorCol = col - 1;
+        // 擦掉該字元：把該格子清成空白
+        do moveCursor(row, cursorCol);
+        do printChar(' ');  // 印空白覆蓋
+        do moveCursor(row, cursorCol);
+    } else if (row &gt; 0) {
+        // 回到上一列最後一欄（簡化：回到上一列行首）
+        let cursorRow = row - 1;
+        let cursorCol = 63;
+    }
+    return;
+}
+</code></pre>
+<h3 id="4-5-movecursor">4.5 moveCursor</h3>
+<p>直接設定游標座標並把游標恆定位置（官方還會在上一個位置畫一個下底線游標）。簡化版只設座標：</p>
+<pre><code>function void moveCursor(int row, int column) {
+    // 範圍限制
+    var int r, c;
+    let r = row;
+    let c = column;
+    if (r &lt; 0) { let r = 0; }
+    if (r &gt; 22) { let r = 22; }
+    if (c &lt; 0) { let c = 0; }
+    if (c &gt; 63) { let c = 63; }
+    let cursorRow = r;
+    let cursorCol = c;
+    return;
+}
+</code></pre>
+<hr />
+<h2 id="5-keyboard-類別的-api">5. Keyboard 類別的 API</h2>
+<p><code>Keyboard</code> 提供的類別方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>簽名</th>
+<th>功能說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>keyPressed</code></td>
+<td><code>Keyboard.keyPressed() → int</code></td>
+<td>回傳目前被按下鍵的掃描碼；沒按時回傳 0</td>
+</tr>
+<tr>
+<td><code>readChar</code></td>
+<td><code>Keyboard.readChar() → char</code></td>
+<td>等待使用者按一個鍵，回傳對應字元（並無回顯於螢幕，接受後回傳）</td>
+</tr>
+<tr>
+<td><code>readLine</code></td>
+<td><code>Keyboard.readLine(String message) → String</code></td>
+<td>顯示提示字串，讀取一行使用者輸入，回傳該行（最後按 Enter）</td>
+</tr>
+<tr>
+<td><code>readInt</code></td>
+<td><code>Keyboard.readInt(String message) → int</code></td>
+<td>顯示提示字串，讀取一行並解析成整數回傳</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-1-鍵盤掃描碼">5.1 鍵盤掃描碼</h3>
+<p>Hack 鍵盤是記憶體映射的：位址 <code>KBD = 24576</code>。讀 <code>RAM[24576]</code> 即得到「目前被按下鍵的掃描碼」。掃描碼對應表（部分）：</p>
+<table>
+<thead>
+<tr>
+<th>掃描碼</th>
+<th>鍵</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td><code>space</code>（空格）</td>
+</tr>
+<tr>
+<td>48..57</td>
+<td><code>0</code>..<code>9</code></td>
+</tr>
+<tr>
+<td>65..90</td>
+<td><code>A</code>..<code>Z</code>（注意是<strong>大寫</strong>）</td>
+</tr>
+<tr>
+<td>128..135</td>
+<td><code>F1</code>..<code>F8</code> 等</td>
+</tr>
+<tr>
+<td>130,131,132,133</td>
+<td>方向鍵</td>
+</tr>
+</tbody>
+</table>
+<p>特別注意：<strong>掃描碼大寫字母 <code>A</code>..<code>Z</code>，不是小寫</strong>。Hack 鍵盤無論 CapsLock，按 <code>a</code> 都會給 <code>65</code>（大寫 <code>A</code>）。因此 <code>readChar</code> 常需要把大寫映射成小寫（若想要小寫的話）。這是掃描碼處理的常見細節。</p>
+<blockquote>
+<p><strong>設計思路</strong>：掃描碼與 ASCII 並不完全一致——例如字母是大寫。<code>Keyboard</code> 的職責之一就是把「掃描碼」轉成「應用程式想用的字元」。<code>readChar</code> 可以做這種映射，或讓應用程式自己決定。</p>
+</blockquote>
+<hr />
+<h2 id="6-keypressed-與-readchar">6. keyPressed 與 readChar</h2>
+<h3 id="6-1-keypressed">6.1 keyPressed</h3>
+<p>最底層：讀記憶體映射位址 24576：</p>
+<pre><code>function int keyPressed() {
+    return Memory.peek(24576);
+}
+</code></pre>
+<p><code>Memory.peek(24576)</code> 回傳目前掃描碼；若無鍵按下則為 0。</p>
+<h3 id="6-2-readchar">6.2 readChar</h3>
+<p>等待按下一個鍵，按住不放直到放開（避免重複），再回傳字元：</p>
+<pre><code>function char readChar() {
+    // 等待按鍵按下
+    while (keyPressed() = 0) { }     // 空迴圈：等 keyPressed 非 0
+
+    // 取得掃描碼
+    var int c;
+    let c = keyPressed();
+
+    // 等待放開（避免重複觸發）
+    while (keyPressed() = c) { }
+
+    // 轉成字元（此處保留掃描碼；若要小寫可做映射）
+    return c;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：上方的「等待放開」很重要——如果不等放開，程式可能把「同一次長按」誤判成多次輸入。這是處理實體鍵盤的「彈跳/重複」問題的樸素解法。</p>
+</blockquote>
+<p><code>readChar</code> 是否需要把回傳的字元<strong>回顯（echo）</strong> 到螢幕？這取決於設計：單鍵回應的遊戲不需要；而要輸入文字時，讀取的過程由 <code>readLine</code> 負責把每個字元 echo 並管理倒退。</p>
+<hr />
+<h2 id="7-readline-讀取一整行">7. readLine：讀取一整行</h2>
+<p><code>readLine(message)</code> 先印出提示字串，然後逐字元讀取，直到使用者按下 <strong>Enter</strong>（<code>\n</code>）。每個字元要回顯並支持倒退（Backspace）。</p>
+<pre><code>function String readLine(String message) {
+    var String line;
+    var char c;
+
+    do Output.printString(message);   // 印提示
+
+    let line = String.new(0);         // 產生空字串（見 12.5 節）
+
+    while (true) {
+        let c = readChar();
+
+        if (c = '\n') {               // Enter → 結束
+            do Output.println();
+            return line;
+        }
+        if (c = '\b') {               // 倒退
+            if (line.length() &gt; 0) {
+                // 去掉最後一個字元
+                let line = eraseLastChar(line);
+                do Output.backSpace();
+            }
+        } else {
+            // 一般字元：加到字串，並回顯
+            let line = append(line, c);
+            do Output.printChar(c);
+        }
+    }
+    return line;
+}
+</code></pre>
+<p>在 Jack 中操作字串會用到 <code>String</code> 的方法（<code>appendChar</code>、<code>eraseLastChar</code>、<code>length</code>），這些在 12.5 節會寫。這裡先看到 <code>readLine</code> 的整體流程：<strong>提示 → 逐字讀 → echo → 支援倒退 → Enter 結束</strong>。</p>
+<hr />
+<h2 id="8-readint-讀取整數">8. readInt：讀取整數</h2>
+<p><code>readInt</code> = <code>readLine</code> 的結果，再用字串轉整數：</p>
+<pre><code>function int readInt(String message) {
+    var String s;
+    var int result, i, len, digit, neg;
+
+    let s = readLine(message);
+
+    let result = 0;
+    let neg = false;
+    let i = 0;
+    let len = s.length();
+
+    if (len &gt; 0) {
+        if (s.charAt(0) = '-') {
+            let neg = true;
+            let i = 1;
+        }
+        while (i &lt; len) {
+            let digit = s.charAt(i) - 48;   // 字元 → 數字
+            let result = result * 10 + digit;
+            let i = i + 1;
+        }
+    }
+    if (neg) { let result = -result; }
+    return result;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>readInt</code> 把「字串轉整數」（如 <code>&quot;123&quot;</code> → 123）自行用累加實作：<code>result = result*10 + digit</code>。它依賴 <code>String.charAt</code>、<code>length</code>。這再度說明：<code>Keyboard</code> 依賴 <code>Output</code>（印提示）與 <code>String</code>（讀字串）。</p>
+</blockquote>
+<hr />
+<h2 id="9-完整的-output-jack-與-keyboard-jack">9. 完整的 Output.jack 與 Keyboard.jack</h2>
+<h3 id="9-1-output-jack-完整版">9.1 Output.jack 完整版</h3>
+<p>我把核心方法串起來（省略完整字型表資料，以註解說明）：</p>
+<pre><code>// Output.jack —— 文字輸出引擎
+class Output {
+
+    static Array font;        // 字型表（64 字元 × 每字元 11 行）
+    static int cursorRow;     // 0..22
+    static int cursorCol;     // 0..63
+
+    // 初始化：清螢幕、游標回左上角、載入字型表
+    function void init() {
+        var int i;
+        let cursorRow = 0;
+        let cursorCol = 0;
+        // 建構字型表 array（128 字元 × 11 行）
+        let font = Array.new(128 * 11);
+        // 填入字型位元圖（此處略，實際有 128 字元的完整資料）
+        do fillFont();
+        do Screen.init();
+        return;
+    }
+
+    // 設定游標位置
+    function void moveCursor(int row, int column) {
+        var int r, c;
+        let r = row;  let c = column;
+        if (r &lt; 0) { let r = 0; }
+        if (r &gt; 22) { let r = 22; }
+        if (c &lt; 0) { let c = 0; }
+        if (c &gt; 63) { let c = 63; }
+        let cursorRow = r;
+        let cursorCol = c;
+        return;
+    }
+
+    // 打印一個字元
+    function void printChar(char c) {
+        var int i, j, line, charBase, y, xMask;
+
+        // 換行與倒退
+        if (c = '\n') { do println(); return; }
+        if (c = '\b') { do backSpace(); return; }
+
+        // 取出字元位元圖
+        let charBase = 0 + c * 11;   // 字元 c 在 font 中的起始
+        let i = 0;
+        while (i &lt; 11) {
+            let line = Memory.peek(font + charBase + i);
+            // 畫每一像素列（8 像素寬）
+            let y = cursorRow * 11 + i;
+            let xMask = 1 &lt;&lt; 7;      // 從最左位開始
+            let j = 0;
+            while (j &lt; 8) {
+                if (line &amp; xMask) {
+                    do Screen.drawPixel(cursorCol * 8 + j, y);
+                }
+                let xMask = xMask &gt;&gt; 1;   // 右移（注意：Hack 使用算術右移）
+                let j = j + 1;
+            }
+            let i = i + 1;
+        }
+
+        // 前進游標
+        if (cursorCol = 63) {
+            do println();
+        } else {
+            let cursorCol = cursorCol + 1;
+        }
+        return;
+    }
+
+    // 打印字串
+    function void printString(String s) {
+        var int i, n;
+        let n = s.length();
+        let i = 0;
+        while (i &lt; n) {
+            do printChar(s.charAt(i));
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // 打印整數
+    function void printInt(int i) {
+        var int n, pow, digit;
+        if (i &lt; 0) {
+            do printChar('-');
+            let i = -i;
+        }
+        // 求最大位數權重
+        let pow = 1;
+        let n = i;
+        while (n &gt;= 10) {
+            let pow = pow * 10;
+            let n = n / 10;
+        }
+        while (pow &gt; 0) {
+            let digit = i / pow;
+            do printChar(digit + 48);
+            let i = i - digit * pow;
+            let pow = pow / 10;
+        }
+        return;
+    }
+
+    // 換行（含捲動）
+    function void println() {
+        if (cursorRow &lt; 22) {
+            let cursorRow = cursorRow + 1;
+        } else {
+            do scrollUp();
+        }
+        let cursorCol = 0;
+        return;
+    }
+
+    // 捲動：把游標以上的文字上移一列
+    function void scrollUp() {
+        var int i, j;
+        // 複製每一列到上一列（以像素為單位搬移 11 列）
+        // 此處為簡化說明，用「清空最後一列 + 重印」示意
+        // 實際官方用記憶體搬移，這裡以最簡方式示意
+        let i = 0;
+        while (i &lt; 512) {
+            let j = 0;
+            while (j &lt; 245) {
+                do Memory.poke(16384 + (j*512+i)/16, 0);  // 佔位示意
+                let j = j + 1;
+            }
+            let i = i + 1;
+        }
+        return;
+    }
+
+    // 後退一格
+    function void backSpace() {
+        if (cursorCol &gt; 0) {
+            let cursorCol = cursorCol - 1;
+        } else if (cursorRow &gt; 0) {
+            let cursorRow = cursorRow - 1;
+            let cursorCol = 63;
+        }
+        return;
+    }
+}
+</code></pre>
+<blockquote>
+<p><strong>補充說明</strong>：真正的 <code>Output.jack</code> 字型表包含 128 個字元的完整位元圖（那一大段 <code>do Memory.poke(font+i, ...)</code> 的初始化）。因篇幅，本書以「載入字型表」佔位，實作時填入每個字元的 11 行資料。<code>scrollUp</code> 的實際官方實作會以「整列記憶體搬移」完成，速度遠快於逐像素示範。</p>
+</blockquote>
+<h3 id="9-2-keyboard-jack-完整版">9.2 Keyboard.jack 完整版</h3>
+<pre><code>// Keyboard.jack —— 鍵盤輸入引擎
+class Keyboard {
+
+    // 回傳目前被按下鍵的掃描碼
+    function int keyPressed() {
+        return Memory.peek(24576);
+    }
+
+    // 讀取一個字元（等待按下與放開）
+    function char readChar() {
+        var int c;
+        // 等按下
+        while (keyPressed() = 0) { }
+        let c = keyPressed();
+        // 等放開
+        while (keyPressed() = c) { }
+        // 轉為字元回傳（掃描碼在 ASCII 範圍可直接使用）
+        return c;
+    }
+
+    // 讀取一行（帶提示）
+    function String readLine(String message) {
+        var String line;
+        var char c;
+
+        do Output.printString(message);
+
+        let line = String.new(0);
+
+        while (true) {
+            let c = readChar();
+            if (c = '\n') {
+                do Output.println();
+                return line;
+            }
+            if (c = '\b') {
+                do Output.backSpace();
+                if (line.length() &gt; 0) {
+                    let line = line.eraseLastChar();
+                }
+            } else {
+                do line.appendChar(c);
+                do Output.printChar(c);
+            }
+        }
+        return line;
+    }
+
+    // 讀取一個整數（帶提示）
+    function int readInt(String message) {
+        var String s;
+        var int result, i, n, digit;
+        var boolean neg;
+
+        let s = readLine(message);
+        let neg = false;
+        let result = 0;
+        let i = 0;
+        let n = s.length();
+
+        if (n &gt; 0) {
+            if (s.charAt(0) = '-') {
+                let neg = true;
+                let i = 1;
+            }
+            while (i &lt; n) {
+                let digit = s.charAt(i) - 48;
+                let result = result * 10 + digit;
+                let i = i + 1;
+            }
+        }
+        if (neg) { let result = -result; }
+        return result;
+    }
+}
+</code></pre>
+<p>這裡用到 <code>String</code> 的方法：<code>new</code>、<code>length</code>、<code>charAt</code>、<code>appendChar</code>、<code>eraseLastChar</code>——這些正是 12.5 節 <code>String.jack</code> 要實作的。</p>
+<hr />
+<h2 id="10-設計思路與實作步驟">10. 設計思路與實作步驟</h2>
+<h3 id="10-1-實作步驟">10.1 實作步驟</h3>
+<ol>
+<li><strong>先寫 <code>Output.init</code></strong>：建立字型表 array，載入所有字元的位元圖，清螢幕。</li>
+<li><strong>再寫 <code>printChar</code></strong>：把字元畫上螢幕（每一行位元圖 → 8 個像素）。這是 Output 重頭戲。</li>
+<li><strong>寫 <code>printString</code>、<code>printInt</code>、<code>println</code>、<code>backSpace</code>、<code>moveCursor</code></strong>：建構在高階輸出。</li>
+<li><strong>寫 <code>Keyboard.keyPressed</code></strong>：讀記憶體映射位址 24576。</li>
+<li><strong>寫 <code>readChar</code></strong>：等待按下與放開。</li>
+<li><strong>寫 <code>readLine</code> / <code>readInt</code></strong>：依賴 <code>String</code> 與 <code>Output</code>。</li>
+</ol>
+<h3 id="10-2-驗證策略">10.2 驗證策略</h3>
+<pre><code>// IOTest.jack 摘要
+do Output.init();
+do Output.printString(&quot;Hello, Nand2Tetris!&quot;);
+do Output.println();
+do Output.printInt(-12345);      // 期望印出 -12345
+do Keyboard.readLine(&quot;輸入一行：&quot;);
+do Keyboard.readInt(&quot;請輸數字：&quot;);
+</code></pre>
+<p>在 CPU Emulator 上操作鍵盤，確認文字能正確打印、輸入能正確讀回。</p>
+<hr />
+<h2 id="11-本章小結">11. 本章小結</h2>
+<ul>
+<li><strong><code>Output</code></strong> 提供文字輸出：<code>printChar</code>、<code>printString</code>、<code>printInt</code>、<code>println</code>、<code>moveCursor</code>、<code>backSpace</code>，管理一個「文字游標」（0..22 列 × 0..63 欄）。</li>
+<li><strong>字型表（font map）</strong> 是「字元 → 位元圖」的對照：每個字元由 11 行 × 8 位元的位元圖表示，因此可容納 64 欄 × 23 列文字。</li>
+<li><code>printChar</code> 把字元的 11 行位元圖逐行畫進螢幕記憶體；<code>printInt</code> 用除法逐位拆出十進位數字並加 48 轉 ASCII。</li>
+<li><strong><code>Keyboard</code></strong> 讀記憶體映射位址 24576 得到掃描碼；<code>keyPressed</code> 回傳目前掃描碼。</li>
+<li><code>readChar</code> 處理「等待按下 / 等待放開」以避免重複觸發；<code>readLine</code> 逐字讀取並支援倒退、Enter 結束；<code>readInt</code> 把讀到的字串解析成整數。</li>
+<li>鍵盤掃描碼是<strong>大寫字母</strong>，應用端需自行映射大小寫。</li>
+<li><code>Keyboard</code> 依賴 <code>Output</code>（印提示）與 <code>String</code>（字串操作），再次體現 OS 類別間緊密的依賴合作。</li>
+</ul>
+<p>有了輸出與輸入，Hack 已經能「對話」了。但我們還缺少幾樣「地基」：字串究竟怎麼在記憶體中表示、陣列如何建立、以及這個作業系統<strong>該如何在啟動時把所有類別初始化</strong>。這些正是下一節 <code>String</code>、<code>Array</code>、<code>Sys</code> 要解決的。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="12.3.html">⇦ 上一節</a><a class="nav-btn" href="12.5.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

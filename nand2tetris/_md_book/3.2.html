@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 3.2 章：1-bit 與 16-bit 暫存器（Register）設計</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link active" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="3.1.html">⇦ 上一節</a></div>
+  <div class="title">第 3.2 章：1-bit 與 16-bit 暫存器（Register）設計</div>
+  <div class="nav-right"><a class="nav-btn" href="3.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch03.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第-3-2-章-1-bit-與-16-bit-暫存器-register-設計">第 3.2 章：1-bit 與 16-bit 暫存器（Register）設計</h1>
+<h2 id="前言">前言</h2>
+<p>在上一章中，我們理解了 DFF 作為最基本記憶單元的運作方式——在時脈上升沿鎖存輸入值。但單純的 DFF 缺乏「選擇性」：它每次都會鎖存新的輸入，無法做到「有時載入新值、有時保持舊值」。</p>
+<p>本章將組合 DFF 與 Mux，建構出具有 <strong>load 控制</strong>的暫存器。我們會先設計 1-bit 版本（稱為 <strong>Bit</strong>），再將 16 個 Bit 併聯組成 16-bit 的 <strong>Register</strong>。暫存器是 CPU 內部最基礎的工作單元，也是整個記憶體層級的起點。</p>
+<hr />
+<h2 id="3-2-1-bit-1-bit-暫存器-的設計">3.2.1 Bit（1-bit 暫存器）的設計</h2>
+<h3 id="設計目標">設計目標</h3>
+<p>Bit 元件需要具備以下功能：</p>
+<table>
+<thead>
+<tr>
+<th>輸入</th>
+<th>輸出</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>in</code>（1-bit）</td>
+<td><code>out</code>（1-bit）</td>
+<td>待寫入的資料 / 當前儲存的值</td>
+</tr>
+<tr>
+<td><code>load</code>（1-bit）</td>
+<td></td>
+<td>控制信號：1=寫入新值，0=保持</td>
+</tr>
+<tr>
+<td><code>clk</code>（1-bit）</td>
+<td></td>
+<td>時脈（隱含連接）</td>
+</tr>
+</tbody>
+</table>
+<p>行為規範：</p>
+<pre><code></code></pre>
+<h3 id="設計思路">設計思路</h3>
+<p>核心思想是用 <strong>Mux 來選擇</strong>「要鎖存哪個值」：</p>
+<pre><code></code></pre>
+<p>工作流程：</p>
+<ol>
+<li><strong>Mux</strong> 根據 <code>load</code> 信號選擇輸入：
+<ul>
+<li><code>load = 1</code> → Mux 輸出 <code>in</code>（新資料）</li>
+<li><code>load = 0</code> → Mux 輸出 <code>out</code>（DFF 當前值，即舊資料）</li>
+</ul>
+</li>
+<li><strong>DFF</strong> 在下一個時脈上升沿鎖存 Mux 的輸出</li>
+</ol>
+<p>這形成了一個精巧的迴圈：DFF 的輸出回饋到 Mux 的輸入，當 <code>load = 0</code> 時，DFF 反覆鎖存自己的值，達到「保持」效果。</p>
+<h3 id="hdl-實作">HDL 實作</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../03/a/Bit.tst&amp;run=1">習題模擬</a></p>
+<blockquote>
+<p><strong>注意</strong>：在 nand2tetris 的 HDL 約定中，<code>out</code> 同時是輸出 pin 和內部信號。上面的程式碼中 <code>oldValue</code> 實際上就是 <code>out</code> 的回饋。在某些 HDL 環境中，你需要透過內部線路來表達這個回饋。以下是更精確的寫法：</p>
+</blockquote>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../03/a/Bit.tst&amp;run=1">習題模擬</a></p>
+<p>更為清晰的表達方式（nand2tetris 標準風格）：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../03/a/Bit.tst&amp;run=1">習題模擬</a></p>
+<blockquote>
+<p><strong>設計關鍵</strong>：Mux 的 <code>a</code> 輸入（<code>sel=0</code> 時選中）連接到 DFF 的輸出——這就是「保持」路徑。Mux 的 <code>b</code> 輸入（<code>sel=1</code> 時選中）連接到外部輸入 <code>in</code>——這就是「寫入」路徑。</p>
+</blockquote>
+<h3 id="bit-的時序圖">Bit 的時序圖</h3>
+<pre><code></code></pre>
+<p>逐邊緣分析：</p>
+<table>
+<thead>
+<tr>
+<th>時脈邊緣</th>
+<th>load</th>
+<th>in</th>
+<th>DFF 輸入</th>
+<th>out（新值）</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第 1 個</td>
+<td>1</td>
+<td>1</td>
+<td>Mux 選 in → 1</td>
+<td>1</td>
+<td>載入新值 1</td>
+</tr>
+<tr>
+<td>第 2 個</td>
+<td>1</td>
+<td>0</td>
+<td>Mux 選 in → 0</td>
+<td>0</td>
+<td>載入新值 0</td>
+</tr>
+<tr>
+<td>第 3 個</td>
+<td>0</td>
+<td>1</td>
+<td>Mux 選 feedback → 0</td>
+<td>0</td>
+<td>保持舊值 0，忽略 in=1</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="3-2-2-register-16-bit-暫存器-的設計">3.2.2 Register（16-bit 暫存器）的設計</h2>
+<h3 id="從-1-bit-到-16-bit">從 1-bit 到 16-bit</h3>
+<p>nand2tetris 的資料通道是 16-bit 寬的。一個 16-bit 暫存器本質上就是 <strong>16 個 Bit 元件並排</strong>，每個 Bit 負責儲存一個位元：</p>
+<pre><code></code></pre>
+<h3 id="hdl-實作">HDL 實作</h3>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../03/a/Register.tst&amp;run=1">習題模擬</a></p>
+<h3 id="設計要點">設計要點</h3>
+<ol>
+<li><strong>平行寫入</strong>：16 個 Bit 同時在時脈邊緣更新，實現了一個時脈週期內寫入完整 16-bit 資料</li>
+<li><strong>統一控制</strong>：所有 Bit 共用同一個 <code>load</code> 信號，確保「要麼全部寫入，要麼全部保持」</li>
+<li><strong>模組化</strong>：Register 的正確性直接繼承自 Bit 的正確性——如果每個 Bit 都正確，整個 Register 就正確</li>
+</ol>
+<hr />
+<h2 id="3-2-3-load-控制-寫入與保留的時序行為">3.2.3 load 控制：寫入與保留的時序行為</h2>
+<h3 id="load-信號的完整語意">load 信號的完整語意</h3>
+<p><code>load</code> 信號是暫存器的「開關」，它決定了暫存器的行為模式：</p>
+<table>
+<thead>
+<tr>
+<th>load</th>
+<th>行為</th>
+<th>隱喻</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>保持（Hold）</td>
+<td>鎖上保險箱，鑰匙轉到「鎖定」位置</td>
+</tr>
+<tr>
+<td>1</td>
+<td>寫入（Load）</td>
+<td>打開保險箱，放入新物品</td>
+</tr>
+</tbody>
+</table>
+<h3 id="多週期行為範例">多週期行為範例</h3>
+<p>假設一個 16-bit 暫存器接收以下序列：</p>
+<pre><code></code></pre>
+<h3 id="時序圖-多位元切片觀察">時序圖（多位元切片觀察）</h3>
+<pre><code></code></pre>
+<h3 id="為什麼回饋迴路是安全的">為什麼回饋迴路是安全的？</h3>
+<p>你可能會擔心：「DFF 的輸出回饋到 Mux，再連回 DFF 的輸入，這樣不會產生迴圈嗎？」</p>
+<p>答案是：<strong>不會</strong>，因為 DFF 的本質就是在「正確的時機」才接受輸入。在非觸發時刻，DFF 的輸出不會變化，因此回饋迴路中的信號是穩定的。只有在時脈上升沿的那一瞬間，DFF 才會「看一眼」輸入並更新輸出。這種「延遲一個時脈週期」的特性，打破了即時迴圈的可能。</p>
+<pre><code></code></pre>
+<hr />
+<h2 id="3-2-4-驗證-bit-和-register">3.2.4 驗證 Bit 和 Register</h2>
+<h3 id="測試腳本-bit-tst">測試腳本（Bit.tst）</h3>
+<pre><code class="language-tst"></code></pre>
+<h3 id="比較表-bit-cmp">比較表（Bit.cmp）</h3>
+<table>
+<thead>
+<tr>
+<th>in</th>
+<th>load</th>
+<th>out</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="測試腳本-register-tst">測試腳本（Register.tst）</h3>
+<pre><code class="language-tst"></code></pre>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<p>本章完成了從 DFF 到暫存器的建構過程：</p>
+<ol>
+<li>
+<p><strong>Bit（1-bit 暫存器）</strong> = Mux + DFF</p>
+<ul>
+<li>Mux 負責「選擇」：load=1 選新資料，load=0 選舊資料</li>
+<li>DFF 負責「鎖存」：在時脈邊緣更新輸出</li>
+<li>回饋迴路讓 Bit 具備「保持」能力</li>
+</ul>
+</li>
+<li>
+<p><strong>Register（16-bit 暫存器）</strong> = 16 個 Bit 並聯</p>
+<ul>
+<li>每個 Bit 獨立負責一個位元</li>
+<li>所有 Bit 共用 load 和時脈，實現並行寫入</li>
+</ul>
+</li>
+<li>
+<p><strong>load 控制</strong>是暫存器的核心機制</p>
+<ul>
+<li><code>load = 1</code>：寫入新值</li>
+<li><code>load = 0</code>：保持當前值</li>
+<li>這種「有條件的更新」是電腦控制資料流動的基礎</li>
+</ul>
+</li>
+</ol>
+<p>暫存器是暫存資料的最基本單位，但它只能保存「一個資料」。接下來的章節（3.3）將展示如何將多個暫存器組織成記憶體陣列，透過位址來選擇存取哪一個暫存器——這就是 RAM 的核心概念。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="3.1.html">⇦ 上一節</a><a class="nav-btn" href="3.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

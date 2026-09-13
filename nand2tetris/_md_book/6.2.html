@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.2 符號表（Symbol Table）與標號解析（Labels &amp; Variables）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link active" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="6.1.html">⇦ 上一節</a></div>
+  <div class="title">6.2 符號表（Symbol Table）與標號解析（Labels &amp; Vari</div>
+  <div class="nav-right"><a class="nav-btn" href="6.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch06.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="6-2-符號表-symbol-table-與標號解析-labels-amp-variables">6.2 符號表（Symbol Table）與標號解析（Labels &amp; Variables）</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>區分 Hack 組譯器中三類符號：預定義符號、標號、變數</li>
+<li>默背預定義符號的位址（SP/LCL/ARG/THIS/THAT、R0~R15、SCREEN、KBD）</li>
+<li>說明標號 <code>(xxx)</code> 如何決定位址（= 下一個可執行指令的行號）</li>
+<li>說明變數如何配置位址（從 16 開始、逐號遞增、每支只配一次）</li>
+<li>用 Python 設計符號表的資料結構並實作查詢與新增</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>6.1 節我們把 A-指令、C-指令的編碼規律都講清楚了。但有一個大問題還沒解決：上節所有例子裡，<code>@7</code>、<code>@16384</code> 這種「直接寫數字」的用法，在真實程式中其實非常罕見。真實程式長這樣：</p>
+<pre><code class="language-asm">@i
+M=1
+(LOOP)
+@i
+M=M+1
+@LOOP
+0;JMP
+</code></pre>
+<p><code>i</code> 是什麼？<code>LOOP</code> 是什麼？組譯器看到 <code>@i</code> 時，憑什麼知道該把哪個數字放進機器碼？</p>
+<p>答案就是本節的主角：<strong>符號表（Symbol Table）</strong>——組譯器內部用來記錄「符號 → 位址」對應關係的資料結構。它是組譯器最核心、也最優雅的部份：整份程式中，你只需要維護一張「需要記住的符號」表格，就能讓程式設計師徹底脫離「記位址」的苦海。</p>
+<hr />
+<h2 id="1-為什麼需要符號">1. 為什麼需要符號？</h2>
+<p>把問題反過來想：如果沒有符號，程式設計師寫 Hack 程式必須自己記所有位址：</p>
+<ul>
+<li>變數 <code>i</code> 放在 RAM 哪一格？</li>
+<li>程式要跳回去的那個「迴圈開頭」在第幾條指令？</li>
+<li>螢幕基地位址是 16384，鍵盤是 24576——你得背下來？</li>
+</ul>
+<p>這對於小程式還行，程式一大就徹底失控：在中間插入一行指令，後面所有行號全部錯位。</p>
+<p>符號機制把這個負擔轉移給組譯器。程式設計師寫下抽象名字（<code>i</code>、<code>LOOP</code>、<code>SCREEN</code>），組譯器在組譯期間自動完成三件事：</p>
+<ol>
+<li><strong>認識制度性的名字</strong>：<code>R0</code>、<code>SCREEN</code> 這些是 Hack 規格保證存在的。</li>
+<li><strong>替標號配位址</strong>：<code>(LOOP)</code> 所在位置對應的指令行號。</li>
+<li><strong>替變數配位址</strong>：從 RAM 第 16 格開始，一支一支配。</li>
+</ol>
+<p>這三件事對應三類符號。我們逐一拆解。</p>
+<hr />
+<h2 id="2-三類符號的總覽">2. 三類符號的總覽</h2>
+<table>
+<thead>
+<tr>
+<th>符號種類</th>
+<th>長什麼樣</th>
+<th>位址從哪來</th>
+<th>什麼時候定案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>預定義符號</strong></td>
+<td><code>R0</code>、<code>SP</code>、<code>SCREEN</code>、<code>KBD</code> 等</td>
+<td>Hack 規格寫死</td>
+<td>組譯開始前</td>
+</tr>
+<tr>
+<td><strong>標號（Label）</strong></td>
+<td><code>(LOOP)</code>、<code>(END)</code></td>
+<td>= 下一條指令的行號</td>
+<td>第一遍掃描（見 6.3）</td>
+</tr>
+<tr>
+<td><strong>變數（Variable）</strong></td>
+<td><code>@i</code>、<code>@sum</code>、<code>@x</code></td>
+<td>從 16 起逐號遞增</td>
+<td>第二遍掃描（見 6.3）</td>
+</tr>
+</tbody>
+</table>
+<p>辨識關鍵字（syntax）：</p>
+<ul>
+<li>標號用<strong>小括號包住</strong>：<code>(LOOP)</code>，永遠獨立一行，而且<strong>不佔指令行號</strong>；</li>
+<li>預定義符號與變數都出現在 <code>@</code> 之後：<code>@R1</code>（預定義）、<code>@i</code>（變數）；</li>
+<li>兩者的區分方式很簡單：<strong>先在預定義表查，查不到就當變數</strong>。</li>
+</ul>
+<hr />
+<h2 id="3-預定義符號與位址">3. 預定義符號與位址</h2>
+<h3 id="3-1-記憶體映射規格先回顧">3.1 記憶體映射規格先回顧</h3>
+<p>預定義符號之所以「預先定義」，是因為第 4 章設計 Hack 的記憶體地圖時，就已經把最重要的位址「命名」了。它們分五組：</p>
+<table>
+<thead>
+<tr>
+<th>符號</th>
+<th>位址</th>
+<th>意義</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>SP</code></td>
+<td>0</td>
+<td>堆疊指標（Stack Pointer）的基地，指向棧頂</td>
+</tr>
+<tr>
+<td><code>LCL</code></td>
+<td>1</td>
+<td>區域變數段基地（Local）</td>
+</tr>
+<tr>
+<td><code>ARG</code></td>
+<td>2</td>
+<td>函式參數段基地（Argument）</td>
+</tr>
+<tr>
+<td><code>THIS</code></td>
+<td>3</td>
+<td>this 指標（指向 current object / 物件段）</td>
+</tr>
+<tr>
+<td><code>THAT</code></td>
+<td>4</td>
+<td>that 指標（指向另一物件段）</td>
+</tr>
+<tr>
+<td><code>R0</code> ~ <code>R15</code></td>
+<td>0 ~ 15</td>
+<td>通用暫存器別名（R0=SP、R1=LCL、R2=ARG...）</td>
+</tr>
+<tr>
+<td><code>SCREEN</code></td>
+<td>16384</td>
+<td>螢幕記憶體映射的起始位址（<code>0x4000</code>）</td>
+</tr>
+<tr>
+<td><code>KBD</code></td>
+<td>24576</td>
+<td>鍵盤記憶體映射的位址（<code>0x6000</code>）</td>
+</tr>
+</tbody>
+</table>
+<p>請注意一個有趣的細節：<code>SP</code> 與 <code>R0</code> <strong>是同一格記憶體</strong>（位址 0），只是兩個名字。同理 <code>LCL == R1</code>、<code>ARG == R2</code>、<code>THIS == R3</code>、<code>THAT == R4</code>。這是 Hack 的「雙重命名」，第 7 章虛擬機（VM）實作時，這些名字會全部派上用場。</p>
+<h3 id="3-2-記憶體地圖視覺化">3.2 記憶體地圖視覺化</h3>
+<pre><code>位址           內容                       符號
+─────   ───────────────────────   ────────
+0       堆疊指標 / 暫存器 R0       SP / R0
+1       區域變數基地 / R1          LCL / R1
+2       參數基地   / R2           ARG / R2
+3       this 指標 / R3            THIS / R3
+4       that 指標 / R4            THAT / R4
+5..15   暫存器 R5~R15             R5..R15
+16..255 變數與陣列基地（組譯器分配）
+256..   堆疊空間
+16384.. 螢幕映射（8K words）       SCREEN
+24576   鍵盤映射                   KBD
+</code></pre>
+<h3 id="3-3-組譯器裡的表示-一張初始化的字典">3.3 組譯器裡的表示：一張初始化的字典</h3>
+<p>預定義符號在 Python 中就是一張<strong>預先填好的字典</strong>：</p>
+<pre><code class="language-python">PREDEFINED = {
+    'SP': 0, 'LCL': 1, 'ARG': 2, 'THIS': 3, 'THAT': 4,
+    'R0': 0, 'R1': 1, 'R2': 2, 'R3': 3, 'R4': 4, 'R5': 5,
+    'R6': 6, 'R7': 7, 'R8': 8, 'R9': 9, 'R10': 10, 'R11': 11,
+    'R12': 12, 'R13': 13, 'R14': 14, 'R15': 15,
+    'SCREEN': 16384, 'KBD': 24576,
+}
+</code></pre>
+<p>這張表會在組譯器啟動時<strong>先複製一份</strong>成為符號表的主體（為什麼要複製而不是直接修改？因為組譯器的符號表會越長越大，不能污染「純淨的規格表」——程式一多的話，<code>@i</code> 的 16、<code>@sum</code> 的 17 會被塞進去）。</p>
+<blockquote>
+<p><strong>設計思路</strong>：把預定義符號集中成一張表，而不是在程式裡寫一堆 <code>if sym == &#x27;SCREEN&#x27;</code> 的判斷，是「資料驅動（data-driven）」的做法——組譯器不需要知道任何符號的語意，只管查表。這樣一支程式碼就能同時服務三類符號，邏輯統一、不易出錯。</p>
+</blockquote>
+<hr />
+<h2 id="4-標號如何決定位址">4. 標號如何決定位址</h2>
+<h3 id="4-1-規則只有一句話">4.1 規則只有一句話</h3>
+<p>標號（Label）的規則是整個組譯器最精簡的定義：</p>
+<blockquote>
+<p><code>(xxx)</code> 的位址 = <strong>緊跟在它之後那一條可執行指令的行號</strong>（從 0 開始數）。</p>
+</blockquote>
+<p>也就是：標號不佔行號，它只是幫「下一條指令的位置」取名字。</p>
+<h3 id="4-2-一個逐步示範">4.2 一個逐步示範</h3>
+<p>看下面這段程式（含空行與註解，模擬真實檔案）：</p>
+<pre><code>行號     原始文字                   說明
+─────────────────────────────────────────────────
+(L1)     (LOOP)                   ← 標號行，不佔行號
+L0       @i                       ← 第 0 條指令
+L1       M=M+1
+L2       @LOOP         → 此時 LOOP = ? 
+L3       0;JMP
+         (END)                    ← 標號，不佔行號
+L4       @END
+L5       0;JMP
+</code></pre>
+<p>數行號時，<strong>只數 A-指令與 C-指令</strong>。於是：</p>
+<ul>
+<li><code>(LOOP)</code> 後面第一條可執行指令是 L0 → <code>LOOP = 0</code></li>
+<li><code>(END)</code> 後面第一條可執行指令是 L4 → <code>END = 4</code></li>
+</ul>
+<p>驗證：<code>@LOOP</code> 與 <code>@END</code> 翻譯出來就是 <code>0000000000000000</code> 與 <code>0000000000000100</code>。</p>
+<h3 id="4-3-標號能不能放中間-當然可以">4.3 標號能不能放中間？——當然可以</h3>
+<p>標號不一定在迴圈開頭，也可以在前後文之間。例如把 <code>(XXX)</code> 放在兩條指令中間，它的值就是「下一條指令」的行號：</p>
+<pre><code class="language-asm">@7        // 第 0 條
+(XXX)     // 標號：位址 = 1
+D=A       // 第 1 條
+</code></pre>
+<p>規則一致：<code>XXX = 1</code>。</p>
+<h3 id="4-4-第一個陷阱-標號重複">4.4 第一個陷阱：標號重複</h3>
+<p>Hack 規格（也是多數組譯器的行為）要求：<strong>同一支標號只能宣告一次</strong>，重複宣告屬於錯誤。為什麼？因為如果 <code>(LOOP)</code> 出現兩次就該取哪個位址？——矛盾。組譯器可以選擇報錯終止，也可以「後收到者覆蓋」（實作最簡單，很多教學組譯器這樣做）。進階實作要檢查重複宣告並印出錯誤訊息，這是 6.4 節除錯單元會講的細節。</p>
+<hr />
+<h2 id="5-變數如何配置位址">5. 變數如何配置位址</h2>
+<h3 id="5-1-規則也只有一句話">5.1 規則也只有一句話</h3>
+<blockquote>
+<p>出現未被認識的符號 <code>@xxx</code> 時，組譯器在符號表新增 <code>xxx → next_var</code>，其中 <code>next_var</code> <strong>從 16 開始，每配一支就 +1</strong>。</p>
+</blockquote>
+<h3 id="5-2-為什麼是-16">5.2 為什麼是 16？</h3>
+<p>回想記憶體地圖：</p>
+<ul>
+<li>位址 0~15 被預定義符號佔滿（SP/LCL/ARG/THIS/THAT/R0~R15）；</li>
+<li>位址 16 之後到堆疊區域之前，是「自由區」。</li>
+</ul>
+<p>規定變數從 16 起，組譯器就能保證「永遠不會踩到制度性位址」。</p>
+<h3 id="5-3-逐步示範-第一支變數">5.3 逐步示範：第一支變數</h3>
+<pre><code class="language-asm">@i          // i 不在表內 → 配 16
+M=0         // 等等，M=0 需要 A 內容為位址——對，A 正是 16
+@i          // i 已在表內 → 直接取 16
+D=M
+</code></pre>
+<p>組譯器處理過程（只看位址分配）：</p>
+<table>
+<thead>
+<tr>
+<th>遇到</th>
+<th>查表結果</th>
+<th>動作</th>
+<th>符號表（新加入者）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@i</code></td>
+<td>找不到</td>
+<td><code>i = 16</code>，next_var 變成 17</td>
+<td><code>i → 16</code></td>
+</tr>
+<tr>
+<td><code>@i</code></td>
+<td>找到 16</td>
+<td>直接用</td>
+<td>（不變）</td>
+</tr>
+</tbody>
+</table>
+<p>關鍵重點：<strong>同一個變數，全程式只配一次位址</strong>。第二次見到 <code>@i</code> 時直接查表。這保證了 <code>@i</code> 在整支程式中都指向同一格 RAM——否則迴圈就崩潰了。</p>
+<h3 id="5-4-多支變數的例子">5.4 多支變數的例子</h3>
+<pre><code class="language-asm">@x          // x = 16
+@y          // y = 17
+@z          // z = 18
+@x          // 查表 → 16
+</code></pre>
+<p><code>next_var</code> 就像討債的櫃檯號碼機：每新增一號就叫下一個號碼。實作語言常說這是「自動遞增計數器」：</p>
+<pre><code class="language-python">next_address = 16          # 從 16 開始「發號碼」
+def get_variable(symbol):
+    nonlocal next_address  # （示意）
+    if symbol not in table:
+        table[symbol] = next_address
+        next_address += 1
+    return table[symbol]
+</code></pre>
+<h3 id="5-5-順序問題-標號-vs-變數誰先誰後">5.5 順序問題：標號 vs 變數誰先誰後？</h3>
+<p>這是初學者最常問的問題，也直接引出 6.3 節的兩階段掃描：</p>
+<ul>
+<li><strong>標號</strong>可能在程式「後半段」才被宣告，但「前半段」的 <code>@LOOP</code> 就要用到它 → 所以標號<strong>必須先全部收齊</strong>（第一遍掃描）。</li>
+<li><strong>變數</strong>則相反，誰先用誰先配，走到哪配到哪（第二遍掃描）。</li>
+</ul>
+<p>如果只掃描一遍，遇到 <code>@LOOP</code> 卻還沒看到後面的 <code>(LOOP)</code>，組譯器一查表找不到，就會誤把 <code>LOOP</code> 當成變數配成 16——那就全錯了。這就是「為什麼需要兩次掃描」的根源，6.3 節我們正式解決它。</p>
+<hr />
+<h2 id="6-符號表的資料結構">6. 符號表的資料結構</h2>
+<h3 id="6-1-功能需求">6.1 功能需求</h3>
+<p>符號表要有三種操作：</p>
+<ol>
+<li><strong>contains(symbol)</strong>：這個符號出現過嗎？</li>
+<li><strong>add(symbol, address)</strong>：新增一筆對應</li>
+<li><strong>getAddress(symbol)</strong>：查詢位址（查不到就是 bug，或該當變數配置）</li>
+</ol>
+<h3 id="6-2-選型-python-字典完全足矣">6.2 選型：Python 字典完全足矣</h3>
+<p>Hack 程式通常只有幾百支符號，所以最合適的資料結構就是<strong>雜湊表（hash table）</strong>。Python 的 <code>dict</code> 就是內建的雜湊表，插入與查詢都是平均 O(1)。</p>
+<pre><code class="language-python">class SymbolTable:
+    &quot;&quot;&quot;Hack 組譯器的符號表——包一層 dict 加上清楚的介面&quot;&quot;&quot;
+
+    def __init__(self):
+        self._table = {
+            'SP': 0, 'LCL': 1, 'ARG': 2, 'THIS': 3, 'THAT': 4,
+            'R0': 0, 'R1': 1, 'R2': 2, 'R3': 3, 'R4': 4, 'R5': 5,
+            'R6': 6, 'R7': 7, 'R8': 8, 'R9': 9, 'R10': 10, 'R11': 11,
+            'R12': 12, 'R13': 13, 'R14': 14, 'R15': 15,
+            'SCREEN': 16384, 'KBD': 24576,
+        }
+
+    def add(self, symbol: str, address: int) -&gt; None:
+        self._table[symbol] = address
+
+    def contains(self, symbol: str) -&gt; bool:
+        return symbol in self._table
+
+    def getAddress(self, symbol: str) -&gt; int:
+        return self._table[symbol]
+
+    def __repr__(self):
+        return repr(self._table)
+</code></pre>
+<p>用起來像這樣：</p>
+<pre><code class="language-python">st = SymbolTable()
+st.getAddress('SP')      # 0
+st.getAddress('SCREEN')  # 16384
+st.contains('LOOP')      # False
+st.add('LOOP', 10)
+st.getAddress('LOOP')    # 10
+st.contains('LOOP')      # True
+</code></pre>
+<h3 id="6-3-如果你是寫-c-語言">6.3 如果你是寫 C 語言？</h3>
+<p>在 C 語言我們沒有內建字典，最樸素的實作是「兩個平行陣列 + 線性搜尋」：</p>
+<pre><code class="language-c">// symbol.h（概念示意，非完整程式）
+#define MAX_SYMBOLS 1024
+
+typedef struct {
+    char name[64];
+    int  address;
+} Symbol;
+
+typedef struct {
+    Symbol symbols[MAX_SYMBOLS];
+    int    count;
+} SymbolTable;
+
+int  st_contains(SymbolTable *st, const char *name);
+void st_add(SymbolTable *st, const char *name, int address);
+int  st_get(SymbolTable *st, const char *name);
+</code></pre>
+<p>線性搜尋對哈克級程式（&lt; 1000 支）綽綽有餘；要更快再換成真雜湊表。這個「拿空間換時間」的取捨，就是資料結構課教的內容，這裡我們用 Python 的內建 <code>dict</code> 一勞永逸。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼不直接裸用 <code>dict</code>，還要包成 <code>SymbolTable</code> 類別？因為物件導向的封裝讓組譯器的其他部分（6.3 節的兩遍掃描）只依賴「add / contains / getAddress」三個方法，而不必知道底層是字典、陣列還是資料庫。這也讓單元測試（6.4 節）更容易寫——介面小，測項就少。</p>
+</blockquote>
+<hr />
+<h2 id="7-查詢與更新操作-程式碼化的解析流程">7. 查詢與更新操作：程式碼化的解析流程</h2>
+<p>「遇到符號怎麼辦」的完整規則，可以濃縮成一張決策表，寫在手冊上完全夠用：</p>
+<pre><code>組合語言中的符號 x
+│
+├─ 若 x 是純數字常數      → 直接用 int(x)（15 位元內）
+├─ 若 x 是 (標號) 宣告    → 記錄「標號 x → 下一條指令行號」
+├─ 若 x 出現在 @ 之後：
+│   ├─ 符號表查得到       → 用表中的位址
+│   └─ 符號表查不到       → 當作變數：
+│                           table[x] = next_address
+│                           next_address += 1
+└─ 以上都做完 → 套用 6.1 節的編碼表翻譯
+</code></pre>
+<p>把「查表優先、查不到才配新位址」的邏輯，用 Python 寫成單一定義函數：</p>
+<pre><code class="language-python">def resolve(symbol: str, st: SymbolTable, next_address: int):
+    # next_address 以可變容器傳入，避免作用域問題（6.3 會有完整版）
+    if symbol.isdigit():
+        return int(symbol)                 # 純數值常數
+    if not st.contains(symbol):
+        st.add(symbol, next_address[0])    # 新變數：配最新號碼
+        next_address[0] += 1               # 號碼機 +1
+    return st.getAddress(symbol)
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：注意判斷順序——「先看是不是純數字」。因為 Hack 規定變數名稱<strong>不能是數字開頭</strong>（組譯器檢查到 <code>@123abc</code> 應報錯），所以 <code>isdigit()</code> 檢查可以安全地把 <code>@7</code> 這種情況攔下來，不讓它誤入變數分配區。</p>
+</blockquote>
+<hr />
+<h2 id="8-本章小結">8. 本章小結</h2>
+<ul>
+<li>符號是程式設計師與機器位址之間的中介，組譯器用<strong>符號表</strong>維護「符號 → 位址」對應。</li>
+<li><strong>預定義符號</strong>：<code>SP=0, LCL=1, ARG=2, THIS=3, THAT=4, R0~R15=0~15, SCREEN=16384, KBD=24576</code>，組譯前就固定，常寫成一張初始化字典。</li>
+<li><strong>標號</strong> <code>(xxx)</code> 的位址 = <strong>緊接其後指令的行號</strong>，不佔行號，須在第一遍掃描時收集齊全，因為可能「先被引用、後才宣告」。</li>
+<li><strong>變數</strong> 從位址 16 開始，按「最先引用者先配」的原則逐號遞增，整支程式只配一次。</li>
+<li>符號表適合用<strong>雜湊表</strong>實作（Python <code>dict</code>），包成 <code>add / contains / getAddress</code> 三方法的小類別最乾淨。</li>
+<li>標號「先收集、變數「後分配」的次序，孕育出 6.3 節的**兩階段掃描（Two-Pass）**組譯器。</li>
+</ul>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="6.1.html">⇦ 上一節</a><a class="nav-btn" href="6.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

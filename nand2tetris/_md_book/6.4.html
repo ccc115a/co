@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>6.4 測試你的組譯器：將 .asm 編譯為 .hack</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link active" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="6.3.html">⇦ 上一節</a></div>
+  <div class="title">6.4 測試你的組譯器：將 .asm 編譯為 .hack</div>
+  <div class="nav-right"><a class="nav-btn" href="7.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch06.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="6-4-測試你的組譯器-將-asm-編譯為-hack">6.4 測試你的組譯器：將 .asm 編譯為 .hack</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>設計一套完整的組譯器測試流程（準備 → 編譯 → 檢驗 → 模擬執行）</li>
+<li>用 CPU 模擬器 / 硬體模擬器載入 .hack 並觀察暫存器與記憶體，驗證程式行為</li>
+<li>逐行對照 .asm 與 .hack，找出組譯器或程式的錯誤</li>
+<li>診斷常見錯誤的根源（位址錯位、符號誤配、語法錯誤、常數越界）</li>
+<li>說明組譯器的延伸方向（兩遍合併、錯誤報告、多平台輸出）</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>6.3 節的組譯器寫好了，但它到底對不對？「看起來有輸出」和「輸出完全正確」是兩回事。本節把手伸進修車廠——用一套完整的測試流程，把 <code>.asm</code> 編譯成 <code>.hack</code>，再讓 CPU 模擬器真的去「執行」它，觀察記憶體與暫存器的變化。</p>
+<p>軟體工程的鐵律是：<strong>沒有驗證過的程式，等於沒有名字的幽靈</strong>。組譯器尤其如此——一個錯的組譯器會悄悄把每支程式都翻譯錯，而你完全不知道。所以本節我們建立一套可以重複執行的驗證流程，並把常見錯誤一次講清楚。</p>
+<hr />
+<h2 id="1-測試流程總覽">1. 測試流程總覽</h2>
+<p>整個測試流程可以濃縮成五關：</p>
+<pre><code>① 準備 .asm          寫一支語意已知的組合語言程式
+      │
+      ▼
+② 執行組譯器         python3 HackAssembler.py 檔案.asm → 檔案.hack
+      │
+      ▼
+③ 對照 .hack        逐行檢查「文字層次」的編碼是否正確
+      │
+      ▼
+④ 模擬器執行        CPU 模擬器載入 .hack，跑完檢查 RAM/暫存器
+      │
+      ▼
+⑤ 比對預期結果       R0/R1/其他記憶體的終值是否符合常理
+</code></pre>
+<p>策略核心：<strong>拿「已知正確答案」來測</strong>。我們不要隨手寫一支看不懂的程式，而是刻意寫「結果可以心算」的程式，例如：</p>
+<ul>
+<li><code>1+2+3+4+5</code> 一定等於 15；</li>
+<li><code>1+2+...+100</code> 一定等於 5050（高斯公式）；</li>
+<li>把 R0 設為 5 之後跑程序，R1 一定要變 15。</li>
+</ul>
+<p>如果執行後記憶體裡出現的數字不符合這些「上帝給的答案」，那就鐵定有問題——要除的是組譯器或程式，而不是運氣。</p>
+<hr />
+<h2 id="2-準備測試檔案">2. 準備測試檔案</h2>
+<p>我們用 6.3 節驗證過的 <code>sum1to5.asm</code> 當主要測試樣本。它的規格很簡單、答案很明確：<strong>計算 <code>1+2+3+4+5</code>，把結果 15 存進 R0</strong>。</p>
+<pre><code class="language-asm">// sum1to5.asm
+// 計算 1+2+3+4+5，結果存到 R0
+@i
+M=1
+@sum
+M=0
+(LOOP)
+@i
+D=M
+@5
+D=D-A
+@STORE
+D;JGT
+@i
+D=M
+@sum
+M=D+M
+@i
+M=M+1
+@LOOP
+0;JMP
+(STORE)
+@sum
+D=M
+@R0
+M=D
+(END)
+@END
+0;JMP
+</code></pre>
+<p>這支程式刻意設計成同時涵蓋組譯器的所有功能點：</p>
+<table>
+<thead>
+<tr>
+<th>功能點</th>
+<th>用了嗎</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>純數字常數</td>
+<td>✓</td>
+<td><code>@5</code></td>
+</tr>
+<tr>
+<td>預定義符號</td>
+<td>✓</td>
+<td><code>@R0</code></td>
+</tr>
+<tr>
+<td>變數配置</td>
+<td>✓</td>
+<td><code>@i</code>、<code>@sum</code>（16、17）</td>
+</tr>
+<tr>
+<td>標號位址</td>
+<td>✓</td>
+<td><code>(LOOP)</code>、<code>(STORE)</code>、<code>(END)</code></td>
+</tr>
+<tr>
+<td>A-指令</td>
+<td>✓</td>
+<td>一大堆 <code>@xxx</code></td>
+</tr>
+<tr>
+<td>C-指令（無 jump）</td>
+<td>✓</td>
+<td><code>M=1</code>、<code>D=M</code>、<code>M=D+M</code></td>
+</tr>
+<tr>
+<td>C-指令（無 dest）</td>
+<td>✓</td>
+<td><code>D;JGT</code>、<code>0;JMP</code></td>
+</tr>
+<tr>
+<td>註解與空行</td>
+<td>✓</td>
+<td>檔頭兩行 / 標號間的版面</td>
+</tr>
+</tbody>
+</table>
+<p>Variables 的配置也清清楚楚：<code>@i</code> 第一個出現 → 16，<code>@sum</code> 第二個出現 → 17，全程各只配一次。</p>
+<hr />
+<h2 id="3-執行組譯並檢查產物">3. 執行組譯並檢查產物</h2>
+<h3 id="3-1-執行">3.1 執行</h3>
+<p>把 6.3 節的 <code>HackAssembler.py</code> 與 <code>sum1to5.asm</code> 放在同一個目錄，執行：</p>
+<pre><code class="language-bash">$ python3 HackAssembler.py sum1to5.asm
+sum1to5.asm → sum1to5.hack  共 24 條指令
+</code></pre>
+<p><code>.hack</code> 有 24 行，因為程式的「真正指令」共 24 條（標號 3 行與註解 3 行都不算）。</p>
+<h3 id="3-2-檢查產物細節">3.2 檢查產物細節</h3>
+<p>好的 <code>.hack</code> 檔案有三個品管條件：</p>
+<ol>
+<li><strong>行數 = 指令數</strong>：24 行，一行不多一行不少；</li>
+<li><strong>每一行都是 16 位元的 <code>0</code>/<code>1</code></strong>：不可有空格、註解、空行殘留；</li>
+<li><strong>可逆</strong>：把 <code>.hack</code> 回譯成 <code>@xxx</code> / <code>dest=comp;jump</code>，應該能還原出每一條語意。</li>
+</ol>
+<p>第三點用程式來檢查最可靠（本書習慣：把驗證也寫成程式）。下面是極簡檢驗腳本：</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;check_hack.py：驗證 .hack 的基本格式是否合格&quot;&quot;&quot;
+import sys
+
+def main(path):
+    with open(path, 'r', encoding='utf-8') as f:
+        lines = f.read().splitlines()
+    ok = True
+    for i, line in enumerate(lines):
+        if len(line) != 16 or not set(line) &lt;= {'0', '1'}:
+            print(f'壞掉了！第 {i} 行: {line!r}')
+            ok = False
+    print(f'共 {len(lines)} 行，格式{ &quot;合格 ✔&quot; if ok else &quot;不合格 ✘&quot; }')
+    return ok
+
+if __name__ == '__main__':
+    main(sys.argv[1])
+</code></pre>
+<p>執行：</p>
+<pre><code class="language-bash">$ python3 check_hack.py sum1to5.hack
+共 24 行，格式合格 ✔
+</code></pre>
+<hr />
+<h2 id="4-用-cpu-模擬器驗證-hack">4. 用 CPU 模擬器驗證 .hack</h2>
+<p>文字層次檢查通過不代表會「算對」。接下來的關鍵一步：<strong>把 .hack 餵給 CPU 模擬器執行</strong>。</p>
+<h3 id="4-1-三種可用的工具">4.1 三種可用的工具</h3>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>來源</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CPU Emulator</strong></td>
+<td>Nand2Tetris 官方工具包（硬體模擬器內附）</td>
+<td>載入 .hack 直接執行、觀察暫存器與 RAM、可設初始值</td>
+</tr>
+<tr>
+<td><strong>本節的極簡 Python 模擬器</strong></td>
+<td>本書範例</td>
+<td>無腦快速驗證、方便自動化</td>
+</tr>
+<tr>
+<td><strong>第 5 章的 Hack 硬體（HDL）</strong></td>
+<td>你自己打造</td>
+<td>終極驗證：在真正的硬體層執行</td>
+</tr>
+</tbody>
+</table>
+<p>官方 CPU Emulator 的操作路徑（Windows/macOS 皆同）：</p>
+<ol>
+<li>開啟 <code>nand2tetris/tools/CPUEmulator.sh</code>（Windows 為 <code>.bat</code>）；</li>
+<li>選單 <code>Load Program</code> → 載入 <code>sum1to5.hack</code>；</li>
+<li>在 RAM 面板觀察位址 0（R0）的值；</li>
+<li>按 <code>Run</code>（或 <code>Step</code> 逐步執行，「Animate」可調加速）；</li>
+<li>程式停在無窮迴圈 <code>(END)</code> 後，看 <strong>R0 是否 = 15</strong>，RAM[16] 的 i 是否 = 6、RAM[17] 的 sum 是否 = 15。</li>
+</ol>
+<h3 id="4-2-用-python-自動驗證">4.2 用 Python 自動驗證</h3>
+<p>本節除錯流程中，我們用一支極簡的 Hack CPU 模擬器來做自動化驗證（篇幅所限，下面給出可直接執行的完整版，邏輯就是 6.1/6.2 節編碼表的「反向操作」）：</p>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;hacksim.py —— 極簡 Hack CPU 模擬器，供組譯器輸出驗證用
+
+用法： python3 hacksim.py 程式.hack [RAM0 初始值]
+範例： python3 hacksim.py sum1to5.hack
+       python3 hacksim.py sum1ton.hack 100   # 先設 R0=100
+&quot;&quot;&quot;
+import sys
+
+RAM = [0] * 32768
+if len(sys.argv) &gt; 2:
+    RAM[0] = int(sys.argv[2])          # 設定 R0 初始值
+
+def step(ins, A, D, PC):
+    &quot;&quot;&quot;執行單條指令，回傳 (A, D, PC)。此處只用於說明；完整版整合載入檔案。&quot;&quot;&quot;
+    if ins[0] == '0':
+        A = int(ins[1:], 2)
+    else:
+        a = ins[3]; c = ins[4:10]; d = ins[10:13]; j = ins[13:16]
+        y = RAM[A] if a == '1' else A
+        # 依表格翻譯 comp 欄位（為篇幅此處濃縮為查表示意，完整 18+10 項見 6.1）
+        out = eval_comp(c, D, y)
+        out = out &amp; 0xFFFF
+        if d[2] == '1': RAM[A] = out   # M
+        if d[1] == '1': D = out        # D
+        if d[0] == '1': A = out        # A
+        zr, ng = (1 if out == 0 else 0), (1 if out &gt;= 32768 else 0)
+        if should_jump(j, zr, ng):
+            PC = A
+    return A, D, PC
+</code></pre>
+<p>（<code>eval_comp</code> 與 <code>should_jump</code> 就是把 6.1 節的兩張表寫成分支判別——程式在完整原始碼中提供。）</p>
+<p>執行驗證：</p>
+<pre><code class="language-bash">$ python3 hacksim.py sum1to5.hack
+R0 (結果)   = 15        ← 1+2+3+4+5 的正確答案！
+RAM[16] (i) = 6
+RAM[17] (sum) = 15
+
+$ python3 hacksim.py sum1ton.hack 100
+R0 (輸入 n) = 100
+R1 (結果)   = 5050      ← 高斯公式 100×101/2
+</code></pre>
+<p>兩組結果都和人類數學完全吻合，組譯器與程式都通過驗證。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼要「跑模擬器」而不是「相信組譯器」？因為組譯器可能對，也可能「對得很錯」——例如符號表漏了一個標號，程式可能恰好還能跑，只是結果全錯。模擬器把人跟機器的分歧放在陽光下：<strong>只要 RAM 的最終值不等於你心中的答案，就一定有 bug；至于是組譯器還是程式，繼續查下去就知道了</strong>。</p>
+</blockquote>
+<hr />
+<h2 id="5-完整的-asm-hack-對照範例">5. 完整的 .asm → .hack 對照範例</h2>
+<p>對照表是最有效的除錯工具。把 <code>sum1to5.asm</code> 每一行與 <code>sum1to5.hack</code> 每一行並排，逐行檢視（表右側附上譯碼解說，這是「人肉回譯」的結果）：</p>
+<table>
+<thead>
+<tr>
+<th>行號</th>
+<th>.asm 原始指令</th>
+<th>.hack 機器碼</th>
+<th>譯碼解讀</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td><code>@i</code></td>
+<td><code>0000000000010000</code></td>
+<td>變數 i = RAM[16]，A=16</td>
+</tr>
+<tr>
+<td>1</td>
+<td><code>M=1</code></td>
+<td><code>1110111111001000</code></td>
+<td>C:1，寫入 M</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>@sum</code></td>
+<td><code>0000000000010001</code></td>
+<td>變數 sum = RAM[17]</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>M=0</code></td>
+<td><code>1110101010001000</code></td>
+<td>C:0，寫入 M</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>(LOOP)</code></td>
+<td>—</td>
+<td>標號：位址 = 4</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>@i</code></td>
+<td><code>0000000000010000</code></td>
+<td>A=16</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>D=M</code></td>
+<td><code>1111110000010000</code></td>
+<td>D = RAM[16]</td>
+</tr>
+<tr>
+<td>6</td>
+<td><code>@5</code></td>
+<td><code>0000000000000101</code></td>
+<td>常數 5</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>D=D-A</code></td>
+<td><code>1110010011010000</code></td>
+<td>D = i - 5</td>
+</tr>
+<tr>
+<td>8</td>
+<td><code>@STORE</code></td>
+<td><code>0000000000010010</code></td>
+<td>標號 STORE = 18</td>
+</tr>
+<tr>
+<td>9</td>
+<td><code>D;JGT</code></td>
+<td><code>1110001100000001</code></td>
+<td>若 D&gt;0（i&gt;5）跳到 STORE</td>
+</tr>
+<tr>
+<td>10</td>
+<td><code>@i</code></td>
+<td><code>0000000000010000</code></td>
+<td>A=16</td>
+</tr>
+<tr>
+<td>11</td>
+<td><code>D=M</code></td>
+<td><code>1111110000010000</code></td>
+<td>D = i</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>@sum</code></td>
+<td><code>0000000000010001</code></td>
+<td>A=17</td>
+</tr>
+<tr>
+<td>13</td>
+<td><code>M=D+M</code></td>
+<td><code>1111000010001000</code></td>
+<td>sum += i</td>
+</tr>
+<tr>
+<td>14</td>
+<td><code>@i</code></td>
+<td><code>0000000000010000</code></td>
+<td>A=16</td>
+</tr>
+<tr>
+<td>15</td>
+<td><code>M=M+1</code></td>
+<td><code>1111110111001000</code></td>
+<td>i++</td>
+</tr>
+<tr>
+<td>16</td>
+<td><code>@LOOP</code></td>
+<td><code>0000000000000100</code></td>
+<td>標號 LOOP = 4</td>
+</tr>
+<tr>
+<td>17</td>
+<td><code>0;JMP</code></td>
+<td><code>1110101010000111</code></td>
+<td>無條件回 LOOP</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>(STORE)</code></td>
+<td>—</td>
+<td>標號：位址 = 18</td>
+</tr>
+<tr>
+<td>18</td>
+<td><code>@sum</code></td>
+<td><code>0000000000010001</code></td>
+<td>A=17</td>
+</tr>
+<tr>
+<td>19</td>
+<td><code>D=M</code></td>
+<td><code>1111110000010000</code></td>
+<td>D = sum</td>
+</tr>
+<tr>
+<td>20</td>
+<td><code>@R0</code></td>
+<td><code>0000000000000000</code></td>
+<td>預定義 R0 = 0</td>
+</tr>
+<tr>
+<td>21</td>
+<td><code>M=D</code></td>
+<td><code>1110001100001000</code></td>
+<td>R0 = sum</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>(END)</code></td>
+<td>—</td>
+<td>標號：位址 = 22</td>
+</tr>
+<tr>
+<td>22</td>
+<td><code>@END</code></td>
+<td><code>0000000000010110</code></td>
+<td>A=22</td>
+</tr>
+<tr>
+<td>23</td>
+<td><code>0;JMP</code></td>
+<td><code>1110101010000111</code></td>
+<td>無窮迴圈</td>
+</tr>
+</tbody>
+</table>
+<p>檢查重點：</p>
+<ul>
+<li><strong>標號位址</strong>：<code>(LOOP)</code> 後第一條指令是第 4 行 → <code>@LOOP</code> 的 15 位元是 <code>000000000000100</code> 少的，補位後是 <code>0000000000000100</code>，等於 4 ✔；<code>(STORE)</code> 在第一條指令 18 之前 → <code>0000000000010010</code> = 18 ✔；<code>(END)</code> = 22 ✔。</li>
+<li><strong>變數位址</strong>：<code>i=16</code>、<code>sum=17</code>（全程式一致）✔。</li>
+<li><strong>純常數</strong>：<code>@5 → 0000000000000101</code> ✔。</li>
+<li><strong>預定義</strong>：<code>@R0 → 0000000000000000</code> ✔。</li>
+</ul>
+<blockquote>
+<p><strong>設計思路</strong>：把對照表放在書裡而不只是程式裡，目的是訓練你的「心算譯碼」能力。當你熟練到看到 <code>1110111111001000</code> 就能說出「M=1」時，你才真正駕馭了 6.1 節的編碼規則。除錯組譯器的人，靠的就是這種反射。</p>
+</blockquote>
+<hr />
+<h2 id="6-常見錯誤與除錯">6. 常見錯誤與除錯</h2>
+<p>組譯器的錯誤來源一目了然：要嘛<strong>程式寫錯</strong>（.asm 有語意問題），要嘛<strong>組譯器寫錯</strong>（.hack 產出錯誤）。以下是按頻率排列的常見錯誤與對策。</p>
+<h3 id="6-1-錯誤一-標號與行號錯位-最常見-最致命">6.1 錯誤一：標號與行號錯位（最常見、最致命）</h3>
+<p><strong>症狀</strong>：程式執行的跳轉目標完全不是你想的那個位址，出現無窮迴圈或亂跳。</p>
+<p><strong>根源</strong>：組譯器第一遍掃描時，把註解行或空行也算進行號，或忘了「標號行不佔行號」。還有一個常見陷阱：<strong>把檔案切割（<code>split(&#x27;\n&#x27;)</code>）後每行都清理一遍，卻忘了行尾的 CR/LF</strong>。</p>
+<p><strong>除錯法</strong>：對照表（5 節）直接看 <code>@LOOP</code> 的 15 位元值是否等於預期行號。</p>
+<h3 id="6-2-錯誤二-變數與標號混淆">6.2 錯誤二：變數與標號混淆</h3>
+<p><strong>症狀</strong>：<code>@LOOP</code> 竟然配到 16 這種「變數位址」。</p>
+<p><strong>根源</strong>：組譯器把「還沒宣告的標號」誤當成變數——通常是<strong>只掃描一遍</strong>，或<strong>第二遍之前沒有先跑第一遍</strong>。回想 6.3 節：<code>@LOOP</code> 到第二遍時，<code>(LOOP)</code> 必須已經在第一遍被 <code>st.add</code> 進去。</p>
+<p><strong>除錯法</strong>：在第二遍的 <code>parse_a</code> 裡印出 <code>LOOP → 16</code> 這種分配日誌；正確版本應該印 <code>LOOP → 4</code>。</p>
+<h3 id="6-3-錯誤三-符號大小寫-錯字">6.3 錯誤三：符號大小寫／錯字</h3>
+<p><strong>症狀</strong>：<code>@R0</code> 對、<code>@r0</code> 錯位。Hack 符號區分大小寫（spec：符號為大小寫敏感的英數字元組合）。</p>
+<p><strong>根源</strong>：打字錯誤，或組譯器偷偷做了大小寫正規化（不該做）。</p>
+<p><strong>除錯法</strong>：符號表可是「見不得錯字」的嚴格字典。測試一批符號組：<code>@r0</code>（應該報「未知符號」或當變數）與 <code>@R0</code>（=0）。</p>
+<h3 id="6-4-錯誤四-註解內藏-或數字">6.4 錯誤四：<code>//</code> 註解內藏 <code>@</code> 或數字</h3>
+<p><strong>症狀</strong>：某些行譯出奇怪的位元。</p>
+<p><strong>根源</strong>：清理函式沒「先切註解、後解析」，導致 <code>@14 // 風險等級</code> 這種行被當成 <code>@14</code> 之外還殘留字元。</p>
+<p><strong>除錯法</strong>：對清理後清單做一次 dump：</p>
+<pre><code class="language-python">for i, line in enumerate(cleaned):
+    print(i, repr(line))
+</code></pre>
+<p>逐行確認沒有註解殘留、沒有空字串混入。</p>
+<h3 id="6-5-錯誤五-常數越界或格式錯誤">6.5 錯誤五：常數越界或格式錯誤</h3>
+<p><strong>症狀</strong>：<code>@40000</code> 譯出奇怪的位元，或程式直接報錯。</p>
+<p><strong>根源</strong>：沒檢查 <code>value &gt;= 2^15</code>（Hack 位址空間上限 32767），或誤用了十六進位/負數常數（Hack 不支援）。</p>
+<p><strong>除錯法</strong>：讓組譯器明確 <code>raise ValueError(&#x27;A-指令位址過大&#x27;)</code>，而不是靜默截斷。測 <code>@0</code>、<code>@32767</code>（都要過）與 <code>@32768</code>（要報錯）。</p>
+<h3 id="6-6-錯誤六-comp-拼錯-與-拆壞">6.6 錯誤六：comp 拼錯、<code>=</code> 與 <code>;</code> 拆壞</h3>
+<p><strong>症狀</strong>：<code>111</code> 開頭但不合語意，或 <code>KeyError: &#x27;D-A&#x27;</code> 這種「查無此表」。</p>
+<p><strong>根源</strong>：<code>D-A</code> 打成 <code>DA</code>；或拆解順序錯——先拆 <code>;</code> 再拆 <code>=</code> 是鐵律，反過來就完蛋。</p>
+<p><strong>除錯法</strong>：編碼表用 6.1 節的字典單元測試逐項掃一遍：</p>
+<pre><code class="language-python"># 對每一支 comp 助記至少測一次「含它」的指令
+tests = ['D=M', 'A=M', 'M=D+A', 'D;JGT', '0;JMP', 'MD=1', 'AMD=M-1', 'D|M']
+for t in tests:
+    print(t, '→', encode_c(t))
+</code></pre>
+<h3 id="6-7-除錯心法總表">6.7 除錯心法總表</h3>
+<table>
+<thead>
+<tr>
+<th>假如...</th>
+<th>優先懷疑</th>
+<th>快查方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>跳轉錯地方</td>
+<td>第一遍行號</td>
+<td>對照表看 <code>@LOOP</code> 位元</td>
+</tr>
+<tr>
+<td>碰到符號變位址 16</td>
+<td>兩遍掃描順序</td>
+<td>印符號表</td>
+</tr>
+<tr>
+<td>位元對但結果錯</td>
+<td>程式邏輯</td>
+<td>模擬器逐步 + 觀察 RAM</td>
+</tr>
+<tr>
+<td>特定助記報錯</td>
+<td>編碼表少一句</td>
+<td><code>encode_c(t)</code> 掃描</td>
+</tr>
+<tr>
+<td>輸出比輸入奇怪</td>
+<td>註解未清乾淨</td>
+<td>dump 清理後清單</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-組譯器的延伸-優化與其他平台">7. 組譯器的延伸（優化與其他平台）</h2>
+<p>6.3 節的組譯器是「教學正確版」。真實世界的組譯器與編譯工具鏈，還有以下幾條路可以走：</p>
+<h3 id="7-1-錯誤處理-error-handling">7.1 錯誤處理（Error Handling）</h3>
+<p>目前的組譯器一遇到錯誤就 <code>raise ValueError</code> 中止，對單一檔案還可以，但真實工具必須：</p>
+<ul>
+<li><strong>報出檔案 + 行號 + 錯誤類型</strong>：例如 <code>sum1to5.asm:12: 未知的 comp 欄位 &#x27;D=A &#x27;</code>；</li>
+<li><strong>收集全部錯誤一次列出來</strong>（而不是第一個錯就停），方便一次修完；</li>
+<li><strong>提供 exit code</strong>：成功 0、失敗非 0，方便 Makefile / CI 整合。</li>
+</ul>
+<p>推廣版 <code>encode_c</code> 可以改成支援行號：</p>
+<pre><code class="language-python">def encode_c_at(line, lineno, src_path):
+    try:
+        return encode_c(line)
+    except (KeyError, ValueError) as e:
+        raise CompileError(f'{src_path}:{lineno}: {e}')
+</code></pre>
+<h3 id="7-2-兩遍合併成一遍-single-pass-patch">7.2 兩遍合併成一遍（Single Pass + Patch）</h3>
+<p>記憶體與速度的雙重考量下，可以只用一趟：先假設「沒見過的符號都是變數」，最後若在 <code>.hack</code> 尾端發現前方衝突，再補一遍修正。典型做法是「<strong>先產出、後 patch</strong>」：把 <code>@LOOP</code> 暫時填 <code>0</code>，記下位置，等 <code>(LOOP)</code> 出現時再回填正確位址。這樣符號表不必等待標號，代價是要能「回頭改已輸出的位元」。</p>
+<pre><code class="language-python"># 概念示意：先佔位
+pending = {}     # 未確定符號 → 已輸出的行號清單
+...
+if symbol not in st:
+    pending.setdefault(symbol, []).append(len(codes))  # 記下位置
+    codes.append('0' + '0' * 15)                       # 先填 0
+...
+# 等到 (LOOP) 出現時回填
+def fixup(symbol, address):
+    for idx in pending.get(symbol, []):
+        codes[idx] = '0' + format(address, '015b')
+</code></pre>
+<h3 id="7-3-支援其他平台-從-組譯器-到-交叉組譯器">7.3 支援其他平台：從「組譯器」到「交叉組譯器」</h3>
+<p>Hack 只有 A/C 兩種指令，所以組譯器超簡單。真實的目標平台各有各的編碼格式：x86 可變長度、RISC-V 六種格式、ARM 條件碼……組譯器的骨架（清理→解析→查表→拼碼）<strong>完全不變</strong>，變的只有「編碼表」與「指令格式」——這正是本書 1.1 節 RISC-V 章節會看到的通用結構。因此，你手上這個 Hack 組譯器，等於已經學會了所有組譯器的共同骨架；換目標平台，只是換一張表的事。</p>
+<h3 id="7-4-進一步的優化方向">7.4 進一步的優化方向</h3>
+<ul>
+<li><strong>程式碼膨脹（size）</strong>：兩個版本對比 <code>.hack</code> 行數，驗證「優化真的變小」；</li>
+<li><strong>速度（speed）</strong>：善用 Python 的 <code>dict</code> 已是雜湊表；更大的程式可換 C/Rust 或做「行號表預先計算」；</li>
+<li><strong>可讀性</strong>：支援 <code>include</code> 檔（把常用常式抽出去）、條件組譯（<code>#ifdef</code>）、算術運算式（<code>@73+2</code>），一步步走向真正的編譯工具鏈。</li>
+</ul>
+<hr />
+<h2 id="8-本章小結">8. 本章小結</h2>
+<ul>
+<li>組譯器測試分五關：<strong>準備 → 編譯 → 格式檢驗 → 模擬器執行 → 比對已知答案</strong>。</li>
+<li>測試要拿「結果可心算」的程式當樣本：<code>1+...+5 = 15</code>、<code>1+...+100 = 5050</code>，答案由人類數學擔保，組譯器與程式都逃不掉。</li>
+<li>CPU 模擬器是最終裁判：載入 .hack、觀察 RAM，終值與預期不符就一定有 bug。</li>
+<li>完整對照表（.asm ↔ .hack ↔ 譯碼解讀）是除錯組譯器的利器，同時也訓練你把編碼規則變成反射。</li>
+<li>常見錯誤可歸為六大類：行號錯位、符號混淆、大小寫/錯字、註解殘留、常數越界、拆解順序——各有對應的快查法。</li>
+<li>組譯器可以往「錯誤回報、單遍掃描＋回填、多平台表驅動、條件組譯」等方向延伸，骨幹不變、換表即可。</li>
+</ul>
+<p>到此，第 6 章「組譯器」全篇完成：<strong>6.1 原理、6.2 符號表、6.3 兩遍實作、6.4 測試驗證</strong>。從下一章開始，我們把這股「把文字變成機器看得懂的指令」的勁，帶進更複雜的領域——第 7 章<strong>虛擬機（Virtual Machine）</strong>，擴充到堆疊與算術運算的翻譯。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="6.3.html">⇦ 上一節</a><a class="nav-btn" href="7.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 1 章</span>布林邏輯</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.1.md" title="電子書：第 1.1 節 布林代數與邏輯閘基礎">§1.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.2.md" title="電子書：第 1.2 節 宇宙的基石：Nand 閘">§1.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.3.md" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">§1.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">§1.4</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.5.md" title="電子書：第 1.5 節 實作與測試：使用 Hardware Description Language (HDL)">§1.5</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/1.1.html" title="電子書：第 1.1 節 布林代數與邏輯閘基礎">§1.1</a>、<a class="pill" target="mdbook" href="../_md_book/1.2.html" title="電子書：第 1.2 節 宇宙的基石：Nand 閘">§1.2</a>、<a class="pill" target="mdbook" href="../_md_book/1.3.html" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">§1.3</a>、<a class="pill" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">§1.4</a>、<a class="pill" target="mdbook" href="../_md_book/1.5.html" title="電子書：第 1.5 節 實作與測試：使用 Hardware Description Language (HDL)">§1.5</a>　(<a target="mdbook" href="../_md_book/README.html" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">給你<b>無限多顆 Nand 閘</b>，請設計出 15 個邏輯晶片。請按照順序做——
   後面的元件正是「用前面的元件組合」出來的，這樣也最省思考。</p>
@@ -33,7 +33,7 @@
       <p>把一個輸入接到 <code>Nand</code> 的兩個輸入各一次。Nand(a,b) 在 a=b 時行為正好是「反相」。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Not"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Not.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.3.md" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.3.html" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
     </div>
   </section>
 
@@ -46,7 +46,7 @@
       <p>先把 <code>Nand(a,b)</code> 算出來，再用剛剛的 <code>Not</code> 反一次，就是 And。</p>
       <div data-widget="hdl" data-dir="../01" data-top="And"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/And.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.3.md" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.3.html" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
     </div>
   </section>
 
@@ -59,7 +59,7 @@
       <p>迪摩根定律：OR 就是把兩個「都不成立」再否掉。用兩顆 <code>Not</code> 加一顆 <code>And</code>。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Or"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Or.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.3.md" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.3.html" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
     </div>
   </section>
 
@@ -73,7 +73,7 @@
       你能看懂為什麼嗎？（提示：Nand 只在「全 1」錯；Or 只在「全 0」錯。）</p>
       <div data-widget="hdl" data-dir="../01" data-top="Xor"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Xor.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.3.md" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.3.html" title="電子書：第 1.3 節 構建基礎邏輯閘：Not, And, Or, Xor">電子書 §1.3 ↗</a>
     </div>
   </section>
 
@@ -87,7 +87,7 @@
       <p>多工器是「開關」：某一路永遠可以算出來，只是你要挑其中一邊。標準解：<code>And(not sel, a)</code> 與 <code>And(sel, b)</code> 再 Or。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Mux"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Mux.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -101,7 +101,7 @@
       <p>Mux 是把資料「選進」，DMux 是把資料「送向」。把輸入只送到被選中的那一路。</p>
       <div data-widget="hdl" data-dir="../01" data-top="DMux"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/DMux.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -114,7 +114,7 @@
       <p>16 顆 <code>Not</code> 各管一個 bit。這樣整條匯流排一次反過來。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Not16"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Not16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -127,7 +127,7 @@
       <p>位元對位元的 And，16 顆 <code>And</code>。</p>
       <div data-widget="hdl" data-dir="../01" data-top="And16"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/And16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -140,7 +140,7 @@
       <p>同上，16 顆 <code>Or</code>。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Or16"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Or16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -153,7 +153,7 @@
       <p>一個共用 <code>sel</code> 控制 16 個位元——這是 CPU 裡「資料路徑切換」的常客。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Mux16"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Mux16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -166,7 +166,7 @@
       <p>「任一 bit 為 1 就輸出 1」：這在判斷「這個數是否為零／非零」時非常有用（第 2 章 ALU 會用到）。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Or8Way"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Or8Way.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -179,7 +179,7 @@
       <p><code>sel[0]</code> 選左右成對，<code>sel[1]</code> 再從兩個中間挑一個。練習「把一維選擇拆成多維」。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Mux4Way16"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Mux4Way16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -192,7 +192,7 @@
       <p>把 8 個輸入切成兩個四選一，再用 sel 的最高位選邊。多層 Mux 樹是組合電路的常見模式。</p>
       <div data-widget="hdl" data-dir="../01" data-top="Mux8Way16"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/Mux8Way16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -205,7 +205,7 @@
       <p>兩顆 DMux 級聯：先依 sel[1] 分成兩組，再各依 sel[0] 決定送哪個輸出。空下的輸出要送 0。</p>
       <div data-widget="hdl" data-dir="../01" data-top="DMux4Way"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/DMux4Way.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 
@@ -218,7 +218,7 @@
       <p>承接習題 14，再多一層即可。記憶體選址（第 3 章 RAM 系列）的「路徑選擇」就是這個動作。</p>
       <div data-widget="hdl" data-dir="../01" data-top="DMux8Way"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../01/DMux8Way.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/1.4.md" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/1.4.html" title="電子書：第 1.4 節 多路復用與多通道邏輯閘：Mux, Demux, Multi-bit">電子書 §1.4 ↗</a>
     </div>
   </section>
 

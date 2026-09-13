@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1.2 節 宇宙的基石：Nand 閘</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link active" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="1.1.html">⇦ 上一節</a></div>
+  <div class="title">第 1.2 節 宇宙的基石：Nand 閘</div>
+  <div class="nav-right"><a class="nav-btn" href="1.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch01.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第-1-2-節-宇宙的基石-nand-閘">第 1.2 節 宇宙的基石：Nand 閘</h1>
+<h2 id="前言-一顆閘-統治一切">前言：一顆閘，統治一切</h2>
+<p>在 1.1 節我們看到，AND、OR、NOT 三者合起來構成了完備的布林邏輯。但接下來要問一個更尖銳的問題：<strong>能不能只用一種閘，就把全部都建構出來？</strong> 答案是——可以，而這顆唯一的閘就是 <strong>Nand（Not AND，非與閘）</strong>。</p>
+<p>這聽起來像是魔術，但它的本質其實是深層的數學必然性。整個 Nand2Tetris 計畫——從第一顆邏輯閘一直到能執行 Tetris 遊戲的完整電腦——都以「<strong>Nand 是唯一的初始元件</strong>」為最高原則。理由是雙重的：</p>
+<ol>
+<li><strong>理論上的簡潔</strong>：只要證明 Nand 能建構 NOT、AND、OR，就等於透過 1.1 節的完備性定理，證明了 Nand 能建構<strong>一切</strong>數位電路。</li>
+<li><strong>實務上的可行性</strong>：真實世界的電晶體很容易製造出 Nand 的行為——你只需要兩個 MOS 電晶體串聯再反相即可。所以「只用 Nand」不是教學上的妥協，而是現代半導體工業真實在做的事。</li>
+</ol>
+<p>本節將正式宣告這顆「宇宙基石」的誕生，分析它的真值表，並親手寫出 Nand 元件的 <strong>HDL（硬體描述語言）</strong> 宣告——這是我們第一份落入磁碟的硬體程式碼。</p>
+<h2 id="1-2-1-為何是-nand-基石的三個條件">1.2.1 為何是 Nand？── 基石的三個條件</h2>
+<p>一顆合格的「宇宙基石」必須同時滿足三個條件：</p>
+<p><strong>條件一：完備（Complete）</strong>。如前所述，它必須獨自一人就能建構 AND、OR、NOT。稍後我們會證明 Nand 具備此特性，而你會在本章 1.3 節親手實作驗證。</p>
+<p><strong>條件二：可實現（Realizable）</strong>。它必須在真實世界可用電晶體製造。Nand 只需兩個串聯 NMOS 加一個反相器即可實現；它不像「理想 NOT」一樣需要特殊的增益電路設計。實務上，幾乎所有現代晶片（包括你那台手機裡的 CPU）內部邏輯基礎最終都是 NAND/組合邏輯閘。</p>
+<p><strong>條件三：最簡（Minimal）</strong>。它的「規格書」簡單到無法再簡單——兩個輸入、一個輸出、一個平凡到極點的真值表。如此單純的心靈，卻能孕育出最複雜的電腦，這正是整個計畫最令人著迷的地方。</p>
+<p>相較之下，And、Or 單獨都不完備（它們都無法表達 NOT），而 Not 只有一個輸入、無法直接表達兩變數函數，因此也無法單獨構成雙輸入運算。<strong>唯有 Nand，站在了完備性與可實現性的交點上。</strong></p>
+<h2 id="1-2-2-nand-的真值表">1.2.2 Nand 的真值表</h2>
+<p>Nand 的定義簡單到一句話：<strong>先做 AND，再取反。</strong></p>
+<div class="math-display">$$
+Nand(x, y) = \neg (x \cdot y)
+$$</div>
+<p>其真值表如下：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">y</th>
+<th style="text-align:center">x·y</th>
+<th style="text-align:center">Nand(x,y) = ¬(x·y)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center"><strong>1</strong></td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center"><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>請注意這個表的位置：Nand 只有在「<strong>兩個輸入同時為 1</strong>」時輸出 0，其餘三種情況都輸出 1。它等於「AND 的補」，所以名字叫做 <strong>N-AND（非與）</strong>。</p>
+<h3 id="與其他閘的血緣關係">與其他閘的血緣關係</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">我們想要的閘</th>
+<th style="text-align:left">與 Nand 的關係</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">NOT(x)</td>
+<td style="text-align:left">若我們把兩個輸入接在一起，Nand(x,x)=¬(x·x)=¬x</td>
+</tr>
+<tr>
+<td style="text-align:center">And</td>
+<td style="text-align:left">直接對 Nand 的輸出再加上一次 NOT 即可</td>
+</tr>
+<tr>
+<td style="text-align:center">Or</td>
+<td style="text-align:left">先用 NOT 把兩個輸入各取反，再做 Nand（De Morgan）</td>
+</tr>
+</tbody>
+</table>
+<p>這些血緣關係將在 1.3 節被一一實作。現在只需要在心中豎起這根柱子：<strong>Nand 是 AND、OR、NOT 的祖先。</strong></p>
+<h2 id="1-2-3-nand-的完備性-functional-completeness">1.2.3 Nand 的完備性（Functional Completeness）</h2>
+<p>現在證明 Nand 的完備性。根據 1.1 節的完備性定理，只要能證明 Nand 能建構 AND、OR、NOT，則 Nand 就能建構一切布林函數。證明如下：</p>
+<h3 id="1-用-nand-建構-not">1. 用 Nand 建構 NOT</h3>
+<p>把 Nand 的兩個輸入接成同一個訊號。根據真值表，只有 <code>(0,0)</code> 或 <code>(1,1)</code> 兩種情況：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">x</th>
+<th style="text-align:center">x</th>
+<th style="text-align:center">Nand(x,x)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">0</td>
+<td style="text-align:center">0</td>
+<td style="text-align:center">1</td>
+</tr>
+<tr>
+<td style="text-align:center">1</td>
+<td style="text-align:center">1</td>
+<td style="text-align:center">0</td>
+</tr>
+</tbody>
+</table>
+<div class="math-display">$$
+\boxed{Not(x) = Nand(x, x)}
+$$</div>
+<p>輸出正好是輸入的補——NOT 到手。</p>
+<h3 id="2-用-nand-建構-and">2. 用 Nand 建構 AND</h3>
+<p>對 Nand 的輸出再做一次 NOT（即再做一次把輸入接在一起的 Nand）：</p>
+<div class="math-display">$$
+And(x,y) = Nand\big(\,Nand(x,y),\; Nand(x,y)\,\big) = \neg\big(\neg(x \cdot y)\big) = x \cdot y
+$$</div>
+<p>內層 Nand 產出 <code>¬(x·y)</code>，外層當作 NOT 使用，雙重否定還原為 AND。</p>
+<h3 id="3-用-nand-建構-or">3. 用 Nand 建構 OR</h3>
+<p>借助 De Morgan 定則（1.1.5 節）：<code>x + y = ¬(¬x · ¬y)</code>。先對 x、y 各自用 NOT（即 Nand(x,x)、Nand(y,y)）取反，再送進 Nand：</p>
+<div class="math-display">$$
+Or(x,y) = Nand\big(\,Not(x),\; Not(y)\,\big) = Nand\big(\,Nand(x,x),\; Nand(y,y)\,\big)
+$$</div>
+<p>驗證一下真值表（以 <code>(x,y)=(0,1)</code> 為例）：<code>Nand(0,0)=1</code>，<code>Nand(1,1)=0</code>，<code>Nand(1,0)=1</code>，正是 <code>0+1=1</code> 的預期。</p>
+<h3 id="完備性定理">完備性定理</h3>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">基本運算</th>
+<th style="text-align:left">以 Nand 表示</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">NOT(x)</td>
+<td style="text-align:left">Nand(x, x)</td>
+</tr>
+<tr>
+<td style="text-align:center">AND(x,y)</td>
+<td style="text-align:left">Nand( Nand(x,y), Nand(x,y) )</td>
+</tr>
+<tr>
+<td style="text-align:center">OR(x,y)</td>
+<td style="text-align:left">Nand( Nand(x,x), Nand(y,y) )</td>
+</tr>
+</tbody>
+</table>
+<p>由於<strong>任何布林函數都能以 AND、OR、NOT 表達</strong>（1.1.3 節的 SOP 構造法），而 AND、OR、NOT 又能以 Nand 表達，故<strong>任何布林函數都能以 Nand 表達</strong>。Nand 完備，證畢。</p>
+<blockquote>
+<p>這正是把 Nand 稱為「宇宙基石」的理由：它不是眾多邏輯閘中的一種，而是<strong>唯一</strong>需要我們向硬體製造者下訂單的元件。所有其他閘，都是我們自己用 Nand 組裝的。</p>
+</blockquote>
+<h2 id="1-2-4-進入硬體世界-什麼是-hdl">1.2.4 進入硬體世界：什麼是 HDL</h2>
+<p>在開始寫 HDL 之前，先建立一個心智模型：<strong>硬體描述語言（Hardware Description Language, HDL）</strong> 是一種「用文字描述電路結構」的語言。它不是普通的程式語言（不是在「執行」），而是在「宣告」元件如何連接。</p>
+<p>在 Nand2Tetris 計畫中，HDL 有幾個核心要素：</p>
+<ul>
+<li><strong>CHIP</strong>：一個硬體元件的完整藍圖。譬如 <code>Nand</code>、<code>And</code>、之後的 <code>Mux</code>、<code>ALU</code>，都是 chip。</li>
+<li><strong>IN / OUT</strong>：宣告元件的對外介面——它有哪幾個輸入腳、哪幾個輸出腳。</li>
+<li><strong>PARTS</strong>：描述這個元件由哪些更小的 chip 組成、彼此如何接線。這叫做<strong>層次化設計（Hierarchical Design）</strong>——大電路建在小電路之上。</li>
+<li><strong>BUILTIN</strong>：宣告「這個 chip 是內建的」，行為由模擬器直接實現，不會被拆解成更小的零件。<strong>只有奠基在整個計畫最底層的 Nand 是 BUILTIN。</strong></li>
+</ul>
+<p>換句話說：模擬器為你無限供應 Nand 這個「無限免費的積木」，而你自己組裝出世界上其餘的一切。這就是整本書的遊戲規則。</p>
+<h2 id="1-2-5-第一個-hdl-檔案-nand-hdl">1.2.5 第一個 HDL 檔案：nand.hdl</h2>
+<p>Nand 是整個硬體堆疊的「第一顆種子」。它的 HDL 宣告非常簡短——因為它沒有內部零件，行為直接內建在模擬器中：</p>
+<pre><code class="language-hdl">// nand.hdl
+// 宇宙的基石：唯一的初始元件，其餘一律由此建構。
+
+CHIP Nand {
+    IN  a, b;
+    OUT out;
+
+    BUILTIN Nand;
+}
+
+</code></pre>
+<p>逐行解讀：</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:center">行</th>
+<th>內容</th>
+<th>意義</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:center">1</td>
+<td><code>// nand.hdl</code></td>
+<td>註解，以 <code>//</code> 開頭，給人類看。</td>
+</tr>
+<tr>
+<td style="text-align:center">2</td>
+<td><code>// 宇宙的基石...</code></td>
+<td>另一行註解。</td>
+</tr>
+<tr>
+<td style="text-align:center">3</td>
+<td><code>CHIP Nand {</code></td>
+<td>宣告一個名為 Nand 的元件，進入其定義區塊。</td>
+</tr>
+<tr>
+<td style="text-align:center">4</td>
+<td><code>IN a, b;</code></td>
+<td>有兩個輸入接腳，取名 <code>a</code> 與 <code>b</code>。</td>
+</tr>
+<tr>
+<td style="text-align:center">5</td>
+<td><code>OUT out;</code></td>
+<td>有一個輸出接腳，取名 <code>out</code>。</td>
+</tr>
+<tr>
+<td style="text-align:center">6</td>
+<td><code>BUILTIN Nand;</code></td>
+<td>告訴模擬器：Nand 的行為是內建的，不需要（也無法）用更小的零件拼出。</td>
+</tr>
+<tr>
+<td style="text-align:center">7</td>
+<td><code>}</code></td>
+<td>元件定義結束。</td>
+</tr>
+</tbody>
+</table>
+<p>請記得：<strong>這是全書唯一一個 <code>BUILTIN</code> 的 chip</strong>。從下一節開始，所有的 chip —— Not、And、Or、Xor、Mux、ALU、CPU——都只能用 <code>PARTS</code> 指向 Nand（或由 Nand 組成的元件），絕不再向「基礎零件庫」索取任何新東西。我們從此開始<strong>自立自強</strong>。</p>
+<h3 id="給初學者的一點說明">給初學者的一點說明</h3>
+<p>如果你還不習慣這種「宣告式」的思維：請把它想成組裝樂高。<code>BUILTIN</code> 是原廠出的一顆特殊積木；而你自己設計的每個 chip，都是一張「說明書」，告訴別人要用哪些積木、插在哪裡。電腦（或模擬器）照著說明書，就能把積木組合出你要的功能。後續章節我們會看到大量更複雜的說明書。</p>
+<h2 id="1-2-6-設計思路-單一基石的策略價值">1.2.6 設計思路：單一基石的策略價值</h2>
+<p>我們把設計哲學整理成本節最重要的總結：</p>
+<ol>
+<li><strong>越底層，越關鍵</strong>：Nand 位於整棵設計樹的最底部，它的正確性依賴於模擬器內建定義，因此只需要驗證一次。其上所有元件都可以「逐步證明」——用真值表對照每一段組合。</li>
+<li><strong>無窮組合，有限零件</strong>：用一顆 Nand 原子，組合出分子（And/Or/Not）、化合物（Mux）、器官（ALU）、最後組合出完整的電腦。零件庫永遠只有 Nand，複雜度來自<strong>連接方式</strong>而非<strong>零件種類</strong>。</li>
+<li><strong>為未來鋪路</strong>：現在嚴謹地只用 Nand 建構，將來設計 CPU、記憶體時就絕不會出現「某個閘不知道從哪冒出來」的信任漏洞。整台機器——連同那顆跑起 Tetris 的核心——都確實地建立在單一原子上。</li>
+</ol>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>Nand 被選為唯一基石</strong>，因為它同時滿足完備性、可實現性與最簡性三個條件。</li>
+<li>Nand 的真值表只有一行輸出 0（當 <code>a=b=1</code> 時），其餘都是 1：<code>Nand(x,y) = ¬(x·y)</code>。</li>
+<li><strong>完備性證明</strong>：以 <code>Nand(x,x)</code> 建構 NOT、以雙重否定建構 AND、以 De Morgan 建構 OR，再由 SOP 構造法擴展到任意函數。</li>
+<li><strong>HDL</strong> 是描述硬體結構的語言，包含 <code>CHIP</code>、<code>IN</code>、<code>OUT</code>、<code>PARTS</code>、<code>BUILTIN</code> 等宣告。</li>
+<li><code>nand.hdl</code> 是唯一使用 <code>BUILTIN</code> 的檔案，是全書硬體堆疊的地基。</li>
+</ul>
+<p>現在，地基已經打下。下一節我們將親手「煉金」——用 Nand 煉出 Not、And、Or、Xor 這四顆次級積木，並把每顆積木都鋪上完整的真值表、布林式與 HDL 藍圖。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="1.1.html">⇦ 上一節</a><a class="nav-btn" href="1.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

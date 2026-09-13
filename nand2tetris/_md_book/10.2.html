@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十章第二節：詞法分析（Lexical Analysis / Tokenizer）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link active" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="10.1.html">⇦ 上一節</a></div>
+  <div class="title">第十章第二節：詞法分析（Lexical Analysis / Tokenizer</div>
+  <div class="nav-right"><a class="nav-btn" href="10.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch10.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第十章第二節-詞法分析-lexical-analysis-tokenizer">第十章第二節：詞法分析（Lexical Analysis / Tokenizer）</h1>
+<h2 id="前言">前言</h2>
+<p>詞法分析是編譯器管線的第一步，也是最基礎的一步。它的任務看似簡單：<strong>將一串原始碼字元轉換為一串有意義的記號（token）</strong>。然而，這個「簡單」的步驟卻是整個編譯過程的基石——如果詞法分析器出錯，後面的所有分析都將建立在錯誤之上。</p>
+<p>想像你在讀一句中文：「我今天去了動物園」。你的大腦會自動把字元組合成有意義的單元：「我」、「今天」、「去了」、「動物園」。詞法分析器做的事情與此類似——它掃描字元流，把連續的字元組合成一個個有意義的 token。</p>
+<p>在本節中，我們將定義 Jack 語言的 token 類型，學習正規表示式的應用，並動手實作一個完整的 JackTokenizer。</p>
+<hr />
+<h2 id="10-2-1-token-的分類">10.2.1 Token 的分類</h2>
+<p>在 Jack 語言中，每一個 token 都屬於以下五種類型之一：</p>
+<h3 id="1-keyword-關鍵字">1. Keyword（關鍵字）</h3>
+<p>關鍵字是 Jack 語言預先保留的詞彙，具有特殊的語法意義。它們<strong>不能</strong>作為變數名或函式名。</p>
+<p>Jack 的完整關鍵字清單（共 27 個）：</p>
+<table>
+<thead>
+<tr>
+<th>分類</th>
+<th>關鍵字</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>類別與結構</strong></td>
+<td><code>class</code>, <code>constructor</code>, <code>function</code>, <code>method</code>, <code>field</code>, <code>static</code></td>
+</tr>
+<tr>
+<td><strong>變數宣告</strong></td>
+<td><code>var</code></td>
+</tr>
+<tr>
+<td><strong>資料型態</strong></td>
+<td><code>int</code>, <code>char</code>, <code>boolean</code>, <code>void</code></td>
+</tr>
+<tr>
+<td><strong>語句</strong></td>
+<td><code>let</code>, <code>do</code>, <code>if</code>, <code>else</code>, <code>while</code>, <code>return</code></td>
+</tr>
+<tr>
+<td><strong>常值</strong></td>
+<td><code>true</code>, <code>false</code>, <code>null</code>, <code>this</code></td>
+</tr>
+<tr>
+<td><strong>運算</strong></td>
+<td><code>and</code>, <code>or</code>, <code>not</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-symbol-符號">2. Symbol（符號）</h3>
+<p>符號是語法結構中的標點符號或運算符號。Jack 使用以下 20 個符號：</p>
+<pre><code>( ) [ ] . , ; + - * / &amp; | &lt; &gt; = ~ { }
+</code></pre>
+<p>其中有些符號具有多重含義。例如 <code>&lt;</code> 在 XML 輸出中需要被轉義為 <code>&amp;lt;</code>，<code>&gt;</code> 轉義為 <code>&amp;gt;</code>，<code>&quot;</code> 轉義為 <code>&amp;quot;</code>，<code>&amp;</code> 轉義為 <code>&amp;amp;</code>。</p>
+<h3 id="3-integerconstant-整數常量">3. IntegerConstant（整數常量）</h3>
+<p>Jack 的整數常量是 16 位元的帶號整數，範圍為 0 到 32767（非負整數）。它由一串連續的十進位數字組成。</p>
+<p>合法的整數常量：</p>
+<pre><code>0, 42, 32767, 100, 255
+</code></pre>
+<h3 id="4-stringconstant-字串常量">4. StringConstant（字串常量）</h3>
+<p>字串常量是由雙引號 <code>&quot;</code> 包圍的一串字元。字串中不包含雙引號本身，且雙引號不屬於字串內容的一部分。</p>
+<p>合法的字串常量：</p>
+<pre><code>&quot;Hello, World!&quot;, &quot;Nand2Tetris&quot;, &quot;a&quot;
+</code></pre>
+<h3 id="5-identifier-識別碼">5. Identifier（識別碼）</h3>
+<p>識別碼是程式設計師自行命名的標識符，用於變數名、函式名、類別名等。Jack 的識別碼必須以英文字母或底線 <code>_</code> 開頭，後續可跟字母、數字或底線。</p>
+<p>合法的識別碼：</p>
+<pre><code>x, myVar, _count, outputString, ScreenWidth
+</code></pre>
+<p>不合法的識別碼：</p>
+<pre><code>2ndValue    // 不能以數字開頭
+class       // 這是關鍵字，不能當識別碼
+my-var      // 不合法的字元 '-'
+</code></pre>
+<hr />
+<h2 id="10-2-2-正規表示式與-token">10.2.2 正規表示式與 Token</h2>
+<p>在形式語言理論中，每一種 token 類型可以用**正規表示式（Regular Expression）**來描述：</p>
+<pre><code>keyword      = &quot;class&quot; | &quot;constructor&quot; | &quot;function&quot; | &quot;method&quot; | &quot;field&quot; |
+               &quot;static&quot; | &quot;var&quot; | &quot;int&quot; | &quot;char&quot; | &quot;boolean&quot; | &quot;void&quot; |
+               &quot;let&quot; | &quot;do&quot; | &quot;if&quot; | &quot;else&quot; | &quot;while&quot; | &quot;return&quot; |
+               &quot;true&quot; | &quot;false&quot; | &quot;null&quot; | &quot;this&quot; | &quot;and&quot; | &quot;or&quot; | &quot;not&quot;
+
+symbol       = &quot;{&quot; | &quot;}&quot; | &quot;(&quot; | &quot;)&quot; | &quot;[&quot; | &quot;]&quot; | &quot;.&quot; | &quot;,&quot; | &quot;;&quot; |
+               &quot;+&quot; | &quot;-&quot; | &quot;*&quot; | &quot;/&quot; | &quot;&amp;&quot; | &quot;|&quot; | &quot;&lt;&quot; | &quot;&gt;&quot; | &quot;=&quot; | &quot;~&quot;
+
+integerConstant = [0-9]+
+
+stringConstant  = '&quot;' [^&quot;]* '&quot;'
+
+identifier    = [a-zA-Z_][a-zA-Z0-9_]*
+</code></pre>
+<p>詞法分析器的工作，就是按照這些規則，從左到右掃描字元流，每次匹配最長的合法 token。</p>
+<hr />
+<h2 id="10-2-3-無視空白與註解">10.2.3 無視空白與註解</h2>
+<p>詞法分析器必須在掃描時自動跳過以下內容：</p>
+<h3 id="空白字元">空白字元</h3>
+<ul>
+<li>空格（space, <code> </code>）</li>
+<li>製表符（tab, <code>\t</code>）</li>
+<li>換行符（newline, <code>\n</code>）</li>
+<li>回車符（carriage return, <code>\r</code>）</li>
+</ul>
+<h3 id="jack-的註解格式">Jack 的註解格式</h3>
+<p>Jack 支援兩種註解：</p>
+<ol>
+<li>
+<p><strong>單行註解</strong>：以 <code>//</code> 開頭，直到行尾</p>
+<pre><code>// 這是一行註解
+var int x; // 這也是註解
+</code></pre>
+</li>
+<li>
+<p><strong>多行註解</strong>：以 <code>/*</code> 開頭，以 <code>*/</code> 結尾（可跨越多行）</p>
+<pre><code>/* 這是
+   多行
+   註解 */
+</code></pre>
+</li>
+</ol>
+<p><strong>注意</strong>：Jack 語言<strong>不支援</strong>巢狀的多行註解。也就是說，<code>/* ... /* ... */ ... */</code> 中第二個 <code>*/</code> 會被視為註解的結束，而非巢狀結構。</p>
+<hr />
+<h2 id="10-2-4-jacktokenizer-的介面設計">10.2.4 JackTokenizer 的介面設計</h2>
+<p>我們的 JackTokenizer 類別需要提供以下介面：</p>
+<pre><code class="language-python">class JackTokenizer:
+    &quot;&quot;&quot;將 Jack 原始碼的字元流轉換為 token 流。&quot;&quot;&quot;
+
+    def __init__(self, input_file: str) -&gt; None:
+        &quot;&quot;&quot;開啟輸入檔案並預讀第一個 token。&quot;&quot;&quot;
+
+    def has_more_tokens(self) -&gt; bool:
+        &quot;&quot;&quot;是否還有尚未處理的 token？&quot;&quot;&quot;
+
+    def advance(self) -&gt; None:
+        &quot;&quot;&quot;讀取下一個 token，並更新 token 型別與值。&quot;&quot;&quot;
+
+    def token_type(self) -&gt; str:
+        &quot;&quot;&quot;回傳目前 token 的型別（KEYWORD, SYMBOL, IDENTIFIER,
+           INT_CONST, STRING_CONST, EOF 之一）。&quot;&quot;&quot;
+
+    def keyword(self) -&gt; str:
+        &quot;&quot;&quot;回傳目前 token 的關鍵字（僅在 token_type() == KEYWORD 時有效）。&quot;&quot;&quot;
+
+    def symbol(self) -&gt; str:
+        &quot;&quot;&quot;回傳目前 token 的符號（僅在 token_type() == SYMBOL 時有效）。&quot;&quot;&quot;
+
+    def identifier(self) -&gt; str:
+        &quot;&quot;&quot;回傳目前 token 的識別碼（僅在 token_type() == IDENTIFIER 時有效）。&quot;&quot;&quot;
+
+    def int_val(self) -&gt; int:
+        &quot;&quot;&quot;回傳目前 token 的整數值（僅在 token_type() == INT_CONST 時有效）。&quot;&quot;&quot;
+
+    def string_val(self) -&gt; str:
+        &quot;&quot;&quot;回傳目前 token 的字串值（僅在 token_type() == STRING_CONST 時有效）。&quot;&quot;&quot;
+</code></pre>
+<hr />
+<h2 id="10-2-5-完整的-jacktokenizer-實作-python">10.2.5 完整的 JackTokenizer 實作（Python）</h2>
+<p>以下是完整的 Python 實作：</p>
+<pre><code class="language-python">import re
+import sys
+import os
+
+# Token 型別常數
+KEYWORD = &quot;KEYWORD&quot;
+SYMBOL = &quot;SYMBOL&quot;
+IDENTIFIER = &quot;IDENTIFIER&quot;
+INT_CONST = &quot;INT_CONST&quot;
+STRING_CONST = &quot;STRING_CONST&quot;
+EOF = &quot;EOF&quot;
+
+# Jack 關鍵字集合
+KEYWORDS = {
+    &quot;class&quot;, &quot;constructor&quot;, &quot;function&quot;, &quot;method&quot;,
+    &quot;field&quot;, &quot;static&quot;, &quot;var&quot;, &quot;int&quot;, &quot;char&quot;, &quot;boolean&quot;,
+    &quot;void&quot;, &quot;true&quot;, &quot;false&quot;, &quot;null&quot;, &quot;this&quot;,
+    &quot;let&quot;, &quot;do&quot;, &quot;if&quot;, &quot;else&quot;, &quot;while&quot;, &quot;return&quot;,
+    &quot;and&quot;, &quot;or&quot;, &quot;not&quot;
+}
+
+# Jack 符號集合
+SYMBOLS = set('{}()[.,;+-*/&amp;|&lt;&gt;=~')
+
+# XML 轉義對照表
+XML_ESCAPE = {
+    &quot;&lt;&quot;: &quot;&amp;lt;&quot;,
+    &quot;&gt;&quot;: &quot;&amp;gt;&quot;,
+    &quot;&amp;&quot;: &quot;&amp;amp;&quot;,
+    '&quot;': &quot;&amp;quot;&quot;
+}
+
+
+class JackTokenizer:
+    &quot;&quot;&quot;將 Jack 原始碼的字元流轉換為 token 流。&quot;&quot;&quot;
+
+    def __init__(self, input_file: str) -&gt; None:
+        with open(input_file, &quot;r&quot;, encoding=&quot;utf-8&quot;) as f:
+            self.source = f.read()
+        self.pos = 0          # 目前掃描位置
+        self.current_token = &quot;&quot;
+        self.current_type = EOF
+        self._skip_whitespace_and_comments()
+
+    def _current_char(self) -&gt; str:
+        &quot;&quot;&quot;回傳目前位置的字元，超出範圍則回傳空字串。&quot;&quot;&quot;
+        if self.pos &lt; len(self.source):
+            return self.source[self.pos]
+        return &quot;&quot;
+
+    def _peek_char(self, offset: int = 1) -&gt; str:
+        &quot;&quot;&quot;向前看 offset 個字元。&quot;&quot;&quot;
+        idx = self.pos + offset
+        if idx &lt; len(self.source):
+            return self.source[idx]
+        return &quot;&quot;
+
+    def _skip_whitespace_and_comments(self) -&gt; None:
+        &quot;&quot;&quot;跳過所有空白字元與註解。&quot;&quot;&quot;
+        while self.pos &lt; len(self.source):
+            ch = self.source[self.pos]
+
+            # 跳過空白字元
+            if ch in &quot; \t\n\r&quot;:
+                self.pos += 1
+                continue
+
+            # 處理單行註解
+            if ch == &quot;/&quot; and self._peek_char() == &quot;/&quot;:
+                self.pos += 2
+                # 跳過直到行尾
+                while self.pos &lt; len(self.source) and self.source[self.pos] != &quot;\n&quot;:
+                    self.pos += 1
+                continue
+
+            # 處理多行註解
+            if ch == &quot;/&quot; and self._peek_char() == &quot;*&quot;:
+                self.pos += 2
+                # 跳過直到找到 */
+                while self.pos &lt; len(self.source):
+                    if self.source[self.pos] == &quot;*&quot; and self._peek_char() == &quot;/&quot;:
+                        self.pos += 2
+                        break
+                    self.pos += 1
+                continue
+
+            # 不是空白也不是註解，停止跳過
+            break
+
+    def has_more_tokens(self) -&gt; bool:
+        &quot;&quot;&quot;判斷是否還有未處理的 token。&quot;&quot;&quot;
+        self._skip_whitespace_and_comments()
+        return self.pos &lt; len(self.source)
+
+    def advance(self) -&gt; None:
+        &quot;&quot;&quot;讀取下一個 token。&quot;&quot;&quot;
+        self._skip_whitespace_and_comments()
+
+        if self.pos &gt;= len(self.source):
+            self.current_type = EOF
+            self.current_token = &quot;&quot;
+            return
+
+        ch = self.source[self.pos]
+
+        # --- 字串常量 ---
+        if ch == '&quot;':
+            self.current_type = STRING_CONST
+            self.pos += 1  # 跳過開頭的 &quot;
+            start = self.pos
+            while self.pos &lt; len(self.source) and self.source[self.pos] != '&quot;':
+                self.pos += 1
+            self.current_token = self.source[start:self.pos]
+            self.pos += 1  # 跳過結尾的 &quot;
+            return
+
+        # --- 整數常量 ---
+        if ch.isdigit():
+            self.current_type = INT_CONST
+            start = self.pos
+            while self.pos &lt; len(self.source) and self.source[self.pos].isdigit():
+                self.pos += 1
+            self.current_token = self.source[start:self.pos]
+            return
+
+        # --- 符號 ---
+        if ch in SYMBOLS:
+            self.current_type = SYMBOL
+            self.current_token = ch
+            self.pos += 1
+            return
+
+        # --- 識別碼或關鍵字 ---
+        if ch.isalpha() or ch == &quot;_&quot;:
+            start = self.pos
+            while self.pos &lt; len(self.source) and (
+                self.source[self.pos].isalnum() or self.source[self.pos] == &quot;_&quot;
+            ):
+                self.pos += 1
+            word = self.source[start:self.pos]
+            if word in KEYWORDS:
+                self.current_type = KEYWORD
+            else:
+                self.current_type = IDENTIFIER
+            self.current_token = word
+            return
+
+        # 未預期的字元
+        raise SyntaxError(f&quot;Unexpected character: '{ch}' at position {self.pos}&quot;)
+
+    def token_type(self) -&gt; str:
+        &quot;&quot;&quot;回傳目前 token 的型別。&quot;&quot;&quot;
+        return self.current_type
+
+    def keyword(self) -&gt; str:
+        &quot;&quot;&quot;回傳關鍵字值。&quot;&quot;&quot;
+        return self.current_token
+
+    def symbol(self) -&gt; str:
+        &quot;&quot;&quot;回傳符號值。&quot;&quot;&quot;
+        return self.current_token
+
+    def identifier(self) -&gt; str:
+        &quot;&quot;&quot;回傳識別碼值。&quot;&quot;&quot;
+        return self.current_token
+
+    def int_val(self) -&gt; int:
+        &quot;&quot;&quot;回傳整數值。&quot;&quot;&quot;
+        return int(self.current_token)
+
+    def string_val(self) -&gt; str:
+        &quot;&quot;&quot;回傳字串值。&quot;&quot;&quot;
+        return self.current_token
+
+    def token_to_xml(self) -&gt; str:
+        &quot;&quot;&quot;將目前 token 轉為 XML 格式的字串。&quot;&quot;&quot;
+        type_map = {
+            KEYWORD: &quot;keyword&quot;,
+            SYMBOL: &quot;symbol&quot;,
+            IDENTIFIER: &quot;identifier&quot;,
+            INT_CONST: &quot;integerConstant&quot;,
+            STRING_CONST: &quot;stringConstant&quot;
+        }
+        xml_type = type_map.get(self.current_type, &quot;unknown&quot;)
+        value = self.current_token
+        # 對 XML 特殊字元進行轉義
+        escaped = XML_ESCAPE.get(value, value)
+        return f&quot;&lt;{xml_type}&gt; {escaped} &lt;/{xml_type}&gt;&quot;
+
+
+def tokenize_file(input_path: str) -&gt; None:
+    &quot;&quot;&quot;對一個 .jack 檔案執行詞法分析，輸出 XxxT.xml。&quot;&quot;&quot;
+    tokenizer = JackTokenizer(input_path)
+    base = os.path.splitext(input_path)[0]
+    output_path = base + &quot;T.xml&quot;
+
+    with open(output_path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as out:
+        out.write(&quot;&lt;tokens&gt;\n&quot;)
+        while tokenizer.has_more_tokens():
+            tokenizer.advance()
+            if tokenizer.token_type() == EOF:
+                break
+            out.write(&quot;  &quot; + tokenizer.token_to_xml() + &quot;\n&quot;)
+        out.write(&quot;&lt;/tokens&gt;\n&quot;)
+
+    print(f&quot;Tokenized: {input_path} -&gt; {output_path}&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    if len(sys.argv) &lt; 2:
+        print(&quot;Usage: python JackTokenizer.py &lt;file.jack&gt;&quot;)
+        sys.exit(1)
+    tokenize_file(sys.argv[1])
+</code></pre>
+<hr />
+<h2 id="10-2-6-設計思路與實作步驟">10.2.6 設計思路與實作步驟</h2>
+<h3 id="步驟一-讀取並清除">步驟一：讀取並清除</h3>
+<p>首先將整個 <code>.jack</code> 檔案讀取為一個字串。使用位置指標 <code>pos</code> 從左到右掃描，並在掃描過程中自動跳過空白與註解。</p>
+<h3 id="步驟二-識別-token-類型">步驟二：識別 Token 類型</h3>
+<p>按照以下優先順序判斷 token 類型：</p>
+<ol>
+<li><strong>空白/註解</strong> → 跳過</li>
+<li><strong><code>&quot;</code></strong> → 字串常量</li>
+<li><strong>數字</strong> → 整數常量</li>
+<li><strong>符號字元</strong> → 符號</li>
+<li><strong>字母或底線</strong> → 先讀取完整單字，再判斷是否為關鍵字</li>
+</ol>
+<h3 id="步驟三-預先讀取-lookahead">步驟三：預先讀取（Lookahead）</h3>
+<p>詞法分析器通常需要「向前看」一個字元來判斷 token 的邊界。例如，遇到 <code>/</code> 時，需要查看下一個字元：</p>
+<ul>
+<li>如果下一個是 <code>/</code> → 這是單行註解的開頭</li>
+<li>如果下一個是 <code>*</code> → 這是多行註解的開頭</li>
+<li>否則 → 這是除法運算符號</li>
+</ul>
+<h3 id="步驟四-xml-轉義">步驟四：XML 轉義</h3>
+<p>由於我們要將 token 輸出為 XML 格式，必須處理 XML 的保留字元。在 XML 中，以下字元具有特殊意義：</p>
+<table>
+<thead>
+<tr>
+<th>字元</th>
+<th>XML 轉義</th>
+<th>常見場景</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;</code></td>
+<td><code>&amp;lt;</code></td>
+<td>小於運算符</td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td><code>&amp;gt;</code></td>
+<td>大於運算符</td>
+</tr>
+<tr>
+<td><code>&amp;</code></td>
+<td><code>&amp;amp;</code></td>
+<td>邏輯且運算符</td>
+</tr>
+<tr>
+<td><code>&quot;</code></td>
+<td><code>&amp;quot;</code></td>
+<td>字串常量</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-2-7-執行範例">10.2.7 執行範例</h2>
+<p>假設我們有以下 Jack 原始碼 <code>Main.jack</code>：</p>
+<pre><code class="language-jack">// This file is part of the materials supplied with Nand2Tetris.
+class Main {
+    function void main() {
+        var int x;
+        let x = 3;
+        do Output.printString(&quot;Hello&quot;);
+        return;
+    }
+}
+</code></pre>
+<p>執行 tokenizer 後，產生的 <code>MainT.xml</code> 輸出如下：</p>
+<pre><code class="language-xml">&lt;tokens&gt;
+  &lt;keyword&gt; class &lt;/keyword&gt;
+  &lt;identifier&gt; Main &lt;/identifier&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;keyword&gt; function &lt;/keyword&gt;
+  &lt;keyword&gt; void &lt;/keyword&gt;
+  &lt;identifier&gt; main &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;keyword&gt; var &lt;/keyword&gt;
+  &lt;keyword&gt; int &lt;/keyword&gt;
+  &lt;identifier&gt; x &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; let &lt;/keyword&gt;
+  &lt;identifier&gt; x &lt;/identifier&gt;
+  &lt;symbol&gt; = &lt;/symbol&gt;
+  &lt;integerConstant&gt; 3 &lt;/integerConstant&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; do &lt;/keyword&gt;
+  &lt;identifier&gt; Output &lt;/identifier&gt;
+  &lt;symbol&gt; . &lt;/symbol&gt;
+  &lt;identifier&gt; printString &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;stringConstant&gt; Hello &lt;/stringConstant&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; return &lt;/keyword&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+&lt;/tokens&gt;
+</code></pre>
+<p>你會注意到：</p>
+<ul>
+<li>註解 <code>// This file is part of...</code> 已被完全移除</li>
+<li>空白被忽略，只保留有意義的 token</li>
+<li><code>&quot;Hello&quot;</code> 被識別為字串常量（不含引號）</li>
+<li><code>{</code> 和 <code>}</code> 分別作為獨立的符號 token</li>
+</ul>
+<hr />
+<h2 id="10-2-8-常見陷阱與除錯技巧">10.2.8 常見陷阱與除錯技巧</h2>
+<h3 id="陷阱一-多行註解中的">陷阱一：多行註解中的 <code>/</code></h3>
+<pre><code class="language-jack">/* 注解中有除法運算： 10 / 2 */
+</code></pre>
+<p>正確的實作會正確處理這種情況，因為 <code>/*</code> 開頭後，一切都視為註解直到 <code>*/</code>。</p>
+<h3 id="陷阱二-lt-和-gt-的-xml-轉義">陷阱二： <code>&lt;</code> 和 <code>&gt;</code> 的 XML 轉義</h3>
+<p>如果你忘記轉義 <code>&lt;</code> 為 <code>&amp;lt;</code>，輸出的 XML 將無法被正確解析，因為 <code>&lt;</code> 會被視為 XML 標籤的開頭。</p>
+<h3 id="陷阱三-字串中的空格">陷阱三：字串中的空格</h3>
+<pre><code>&quot;Hello World&quot;
+</code></pre>
+<p><code>&quot;Hello World&quot;</code> 應該被識別為一個完整的字串常量 token，而不是兩個單獨的 token。 tokenizer 需要正確處理引號內的內容。</p>
+<h3 id="陷阱四-數字後接識別碼">陷阱四：數字後接識別碼</h3>
+<pre><code>2ndValue
+</code></pre>
+<p>在 Jack 中這是不合法的（不以數字開頭的識別碼），但 tokenizer 可能會將 <code>2</code> 識別為整數常量，將 <code>ndValue</code> 識別為識別碼。這是符合 tokenizer 行為的——語法檢查應該由後續的 parser 負責。</p>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<p>本節深入探討了詞法分析器的原理與實作：</p>
+<ul>
+<li><strong>Token 分類</strong>：Jack 語言有 5 種 token 類型——keyword、symbol、integerConstant、stringConstant、identifier。</li>
+<li><strong>正規表示式</strong>：每種 token 都可以用正規表示式來描述其格式。</li>
+<li><strong>空白與註解</strong>：tokenizer 必須自動跳過空白和兩種格式的註解（<code>//</code> 與 <code>/* ... */</code>）。</li>
+<li><strong>XML 轉義</strong>：輸出 XML 時必須處理 <code>&lt;</code>、<code>&gt;</code>、<code>&amp;</code>、<code>&quot;</code> 四個特殊字元。</li>
+<li><strong>實作策略</strong>：使用位置指標逐字掃描，根據字元類型分支判斷 token 型別，一次性讀取整個檔案到記憶體以簡化實作。</li>
+</ul>
+<p>在下一節（10.3）中，我們將進入語法分析的領域——學習如何將 token 流組織成有意義的語法結構，並實作遞迴下降解析器。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="10.1.html">⇦ 上一節</a><a class="nav-btn" href="10.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

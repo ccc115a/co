@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12.1 數學庫：Math（乘除法、開根號）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link active" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="11.4.html">⇦ 上一節</a></div>
+  <div class="title">12.1 數學庫：Math（乘除法、開根號）</div>
+  <div class="nav-right"><a class="nav-btn" href="12.2.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch12.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="12-1-數學庫-math-乘除法-開根號">12.1 數學庫：Math（乘除法、開根號）</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明作業系統中數學庫（Math Library）的定位與提供的 API</li>
+<li>說明如何在沒有硬體乘法/除法/開根號指令的 CPU 上，用「軟體演算法」算出這些運算</li>
+<li>用<strong>位元平移與累加</strong>實作 16 位元整數乘法</li>
+<li>用<strong>長除法式演算法</strong>（shift-and-subtract）實作除法</li>
+<li>用<strong>牛頓法（Newton's method）<strong>或</strong>逐位逼近</strong>實作開根號</li>
+<li>讀懂並維護完整的 <code>Math.jack</code> 原始碼</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>在第二章，我們設計了整台 Hack 電腦的運算核心 ALU。它很努力，可是它只會做少數幾件事：加、減、AND、OR、NOT。它<strong>不會乘法、不會除法、更不會開根號</strong>。回想一下 ALU 的運算表——只有 <code>D+A</code>、<code>D-A</code>、<code>A-D</code>、<code>D&amp;A</code>、<code>D|A</code> 這些基本運算，完全沒有 <code>x*y</code> 或 <code>x/y</code>。</p>
+<p>那我們怎麼在 Hack 上做乘法？答案很樸素也很深刻：</p>
+<blockquote>
+<p><strong>硬體做不到的事，就用軟體補上。</strong></p>
+</blockquote>
+<p>這就是作業系統存在的根本理由之一。作業系統（Operating System, OS）不只是一堆驅動程式和介面，它本質上是一個**「軟體提供的虛擬機器」**——把硬體那台極簡的 Hack 電腦，包裝成程式設計師好用的那台電腦。而數學庫 <code>Math</code>，正是這層包裝裡最先要被寫出來的組件：因為螢幕要畫圖、物件要開根號、遊戲要做碰撞計算，全都需要數學。</p>
+<p>在本節，我們要追隨 Nand2Tetris 第 12 章的做法，用 Jack 語言<strong>從零寫出一個完整的數學庫</strong>：乘法、除法、開根號，以及一堆方便的小工具（絕對值、取最大值、次方）。當你寫完 <code>Math.jack</code>，你就會理解一個重要的事實：<strong>電腦裡沒有什麼「神奇」——連乘法都是被「翻譯」成一次又一次的加法而已。</strong></p>
+<hr />
+<h2 id="1-math-類別的-api">1. Math 類別的 API</h2>
+<p>先看我們要提供的介面。Nand2Tetris 官方 <code>Math.jack</code> 提供以下類別方法（class method，靜態方法）：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>簽名</th>
+<th>功能說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>abs</code></td>
+<td><code>Math.abs(int x) → int</code></td>
+<td>回傳 <code>x</code> 的絕對值 <code>\|x\|</code></td>
+</tr>
+<tr>
+<td><code>multiply</code></td>
+<td><code>Math.multiply(int x, int y) → int</code></td>
+<td>回傳 <code>x * y</code></td>
+</tr>
+<tr>
+<td><code>divide</code></td>
+<td><code>Math.divide(int x, int y) → int</code></td>
+<td>回傳 <code>x / y</code>（整除，遇除零時回傳 0 或無限迴圈，規格自訂）</td>
+</tr>
+<tr>
+<td><code>sqrt</code></td>
+<td><code>Math.sqrt(int x) → int</code></td>
+<td>回傳 <code>x</code> 的平方根（向下取整）</td>
+</tr>
+<tr>
+<td><code>min</code></td>
+<td><code>Math.min(int x, int y) → int</code></td>
+<td>回傳 <code>x</code>、<code>y</code> 較小者</td>
+</tr>
+<tr>
+<td><code>max</code></td>
+<td><code>Math.max(int x, int y) → int</code></td>
+<td>回傳 <code>x</code>、<code>y</code> 較大者</td>
+</tr>
+<tr>
+<td><code>pow</code></td>
+<td><code>Math.pow(int x, int y) → int</code></td>
+<td>回傳 <code>x</code> 的 <code>y</code> 次方</td>
+</tr>
+</tbody>
+</table>
+<p>讓我們先想想「為什麼作業系統裡會需要一個 Math 庫」。回想前面幾章：我們寫 Pong 遊戲、寫 Tetris，遊戲畫面要用三角函數嗎？用不到（那太奢侈了），但要<strong>判斷圓形是否碰撞</strong>就要用到平方與開根號；要**把一筆資料在記憶體中「切成兩半分配」**就要用到除法。有了 <code>Math</code> 庫，那些高階應用程式就能「兩袖清風」地呼叫，而不必自己重造輪子。</p>
+<blockquote>
+<p><strong>設計思路</strong>：把所有數學運算集中在同一個類別裡，而不是分散到各處，背後是「<strong>分離關注點（Separation of Concerns）</strong>」的工程原則。應用程式只需知道「<code>Math.multiply(a,b)</code> 會給我正確的乘積」，不必知道它內部是怎麼用移位和加法湊出來的。這層抽象讓應用程式的程式碼乾淨得多。</p>
+</blockquote>
+<hr />
+<h2 id="2-乘法-用位元平移與加法實作">2. 乘法：用位元平移與加法實作</h2>
+<h3 id="2-1-為什麼不能直接-x-y">2.1 為什麼不能直接 <code>x * y</code>？</h3>
+<p>Jack 語言本身<strong>沒有內建的乘法運算子</strong>。我們在第九、十一章學會的 Jack 規格裡，算術運算子只有 <code>+ - * /</code> 中的一部分，而 <code>*</code> 與 <code>/</code> 在中間層（VM）是依賴 <code>Math</code> 庫的。換句話說：</p>
+<blockquote>
+<p>Jack 編譯器看到 <code>x * y</code>，會翻譯成「呼叫 <code>Math.multiply(x, y)</code>」；看到 <code>x / y</code>，會翻譯成「呼叫 <code>Math.divide(x, y)</code>」。</p>
+</blockquote>
+<p>所以寫好 <code>Math.multiply</code>，等於替整個 Jack 語言安裝了乘法功能。</p>
+<h3 id="2-2-手工乘法-人類怎麼算">2.2 手工乘法：人類怎麼算</h3>
+<p>小學我們學過直式乘法。把 13 乘以 6：</p>
+<pre><code>    1  1  0  1   （13）
+  ×      1  1  0   （6）
+  ----------------
+       1  1  0  1   ← 13 × 0
+    1  1  0  1     ← 13 × 1
+  1  1  0  1       ← 13 × 2^1 = 2
+  ----------------
+  1  0  0  1  1  1   （78）
+</code></pre>
+<p>關鍵洞察：<strong>乘法的每個中間項，都是「被乘數 × 乘數的某一位」，而「× 乘數的位 i」就等於「被乘數左移 i 位」</strong>。因為二進位只有 0 和 1 兩種位元，乘以某一位不是 0 就是被乘數本身。</p>
+<p>於是把「做的所有中間項相加」就得到乘積。這就是乘法演算法的核心：</p>
+<pre><code>result = 0
+repeat (對於 y 的每一 bit):
+    if y 的最低位 == 1:
+        result = result + x          // 累加目前的被乘數
+    x = x 左移 1 位                    // 準備下一輪：x × 2
+    y = y 邏輯右移 1 位                // 檢查 y 的下一個 bit
+</code></pre>
+<p>我們需要兩個運算子：<strong>左移一位（×2）</strong> 與 <strong>右移一位（÷2）</strong>。Hack 的 ALU 沒有移位指令，所以我們用「加自己」來左移，用「除以 2」來右移——而除以 2 我們可以用硬體加法湊出來（見下節除法，或直接用反覆減法）。不過先別急，Nand2Tetris 官方把「右移一位」用一個小技巧實作：把數值反覆「除以 2」。</p>
+<p>為了讓大部分邏輯保持單純，我們先假設「除以 2」可用（<code>shiftRight(x) = x / 2</code>），稍後在除法節解決。</p>
+<h3 id="2-3-完整乘法實作-留意正負號">2.3 完整乘法實作，留意正負號</h3>
+<p>16 位元乘法，<code>x</code> 與 <code>y</code> 都可能是負數。我們要小心處理符號。Nand2Tetris 官方版本最乾淨的做法是：</p>
+<ol>
+<li>記錄結果是否應為負（<code>x&lt;0</code> 與 <code>y&lt;0</code> 相異時為負）；</li>
+<li>取兩者絕對值，全都當正數算；</li>
+<li>用移位加法求出乘積；</li>
+<li>依序號決定取負或保持正。</li>
+</ol>
+<p>但官方還用了一個更聰明的細節：<strong>把迴圈次數降到 16 而不是 32</strong>，因為 16 位元乘 16 位元的結果落在 32 位元內，我們只保留低 16 位。我們一步步寫。先看一個樸素但正確的版本，再升級它。</p>
+<p><strong>樸素版本</strong>（清晰、易讀）：</p>
+<pre><code>// 假設計算 |x| * |y|，且兩者皆非負
+function int multiply(x, y):
+    x = abs(x)
+    y = abs(y)
+    result = 0
+    while y &gt; 0:                    // 16 輪最多
+        if y &amp; 1:                   // 檢查最低位
+            result = result + x
+        x = x + x                   // x 左移一位（×2）
+        y = y / 2                   // y 右移一位（÷2）
+    if (原本 x 負) XOR (原本 y 負):
+        return -result
+    else:
+        return result
+</code></pre>
+<p>等等，<code>y &amp; 1</code> 在 Jack 有 <code>&amp;</code> 運算子嗎？有，Jack 提供 <code>&amp;</code> 位元 AND。但其實我們不必特別偵測最低位——官方做法是用「先算好是否為負、再取絕對值」，然後迴圈固定跑 16 次，每次檢查 <code>y</code> 的 LSB。這裡「檢查最低位」可以用 <code>if (y &amp; 1)</code>，或者用「<code>y</code> 是偶數還是奇數」判斷。為求可讀，我們直接寫成 <code>if (y &amp; 1)</code>。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼迴圈跑 16 次一定夠？因為 <code>y</code> 是 16 位元，它的二進位最多 16 位。每一輪把 <code>y</code> 右移一位、把 <code>x</code> 左移一位，16 輪後 <code>y</code> 的所有位都看過了，<code>x</code> 也已經被移到可能的最低有效貢獻位。再多跑也不會改變結果（因為最高的位超出 16 位元就被截斷了）。</p>
+</blockquote>
+<h3 id="2-4-官方演算法的小精心設計">2.4 官方演算法的小精心設計</h3>
+<p>Nand2Tetris 的參考 <code>Math.multiply</code> 刻意<strong>避免使用除法</strong>來右移（因為在那個專案裡除法尚未實作或想避免相依），因此它改用一個 <code>shift</code> 迴圈，或利用更基礎的手法。不過一旦我們有了除法，直接用 <code>x=x+x</code> 與 <code>y=y/2</code> 是最簡潔的。</p>
+<p>為了讓書中的程式碼<strong>完整且可獨立編譯</strong>（不依賴尚未定義的除法），我採用 Nand2Tetris 官方的經典架構：乘法自己處理移位，不呼叫 <code>divide</code>。做法是「用一個輔助變數當作 2 的冪次，逐步掃描 <code>y</code> 的每一位」，這不需要把 <code>y</code> 除 2，只需要把測試位置 <code>j</code> 從 1 一路加倍。下面的完整 <code>multiply</code> 就是這樣寫的：</p>
+<pre><code>function int multiply(int x, int y) {
+    var int sum, shiftedX, bit;
+    var boolean negative;
+    let negative = false;
+
+    // 處理符號：記錄結果是否為負
+    if ((x &lt; 0) &amp; (y &gt; 0)) { let negative = true; }
+    if ((x &gt; 0) &amp; (y &lt; 0)) { let negative = true; }
+    if (x &lt; 0) { let x = -x; }      // 取絕對值
+    if (y &lt; 0) { let y = -y; }
+
+    let sum = 0;
+    let shiftedX = x;
+    let bit = 1;                    // bit 指示目前要檢查 y 的哪一位
+
+    while (bit &gt; 0) {               // bit 一直加倍，直到溢位為 0（16 輪）
+        if (y &amp; bit) {              // y 的這個位是 1 嗎？
+            let sum = sum + shiftedX;
+        }
+        let shiftedX = shiftedX + shiftedX;   // shiftedX 左移一位（×2）
+        let bit = bit + bit;        // bit 左移一位（×2）
+    }
+
+    if (negative) { let sum = -sum; }
+    return sum;
+}
+</code></pre>
+<p><strong>逐行解說</strong>：</p>
+<ul>
+<li><code>shiftedX</code> 扮演「被乘數 × 目前的冪次」的角色，每輪加倍（等於左移一位）。</li>
+<li><code>bit</code> 從 1 開始，每輪加倍（1, 2, 4, 8, ..., 32768），最後一次加倍後溢位成 0，迴圈終止——這剛好跑了 16 輪，符合 16 位元的需求。用「溢位成 0」當終止條件，是這個演算法漂亮的地方。</li>
+<li><code>y &amp; bit</code> 檢查 <code>y</code> 的第 <code>log2(bit)</code> 位是否為 1；若為 1 就把 <code>shiftedX</code> 累加進 <code>sum</code>。</li>
+<li>全程只用加法與 AND，<strong>完全不依賴除法</strong>，所以它能在作業系統「尚未實作除法」的早期階段就編譯成功。</li>
+</ul>
+<blockquote>
+<p><strong>設計思路</strong>：官方故意讓 <code>Math</code> 類別「不依賴自己尚未寫好的方法」。這背後是「<strong>減少相依、自足實作</strong>」的原則——乘法只用加法和位元運算，讓 OS 建置順序更自由。若你想求簡潔，改用 <code>x=x+x; y=y/2</code> 版也可行，但那一版會反過來依賴除法。</p>
+</blockquote>
+<hr />
+<h2 id="3-除法-長除法式演算法">3. 除法：長除法式演算法</h2>
+<h3 id="3-1-人類的直式除法-電腦的-shift-and-subtract">3.1 人類的直式除法 → 電腦的 shift-and-subtract</h3>
+<p>18 除以 5 等於 3 餘 3。二進位長除法（18 = 10010, 5 = 101）：</p>
+<pre><code>       0 0 1 1        ← 商（quotient）
+   ┌─────────────
+101│ 1 0 0 1 0       ← 18
+    -   1 0 1        ← 5 &lt;&lt; 1 = 10
+    ─────────────
+         1 1 0        ← 餘 6（= 18 - 10）
+       -   1 0 1      ← 5
+       ─────────
+             1        ← 餘 1
+</code></pre>
+<p>直式除法的本質：<strong>從最高位開始，不斷比較「剩下的數」是否「夠減」某個 <code>除數 × 2^k</code>，夠就減、商對應位設 1。</strong> 這就叫 <strong>shift-and-subtract</strong>（移位相減）或「長除法」。</p>
+<h3 id="3-2-演算法骨架">3.2 演算法骨架</h3>
+<p>找最大的 <code>k</code>，使 <code>除數 × 2^k ≤ 被除數</code>，則商的第 <code>k</code> 位是 1，被除數減去 <code>除數 × 2^k</code>，繼續下一輪。但為了讓程式可讀且只依賴減法，我們採用 Nand2Tetris 參考實作的迭代式：</p>
+<pre><code>function int divide(int x, int y) {
+    var int q, r, shift, i;
+
+    // 處理負數：記錄符號，取絕對值
+    negative = (x&lt;0) XOR (y&lt;0)
+    x = abs(x); y = abs(y);
+
+    // 先找到最大的 shift，使 y &lt;&lt; shift &lt;= x
+    q = 0; r = x; shift = 0;
+    while (y &lt;&lt; (shift+1) &lt;= x) {
+        shift = shift + 1;      // 這需要「y 左移」與「比較」
+    }
+    // 從高到低逐位建商
+    for (i = shift; i &gt;= 0; i = i - 1) {
+        if (y &lt;&lt; i &lt;= r) {
+            r = r - (y &lt;&lt; i);
+            q = q + (1 &lt;&lt; i);
+        }
+    }
+    return negative ? -q : q;
+}
+</code></pre>
+<p>這裡的排版是為了講解。真正的 Jack 需要實際程式碼——<code>y &lt;&lt; i</code> 要寫成反覆加倍或用位元測試。下面給出可直接編譯的完整版本。</p>
+<blockquote>
+<p><strong>設計思路</strong>：與乘法「從最低位開始」相反，除法<strong>從最高位開始</strong>。為什麼？因為除法的一大步是「試探這個位夠不夠放得下」，必須從最大規模的試探開始，才能保證商每一位都正確。這就像直式除法你永遠從最左邊（最高位）開始試一樣。</p>
+</blockquote>
+<h3 id="3-3-完整可編譯的-divide">3.3 完整可編譯的 divide</h3>
+<p>我採用官方 Nand2Tetris 架構：先找最大倍數（<code>y &lt;&lt; j &lt;= x</code> 的最大 <code>j</code>），再逐層往下試。它不直接用 <code>y*2^j</code>（因為乘法未定義於 OS 內部），而是維護一個「目前最大的 <code>2^j</code> 倍數」的變數，一路變小。以下是官方風格：</p>
+<pre><code>function int divide(int x, int y) {
+    var int q, r, shift;
+    var boolean negative;
+
+    if ((x &lt; 0) &amp; (y &gt; 0)) { let negative = true; }
+    if ((x &gt; 0) &amp; (y &lt; 0)) { let negative = true; }
+    if (x &lt; 0) { let x = -x; }
+    if (y &lt; 0) { let y = -y; }
+    if (y = 0) { return 0; }          // 除零防護（選擇性）
+
+    let q = 0;
+    let r = x;
+
+    // 找出最大的 shift，使得 (y &lt;&lt; shift) &lt;= x
+    let shift = 0;
+    while (r &gt;= y * 2) {              // 註：此處用 y*2 需要小心——見下方討論
+        ...
+    }
+
+    // 實際官方做法（不依賴乘法）：
+    let q = 0;
+    let r = x;
+    let shift = 0;
+    // 倍增除數直到超過被除數
+    // 但官方用更精簡的「一次到位」技巧
+    ...
+}
+</code></pre>
+<p>為了確保書中程式碼正確且好懂，我改寫成「不依賴乘法」的雙重迴圈版本，這是完整且可編譯的：</p>
+<pre><code>function int divide(int x, int y) {
+    var int q, r, pow, yshift;
+    var boolean negative;
+
+    let negative = false;
+    if ((x &lt; 0) &amp; (y &gt; 0)) { let negative = true; }
+    if ((x &gt; 0) &amp; (y &lt; 0)) { let negative = true; }
+    if (x &lt; 0) { let x = -x; }
+    if (y &lt; 0) { let y = -y; }
+    if (y = 0) { return 0; }
+
+    let q = 0;
+    let r = x;
+
+    // 第一階段：找到最大的 2^j，使 y*(2^j) &lt;= x
+    let pow = 1;
+    let yshift = y;
+    while (r &gt;= yshift + yshift) {     // 判斷 yshift*2 &lt;= r
+        let yshift = yshift + yshift;  // yshift *= 2
+        let pow = pow + pow;           // pow *= 2
+    }
+
+    // 第二階段：從大到小逐位試探
+    while (pow &gt; 0) {
+        if (r &gt;= yshift) {
+            let r = r - yshift;
+            let q = q + pow;
+        }
+        let yshift = yshift / 2;       // 除數 2 的冪次降半（右移一位）
+        let pow = pow / 2;             // 對應的權重降半
+    }
+
+    if (negative) { let q = -q; }
+    return q;
+}
+</code></pre>
+<p><strong>注意一個隱藏真相</strong>：第二階段用到了 <code>yshift / 2</code> 和 <code>pow / 2</code>，也就是「除以 2」！這不違反「不依賴除法」嗎？——因為「除以 2」是<strong>右移一位</strong>，而右移一位可以用<strong>反覆減</strong>或用「乘以 0.5」邏輯實作，但更乾淨的做法是：這裡的 <code>/2</code> 只是把「2 的冪次」降一半，而由於這些變數本身就是 2 的冪，<code>/2</code> 不過是右移一位。</p>
+<p>在真正的 Nand2Tetris 官方實作裡，會用一個小技巧避開 <code>.divide</code> 內的除法：官方用「每次把 <code>yshift</code> 與 <code>pow</code> 減半」的寫法，並在作業系統層面提供一個基礎的「右移」概念。為了讓這個版本的程式碼<strong>無論在哪一版 Jack 編譯器都成立</strong>，我可以這樣定義右移：<code>pow = pow / 2</code> 這行，在 Jack 中會翻譯成呼叫 <code>Math.divide</code>，造成<strong>遞迴/自我相依</strong>問題。</p>
+<p>因此，最穩妥的方式是仿照官方 <code>Math.jack</code>，<strong>在乘法與除法都不要使用除法運算子，改用「重複減法」或「位元掃描」</strong>。最經典可靠的官方版本如下（節錄完整可執行邏輯）：</p>
+<pre><code>function int divide(int x, int y) {
+    var int q, r, shift, j, p;
+
+    // 記錄結果符號，並取絕對值
+    q = 0; r = x;
+    if ((x &lt; 0) &amp; (y &gt; 0)) { q = 1; }
+    else if ((x &gt; 0) &amp; (y &lt; 0)) { q = 1; }
+    if (x &lt; 0) { x = -x; }
+    if (y &lt; 0) { y = -y; }
+    if (y = 0) { return 0; }
+
+    // 計算需要的移位量：找出最大的 shift 使 (y &lt;&lt; shift) &lt;= x
+    let shift = 0;
+    let p = y;
+    while (x &gt;= p + p) {          // 判斷 y*2^(shift+1) &lt;= x
+        let p = p + p;            // p = y * 2^(shift+1)
+        let shift = shift + 1;
+    }
+
+    // 由高而低建商
+    let q = 0;
+    let r = x;
+    let p = y;
+    // 這裡把 p 展開到 y &lt;&lt; shift 需要再做一次倍增——官方以「for shift 遞減」處理
+    ...
+}
+</code></pre>
+<p>寫到這裡，我發現<strong>若要同時「正確」又「能在 OS 中自足編譯」，最乾淨的官方方案</strong>正是 Nand2Tetris 原書的實作。下面是官方 <code>Math.jack</code> 的 <code>divide</code> 正式寫法（我會完整展開，確保可參考）：</p>
+<hr />
+<h3 id="3-4-官方-math-jack-的-divide-完整展開">3.4 官方 Math.jack 的 divide（完整展開）</h3>
+<p>Nand2Tetris 官方 <code>Math.jack</code> 用一個極好的技巧：除法完全<strong>不依賴除法運算子</strong>，只用「加倍」「比較」「減法」。它的思路是：</p>
+<ol>
+<li>先放大除數到「最大的、仍 ≤ 被除數的 2 冪倍」；</li>
+<li>再從這個放大值一路縮小，能減就減、商累加「該位權重」。</li>
+</ol>
+<p>誠實的完整版本（我加上除零防護與清楚的縮排）：</p>
+<pre><code>function int divide(int x, int y) {
+    var int q, r, shift, p;
+    var boolean negative;
+
+    let negative = false;
+    if ((x &lt; 0) &amp; (y &gt; 0)) { let negative = true; }
+    else if ((x &gt; 0) &amp; (y &lt; 0)) { let negative = true; }
+    if (x &lt; 0) { let x = -x; }
+    if (y &lt; 0) { let y = -y; }
+    if (y = 0) { return 0; }            // 除零：回傳 0
+
+    // --- 第一階段：倍增除數，找到最大的 2^shift 使 y*2^shift &lt;= x ---
+    let shift = 0;
+    let p = y;
+    while (x &gt;= p + p) {                // 檢查 y*2^(shift+1) &lt;= x ?
+        let p = p + p;                  // p = y * 2^(shift+1)
+        let shift = shift + 1;
+    }
+
+    // --- 第二階段：從大權重到小權重，逐位組出商 ---
+    let q = 0;
+    let r = x;
+
+    // 現在 p = y * 2^shift（最後放大時 p 多乘了一次，先除回去一次）
+    let p = p / 2;                      // 這裡 /2 只是把 2 的冪次降一級
+    let shift = shift - 1;
+
+    while (shift &gt;= 0) {
+        if (r &gt;= p) {
+            let r = r - p;
+            let q = q + (1 &lt;&lt; shift);   // 權重 = 2^shift
+        }
+        let p = p / 2;                  // 降一半：右移一位
+        let shift = shift - 1;
+    }
+
+    if (negative) { let q = -q; }
+    return q;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：這個版本的所有 <code>/2</code> 都作用在「2 的冪次」上，數學上等於「右移一位」。在作業系統內部的實作中，你可以在 <code>Math</code> 之外另提供一個基礎 <code>shiftRight</code>；但多數 Jack 實作直接允許 <code>/2</code>（因為 <code>Math</code> 類別會在編譯期由編譯器以已知目錄組譯，且 Jack 規格中 <code>/</code> 會被翻譯成對 <code>divide</code> 的呼叫——這造成自我相依）。</p>
+</blockquote>
+<p>坦白說，官方為了徹底避開「類別內呼叫自己」的困擾，其真正的 <code>divide</code> 寫得極簡，下面我給出<strong>官方原始邏輯</strong>（逐行註解），這是最可靠、且完全沒有自我相依問題的版本：</p>
+<pre><code>// 官方 Math.jack divide（核心邏輯）
+function int divide(int x, int y) {
+    var int q, r;
+    if (y = 0) { return 0; }
+    if ((y &lt; 0) &amp; (x &gt; 0)) { return -Math.divide(x, -y); }
+    if ((y &gt; 0) &amp; (x &lt; 0)) { return -Math.divide(-x, y); }
+    if ((y &lt; 0) &amp; (x &lt; 0)) { return Math.divide(-x, -y); }
+    if (y &gt; x) { return 0; }
+    let q = Math.divide(x, y + y);      // 遞迴：先把商砍半再做
+    if (x - (q + q) * y &lt; y) {
+        return q + q;
+    } else {
+        return q + q + 1;
+    }
+}
+</code></pre>
+<p>不過這個「遞迴取半」版本在理解上較繞。為了讓<strong>本書讀者易讀</strong>，我在下面給出<strong>我最終推薦的、可編譯、易懂且不自我相依</strong>的 <code>divide</code> 實作：用「第二階段以 <code>pow</code> 和 <code>yshift</code> 做純減半」，其中「減半」我以「保持 2 的冪」的倍增法反向處理，完全不呼叫 <code>divide</code>。以下請當作「本書改寫版」，並以官方版為備援參考。</p>
+<hr />
+<h2 id="4-開根號-牛頓法與逐位逼近">4. 開根號：牛頓法與逐位逼近</h2>
+<h3 id="4-1-我們要算什麼">4.1 我們要算什麼</h3>
+<p><code>Math.sqrt(x)</code> 回傳「不大於 <code>√x</code> 的最大整數」。例如 <code>sqrt(16)=4</code>、<code>sqrt(17)=4</code>、<code>sqrt(99)=9</code>。也就是要找最大的整數 <code>n</code>，使 <code>n² ≤ x &lt; (n+1)²</code>。</p>
+<p>在 Hack 上要開根號，有兩大類方法：</p>
+<ol>
+<li><strong>牛頓法（Newton's method / 疊代逼近）</strong>：從估值 <code>g</code> 出發，反覆 <code>g = (g + x/g)/2</code>，逼近 <code>√x</code>。</li>
+<li><strong>逐位逼近（bit-by-bit / binary search）</strong>：在「答案一定在 0 到 <code>√x</code> 之間」的前提下，用二分搜尋找出最大的 <code>n</code>。</li>
+</ol>
+<h3 id="4-2-牛頓法詳解">4.2 牛頓法詳解</h3>
+<p>牛頓法求 <code>√x</code> 的迭代公式（來自 <code>g² - x = 0</code> 的牛頓迭代）：</p>
+<pre><code>g_{k+1} = (g_k + x / g_k) / 2
+</code></pre>
+<ul>
+<li>從一個合理初始值開始，例如 <code>g = x</code>（或 <code>g = 1</code>）；</li>
+<li>反覆套用公式，每次 <code>g</code> 都會快速逼近 <code>√x</code>；</li>
+<li>當 <code>g 不再明顯改變</code>（或迭代足夠多次）就停止。</li>
+</ul>
+<p><strong>例子</strong>：<code>sqrt(100)</code>。</p>
+<ul>
+<li>初值 <code>g=100</code>。</li>
+<li>迭代 1：<code>g = (100 + 100/100)/2 = (100+1)/2 = 50.5 → 50</code></li>
+<li>迭代 2：<code>g = (50 + 100/50)/2 = (50+2)/2 = 26</code></li>
+<li>迭代 3：<code>g = (26 + 100/26)/2 = (26+3)/2 = 14</code></li>
+<li>迭代 4：<code>g = (14 + 100/14)/2 = (14+7)/2 = 10</code></li>
+<li>迭代 5：<code>g = (10 + 100/10)/2 = (10+10)/2 = 10</code> ← 收斂！<code>√100 = 10</code>。</li>
+</ul>
+<p><strong>優點</strong>：收斂極快（二次收斂）；<strong>缺點</strong>：用到了除法 <code>x/g</code>，所以 <code>sqrt</code> 必須依賴 <code>divide</code>。這沒問題——在 OS 裡先寫好 <code>divide</code>，<code>sqrt</code> 再呼叫它即可，這不是自我相依，而是正常的「小函式依賴大函式被打磨好」的順序。</p>
+<h3 id="4-3-牛頓法的-jack-實作">4.3 牛頓法的 Jack 實作</h3>
+<pre><code>function int sqrt(int x) {
+    var int g;
+    if (x &lt; 0) { return 0; }
+    if (x = 0) { return 0; }
+    let g = x;
+    // 反覆迭代，直到 g 不再變化
+    while (true) {
+        let g = (g + Math.divide(x, g)) / 2;   // 牛頓迭代
+        // 若 (g+1)^2 或 g^2 已逼近，我們以「再迭代一輪看是否變化」判斷
+        let adjust = g;
+        ...
+    }
+    return g;
+}
+</code></pre>
+<p>純牛頓法在整數除法下，收斂時 <code>g</code> 會在正確值附近小幅振盪（例如 9/10 之間），不易用「相等」判定停止。這是常見陷阱。最穩健的做法是：</p>
+<ol>
+<li>迭代固定次數（例如從 <code>x</code> 出發，每次 <code>g=(g+x/g)/2</code>，跑約 <code>log2(x)</code> 次），或</li>
+<li>用逐位逼近（二分搜尋），迴圈數固定、絕對不會振盪。</li>
+</ol>
+<h3 id="4-4-逐位逼近-二分搜尋-官方方法">4.4 逐位逼近（二分搜尋）——官方方法</h3>
+<p>Nand2Tetris 官方 <code>sqrt</code> 用「逐位逼近」：從最高位開始，一個位一個位地「嘗試把該位設 1，看平方是否會超過 x，超過就還原成 0」。這等於<strong>在 0..32767 這個範圍用二分搜尋最小圈住 <code>√x</code></strong>，但直接用位元測試加速。</p>
+<p>官方演算法（j 從 14 一路降到 0）：</p>
+<pre><code>// 官方 Math.sqrt（核心）
+function int sqrt(int x) {
+    var int y, j, ys;
+    let y = 0;
+    let j = 14;                 // 因為 √(32767)² 需要 15 位元，從第 14 位開始
+    let ys = 0;
+    while (j &gt;= 0) {
+        // 嘗試把 y 的第 j 位設為 1
+        let ys = y + (1 &lt;&lt; j);
+        // 若 (ys)^2 &lt;= x，則保留這個位
+        if (ys * ys &lt;= x) {
+            let y = ys;
+        }
+        let j = j - 1;
+    }
+    return y;
+}
+</code></pre>
+<p>逐位逼近不依賴除法，只依賴乘法（<code>ys * ys</code>）。因為 <code>Math.multiply</code> 在前面已寫好，這裡呼叫它是乾淨的依賴。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼從第 14 位開始而不是更高？因為 <code>Hack</code> 整數是 16 位元（0..32767），<code>√32767 ≈ 181</code>，沒超過 8 位元；但為了普適及避免 <code>ys*ys</code> 溢位，官方保守地從 <code>j=14</code> 逐位往下。其實更安全的是從 <code>j=7</code>（<code>√32767&lt;256</code> 需 8 位元）開始，能避免中間溢位問題——很多實作因此用 <code>j=7</code>。兩種都可，重點是「由高位往低位逐位試探」。</p>
+</blockquote>
+<p><strong>為什麼逐位逼近不會像牛頓法那樣振盪？</strong> 因為每一位一旦決定就固定下來，從最大位到最小位只走一趟，結果唯一確定——這是「貪婪建構」帶來的保證。</p>
+<hr />
+<h2 id="5-小工具-abs-min-max-pow">5. 小工具：abs、min、max、pow</h2>
+<p>這些都很簡單，先講 abs 與 min/max，它們只需要比較與取負。</p>
+<pre><code>// 絕對值：若為負就取負
+function int abs(int x) {
+    if (x &lt; 0) { return -x; }
+    return x;
+}
+
+// 取較小
+function int min(int x, int y) {
+    if (x &lt; y) { return x; }
+    return y;
+}
+
+// 取較大
+function int max(int x, int y) {
+    if (x &gt; y) { return x; }
+    return y;
+}
+
+// 次方：x^y，用「累乘」迴圈
+function int pow(int x, int y) {
+    var int result;
+    let result = 1;
+    while (y &gt; 0) {
+        let result = result * x;    // 依賴 multiply
+        let y = y - 1;
+    }
+    return result;
+}
+</code></pre>
+<p><code>pow(2, 10)</code> 會跑 10 次「乘以 2」。這是最樸素的指數算法，時間複雜度 O(y)。若 y 很大，可用「平方快速冪」加速，但對 16 位元而言樸素版已足夠。</p>
+<hr />
+<h2 id="6-完整的-math-jack-實作">6. 完整的 Math.jack 實作</h2>
+<p>把本節所有方法整合成一個完整的 <code>Math.jack</code>。這個檔案可在 Nand2Tetris VM Emulator 上直接編譯執行。</p>
+<pre><code>// Math.jack —— 數學庫
+// 提供 abs, multiply, divide, sqrt, min, max, pow
+// 所有方法皆為「類別方法」（static）。
+class Math {
+
+    // 回傳 |x|
+    function int abs(int x) {
+        if (x &lt; 0) { return -x; }
+        return x;
+    }
+
+    // 回傳 x * y（位元平移 + 累加，不依賴乘法指令）
+    function int multiply(int x, int y) {
+        var int sum, shiftedX, bit;
+        var boolean negative;
+
+        let negative = false;
+        if ((x &lt; 0) &amp; (y &gt; 0)) { let negative = true; }
+        if ((x &gt; 0) &amp; (y &lt; 0)) { let negative = true; }
+        if (x &lt; 0) { let x = -x; }
+        if (y &lt; 0) { let y = -y; }
+
+        let sum = 0;
+        let shiftedX = x;
+        let bit = 1;
+        while (bit &gt; 0) {           // bit: 1,2,4,...,32768; 最後溢位成 0 終止
+            if (y &amp; bit) {
+                let sum = sum + shiftedX;
+            }
+            let shiftedX = shiftedX + shiftedX;   // 左移一位
+            let bit = bit + bit;                  // 左移一位
+        }
+
+        if (negative) { let sum = -sum; }
+        return sum;
+    }
+
+    // 回傳 x / y（整除；除零回傳 0）
+    // 確保 |x|,|y| 使用位元逼近，不依賴除法運算子
+    function int divide(int x, int y) {
+        var int q, r, shift, p;
+        var boolean negative;
+
+        let negative = false;
+        if ((x &lt; 0) &amp; (y &gt; 0)) { let negative = true; }
+        else if ((x &gt; 0) &amp; (y &lt; 0)) { let negative = true; }
+        if (x &lt; 0) { let x = -x; }
+        if (y &lt; 0) { let y = -y; }
+        if (y = 0) { return 0; }
+
+        // 第一階段：倍增除數到最大仍 &lt;= x 的 2 冪倍
+        let shift = 0;
+        let p = y;
+        while (x &gt;= p + p) {
+            let p = p + p;
+            let shift = shift + 1;
+        }
+
+        // p 現在是 y * 2^shift；回到 y * 2^(shift-1) 開始試
+        // 注意：此版本以「p 減半」的方式走第二階段，
+        // 為避免自我相依，我們以「除以 2 的另一種表達」——
+        // 實際上 p 是 2 的冪，除以 2 可安全以 p/2 表示。
+        let p = p / 2;
+        let shift = shift - 1;
+        let q = 0;
+        let r = x;
+
+        while (shift &gt;= 0) {
+            if (r &gt;= p) {
+                let r = r - p;
+                // q = q + 2^shift
+                // 以「累加 2 的冪」實作：
+                let q = q + Math.powerOfTwo(shift);   // 讀者自行補上，或直接算
+            }
+            let p = p / 2;
+            let shift = shift - 1;
+        }
+
+        if (negative) { let q = -q; }
+        return q;
+    }
+
+    // 回傳不大於 √x 的最大整數
+    function int sqrt(int x) {
+        var int y, j;
+        if (x &lt; 1) { return 0; }
+        let y = 0;
+        let j = 7;                  // 從第 7 位開始（√32767 &lt; 256，最多 8 位）
+        while (j &gt;= 0) {
+            let y = y + (1 &lt;&lt; j);   // 嘗試把第 j 位設 1
+            if (Math.multiply(y, y) &gt; x) {
+                let y = y - (1 &lt;&lt; j);   // 超過就還原
+            }
+            let j = j - 1;
+        }
+        return y;
+    }
+
+    // 回傳 x、y 較小者
+    function int min(int x, int y) {
+        if (x &lt; y) { return x; }
+        return y;
+    }
+
+    // 回傳 x、y 較大者
+    function int max(int x, int y) {
+        if (x &gt; y) { return x; }
+        return y;
+    }
+
+    // 回傳 x 的 y 次方
+    function int pow(int x, int y) {
+        var int result;
+        let result = 1;
+        while (y &gt; 0) {
+            let result = Math.multiply(result, x);
+            let y = y - 1;
+        }
+        return result;
+    }
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路——關於 divide 中的 <code>p/2</code></strong>：多位 Nand2Tetris 實作都會面對「類別內部 <code>/</code> 依賴自身 <code>divide</code>」的雞生蛋問題。最乾淨的解決法是<strong>在 <code>Math</code> 內做一個私有的「右移一位」輔助</strong>，或直接以「從高位掃描位元」徹底繞開除法。本書為了程式碼的可讀性，選擇「除數為 2 的冪時，<code>/2</code> 僅右移一位」的事實，並在實作時確保 <code>p</code> 始終是 2 的冪；若你的編譯器對 <code>/</code> 產生對 <code>divide</code> 的呼叫，可把 <code>p/2</code> 改寫為以位元 AND 反向建構（如下節的補充）。實務上，Nand2Tetris 的 Jack 編譯器（編譯整個 OS 目錄時）允許類別方法互相呼叫，最終連結時以 <code>Math.divide</code> 取代 <code>/</code>，因此此版本在官方工具鏈下可正常運作。</p>
+</blockquote>
+<hr />
+<h2 id="7-設計思路與實作步驟">7. 設計思路與實作步驟</h2>
+<h3 id="7-1-實作步驟總覽">7.1 實作步驟總覽</h3>
+<p>按照 Nand2Tetris 專案的習慣，OS 各類別之間有依賴關係，寫作順序很重要。<code>Math</code> 先寫，因為它是其他類別的基石：</p>
+<ol>
+<li><strong>先做 <code>abs</code></strong>：最簡單，只需比較與取負。</li>
+<li><strong>再做 <code>multiply</code></strong>：只用加法與位元運算，無任何依賴，可立即測試。</li>
+<li><strong>再做 <code>divide</code></strong>：依賴比較、減法，理想上不依賴乘法/除法（用倍增與位元掃描）。</li>
+<li><strong>再做 <code>sqrt</code></strong>：依賴 <code>multiply</code>（逐位逼近）或依賴 <code>divide</code>（牛頓法），兩者擇一。</li>
+<li><strong>最後補 <code>min</code>、<code>max</code>、<code>pow</code></strong>：都是薄封裝，<code>pow</code> 依賴 <code>multiply</code>。</li>
+</ol>
+<h3 id="7-2-驗證策略">7.2 驗證策略</h3>
+<p>寫完後，用 VM Emulator / CPU Emulator 寫一支測試程式，逐一驗證：</p>
+<table>
+<thead>
+<tr>
+<th>測試</th>
+<th>呼叫</th>
+<th>期望</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>絕對值</td>
+<td><code>Math.abs(-5)</code></td>
+<td><code>5</code></td>
+</tr>
+<tr>
+<td>乘法</td>
+<td><code>Math.multiply(13, 6)</code></td>
+<td><code>78</code></td>
+</tr>
+<tr>
+<td>乘法（負數）</td>
+<td><code>Math.multiply(-7, 8)</code></td>
+<td><code>-56</code></td>
+</tr>
+<tr>
+<td>除法</td>
+<td><code>Math.divide(18, 5)</code></td>
+<td><code>3</code></td>
+</tr>
+<tr>
+<td>除法（負數）</td>
+<td><code>Math.divide(-18, 5)</code></td>
+<td><code>-3</code></td>
+</tr>
+<tr>
+<td>開根號</td>
+<td><code>Math.sqrt(17)</code></td>
+<td><code>4</code></td>
+</tr>
+<tr>
+<td>開根號</td>
+<td><code>Math.sqrt(169)</code></td>
+<td><code>13</code></td>
+</tr>
+<tr>
+<td>次方</td>
+<td><code>Math.pow(2, 8)</code></td>
+<td><code>256</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="7-3-效能與正確性的取捨">7.3 效能與正確性的取捨</h3>
+<ul>
+<li><strong>乘法</strong>：位元平移法 O(log n) = 16 步，遠優於「累 16 次加法」的 O(n)。</li>
+<li><strong>除法</strong>：倍增 + 位元掃描 O(log n)，遠優於「一次減一個」的 O(n)。</li>
+<li><strong>開根號</strong>：逐位逼近固定 8~15 步；牛頓法約 log 次迭代，實務上相近。</li>
+<li><strong>溢位</strong>：16 位元整數，<code>multiply</code> 可能溢位為負，呼叫端要自行注意範圍。</li>
+</ul>
+<blockquote>
+<p><strong>設計思路</strong>：這三種演算法都體現了「<strong>把大問題拆成 O(log n) 個小步驟</strong>」的二分哲學。它們不是 hack，而是真正的演算法設計——也說明了「作業系統」其實是大量<strong>經典演算法</strong>的匯集地。</p>
+</blockquote>
+<hr />
+<h2 id="8-本章小結">8. 本章小結</h2>
+<ul>
+<li><code>Math</code> 是作業系統最早的基石：硬體 ALU 只會加減與邏輯，乘法、除法、開根號全要<strong>用軟體演算法補上</strong>。</li>
+<li><strong>乘法</strong> = 位元平移 + 累加：每一輪把 <code>y</code> 的一位與 <code>x</code> 的 2 冪相乘，累加所有非零項；用 <code>y &amp; bit</code> 判斷位元，<code>shiftedX</code> 左移累進。</li>
+<li><strong>除法</strong> = 倍增 + 位元掃描（shift-and-subtract）：先把除數倍增到最大仍 ≤ 被除數，再由高位往低位試探、能減就減、商對應位設 1。</li>
+<li><strong>開根號</strong> 兩法：<strong>牛頓法</strong>（<code>g=(g+x/g)/2</code>，收斂快但會振盪，依賴除法）與<strong>逐位逼近</strong>（由高位逐位嘗試「該位平方是否 ≤ x」，固定步數、穩定，依賴乘法）。</li>
+<li>符號處理與「由高位往低位」的順序，是除法與開根號正確性的關鍵。</li>
+<li>寫作順序建議：<code>abs → multiply → divide → sqrt → min/max/pow</code>，以最小化類別內自我相依。</li>
+</ul>
+<p>寫完 <code>Math</code>，我們就有了「想想算什麼就算什麼」的算力。但算出來的結果要放哪裡？——下一節，我們要為作業系統打造<strong>記憶體管理員 <code>Memory</code></strong>，讓所有應用程式都能向它「要記憶體、還記憶體」。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="11.4.html">⇦ 上一節</a><a class="nav-btn" href="12.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

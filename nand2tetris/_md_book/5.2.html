@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>5.2 記憶體晶片與匯流排整合（Memory Module）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link active" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="5.1.html">⇦ 上一節</a></div>
+  <div class="title">5.2 記憶體晶片與匯流排整合（Memory Module）</div>
+  <div class="nav-right"><a class="nav-btn" href="5.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch05.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="5-2-記憶體晶片與匯流排整合-memory-module">5.2 記憶體晶片與匯流排整合（Memory Module）</h1>
+<h2 id="前言">前言</h2>
+<p>在上一節中，我們完成了 CPU 的設計。CPU 透過 <code>addressM</code>、<code>outM</code> 和 <code>writeM</code> 與記憶體溝通，但記憶體本身還是一個黑盒子。本節將揭開這個黑盒子，深入了解 Hack 記憶體系統的內部結構。Hack 的記憶體不僅僅是一個 RAM，它還整合了螢幕緩衝區與鍵盤輸入介面，形成一個統一的位址空間。理解記憶體模組的設計，是將 CPU 與電腦系統連接起來的關鍵一步。</p>
+<hr />
+<h2 id="hack-memory-的組成">Hack Memory 的組成</h2>
+<p>Hack Memory 模組將三個不同的記憶體裝置整合在一個統一的位址空間中：</p>
+<h3 id="位址空間劃分">位址空間劃分</h3>
+<table>
+<thead>
+<tr>
+<th>位址範圍</th>
+<th>裝置</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>0 - 16383</code></td>
+<td>RAM16K</td>
+<td>通用隨機存取記憶體，16K 個 16-bit 字</td>
+</tr>
+<tr>
+<td><code>16384 - 24575</code></td>
+<td>Screen</td>
+<td>螢幕記憶體映像（8K 個 16-bit 字）</td>
+</tr>
+<tr>
+<td><code>24576</code></td>
+<td>Keyboard</td>
+<td>鍵盤映射暫存器（1 個 16-bit 字）</td>
+</tr>
+</tbody>
+</table>
+<p>這個位址空間的設計非常優雅：</p>
+<ul>
+<li><strong>RAM16K</strong> 提供 16,384 個 16-bit 記憶體位置，是程式的主要儲存空間</li>
+<li><strong>Screen</strong> 占據 8K 位置，映射到 256×512 像素的螢幕緩衝區</li>
+<li><strong>Keyboard</strong> 只有一個位置，反映當前按下的鍵碼</li>
+</ul>
+<h3 id="memory-晶片的-load-write-行為">Memory 晶片的 load/write 行為</h3>
+<p>Memory 模組的行為可以用以下規則描述：</p>
+<ol>
+<li><strong>讀取永遠有效</strong>：不論位址指向哪裡，讀取操作總是返回該位址的當前值</li>
+<li><strong>寫入只在 RAM 區域有效</strong>：只有當位址在 <code>0 - 16383</code> 範圍內，且 <code>load</code> 訊號為 1 時，資料才會被寫入</li>
+<li><strong>Screen 寫入</strong>：當位址在 <code>16384 - 24575</code> 且 <code>load=1</code> 時，資料寫入螢幕緩衝區，並立即反映在螢幕顯示上</li>
+<li><strong>Keyboard 只讀</strong>：Keyboard 暫存器不能被程式寫入，它只反映當前的按鍵狀態</li>
+</ol>
+<h3 id="記憶體與-cpu-之間的資料傳輸">記憶體與 CPU 之間的資料傳輸</h3>
+<p>CPU 與 Memory 之間的連接形成了一個緊密的迴路：</p>
+<pre><code></code></pre>
+<ul>
+<li><code>addressM</code>：CPU 輸出 15-bit 位址到 Memory（A 暫存器的值）</li>
+<li><code>outM</code>：CPU 輸出要寫入 Memory 的 16-bit 資料</li>
+<li><code>writeM</code>：CPU 輸出寫入使能訊號（1=寫入，0=不寫入）</li>
+<li><code>inM</code>：Memory 輸出指定位置的 16-bit 資料給 CPU</li>
+</ul>
+<hr />
+<h2 id="memory-hdl-實作">Memory HDL 實作</h2>
+<p>以下是完整的 <code>Memory.hdl</code> 實作：</p>
+<pre><code class="language-hdl"></code></pre>
+<p><a href="../_web_eda/dist/hdl.html?case=../05/Memory.tst&amp;run=1">習題模擬</a></p>
+<h3 id="設計思路與實作步驟">設計思路與實作步驟</h3>
+<ol>
+<li><strong>位址解碼</strong>：首先判斷位址落在哪個區域，產生三個選擇訊號 <code>isRAM</code>、<code>isScreen</code>、<code>isKeyboard</code></li>
+<li><strong>獨立模組</strong>：RAM16K、Screen、Keyboard 三個模組各自獨立運作，互不干擾</li>
+<li><strong>選擇性寫入</strong>：<code>load</code> 訊號經過 AND 閘過濾，確保只在正確的區域寫入</li>
+<li><strong>輸出多工器</strong>：最後用一組多工器根據位址範圍選擇正確的資料來源</li>
+</ol>
+<h3 id="設計要點補充">設計要點補充</h3>
+<p><strong>Screen 的基底位址偏移</strong>：Screen 記憶體的實際起始位址是 16384，但 Screen 模組內部使用從 0 開始的相對位址。在 Memory 模組中，我們透過傳遞 <code>address[0..12]</code> 來實現這個偏移，因為位址 16384 的二進位是 <code>100000000000000</code>，去掉最高兩位後就是相對位址。</p>
+<p><strong>Keyboard 的特殊性</strong>：Keyboard 暫存器是整個記憶體系統中唯一不能被程式寫入的位置。它的值由鍵盤硬體掃描電路自動更新，程式只能讀取。這種「記憶體映射 I/O」的設計模式在真實電腦中非常普遍。</p>
+<h3 id="本章小結">本章小結</h3>
+<ul>
+<li>Hack Memory 整合了 RAM16K、Screen 和 Keyboard 三個裝置</li>
+<li>統一位址空間：0-16383 為 RAM，16384-24575 為 Screen，24576 為 Keyboard</li>
+<li>位址解碼邏輯決定哪個記憶體裝置被選中</li>
+<li>只有 RAM 區域允許程式寫入資料</li>
+<li>Memory 透過 <code>inM</code>、<code>addressM</code>、<code>outM</code>、<code>writeM</code> 與 CPU 連接，形成完整的資料通路</li>
+<li>這種記憶體映射的設計，讓所有裝置都能用統一的存取方式來操控</li>
+</ul>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="5.1.html">⇦ 上一節</a><a class="nav-btn" href="5.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第十章第四節：語法樹與 XML 結構輸出測試</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link active" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="10.3.html">⇦ 上一節</a></div>
+  <div class="title">第十章第四節：語法樹與 XML 結構輸出測試</div>
+  <div class="nav-right"><a class="nav-btn" href="11.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch10.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="第十章第四節-語法樹與-xml-結構輸出測試">第十章第四節：語法樹與 XML 結構輸出測試</h1>
+<h2 id="前言">前言</h2>
+<p>在前面兩節中，我們已經實作了詞法分析器（JackTokenizer）和語法分析器（CompilationEngine）。現在我們需要一個方法來<strong>驗證這些組件的正確性</strong>。在 nand2tetris 的設計中，這個驗證機制就是 <strong>XML 輸出</strong>。</p>
+<p>XML（eXtensible Markup Language）是一種標記語言，具有自描述性、結構化的特點。nand2tetris 選擇 XML 作為語法樹的表示格式，是因為 XML 可以被一般文字工具（diff、grep、自訂比對器）輕鬆處理，同時又具有清晰的層次結構。</p>
+<p>本節將完整介紹兩種 XML 輸出格式——tokenizer 輸出的 <code>XxxT.xml</code> 和 parser 輸出的 <code>Xxx.xml</code>，並展示如何使用 nand2tetris 提供的 <code>TextComparer</code> 工具驗證編譯器的正確性。</p>
+<hr />
+<h2 id="10-4-1-為何使用-xml">10.4.1 為何使用 XML？</h2>
+<p>在教學與驗證的脈絡下，XML 有以下優勢：</p>
+<ol>
+<li><strong>自描述性</strong>：每個 token 和語法結構都帶有標籤，例如 <code>&lt;keyword&gt;class&lt;/keyword&gt;</code> 一看就知道是什麼。</li>
+<li><strong>層次結構</strong>：XML 的巢狀標籤天然對應語法樹的巢狀結構。</li>
+<li><strong>易於比對</strong>：XML 是純文字格式，可以用簡單的字串比對工具驗證輸出是否正確。</li>
+<li><strong>可讀性高</strong>：人類可以直接閱讀 XML 輸出，直覺地判斷語法樹是否正確。</li>
+<li><strong>工具支援</strong>：nand2tetris 提供了專用的 <code>TextComparer</code> 工具來比對 XML 輸出。</li>
+</ol>
+<p>在實際的工業級編譯器中，通常不會使用 XML——而是使用更緊湊的資料結構（如 Python 的物件、C 的 struct）。XML 的輸出純粹是為了教學驗證而設計的。</p>
+<hr />
+<h2 id="10-4-2-tokenizer-的輸出格式-xxxt-xml">10.4.2 Tokenizer 的輸出格式（<code>XxxT.xml</code>）</h2>
+<h3 id="格式規範">格式規範</h3>
+<p><code>XxxT.xml</code> 是 tokenizer 的輸出，格式如下：</p>
+<pre><code class="language-xml">&lt;tokens&gt;
+  &lt;keyword&gt; class &lt;/keyword&gt;
+  &lt;identifier&gt; Main &lt;/identifier&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  ...
+  &lt;symbol&gt; } &lt;/symbol&gt;
+&lt;/tokens&gt;
+</code></pre>
+<h3 id="規則">規則</h3>
+<ol>
+<li>整個輸出被包在 <code>&lt;tokens&gt;</code> 和 <code>&lt;/tokens&gt;</code> 標記中</li>
+<li>每個 token 用對應型別的標籤包圍</li>
+<li>標籤名稱與 token 型別的對應：</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>Token 型別</th>
+<th>XML 標籤</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>KEYWORD</td>
+<td><code>&lt;keyword&gt;</code></td>
+</tr>
+<tr>
+<td>SYMBOL</td>
+<td><code>&lt;symbol&gt;</code></td>
+</tr>
+<tr>
+<td>IDENTIFIER</td>
+<td><code>&lt;identifier&gt;</code></td>
+</tr>
+<tr>
+<td>INT_CONST</td>
+<td><code>&lt;integerConstant&gt;</code></td>
+</tr>
+<tr>
+<td>STRING_CONST</td>
+<td><code>&lt;stringConstant&gt;</code></td>
+</tr>
+</tbody>
+</table>
+<ol start="4">
+<li>關鍵字和識別碼以<strong>原始形式</strong>輸出（不是小寫）</li>
+<li>符號以<strong>原始形式</strong>輸出，但 XML 特殊字元需要轉義</li>
+<li>每個 token 佔一行，前面有兩個空格的縮排</li>
+<li>token 的值與標籤之間有一個空格</li>
+</ol>
+<h3 id="xml-轉義規則">XML 轉義規則</h3>
+<p>以下符號在 XML 中有特殊意義，輸出時必須轉義：</p>
+<table>
+<thead>
+<tr>
+<th>原始符號</th>
+<th>XML 轉義</th>
+<th>出現位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>&lt;</code></td>
+<td><code>&amp;lt;</code></td>
+<td>小於運算符</td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td><code>&amp;gt;</code></td>
+<td>大於運算符</td>
+</tr>
+<tr>
+<td><code>&amp;</code></td>
+<td><code>&amp;amp;</code></td>
+<td>邏輯且運算符</td>
+</tr>
+<tr>
+<td><code>&quot;</code></td>
+<td><code>&amp;quot;</code></td>
+<td>字串常量的邊界</td>
+</tr>
+</tbody>
+</table>
+<p>例如，如果 Jack 程式中有 <code>x &lt; 100</code>，tokenizer 的 XML 輸出會是：</p>
+<pre><code class="language-xml">  &lt;identifier&gt; x &lt;/identifier&gt;
+  &lt;symbol&gt; &amp;lt; &lt;/symbol&gt;
+  &lt;integerConstant&gt; 100 &lt;/integerConstant&gt;
+</code></pre>
+<h3 id="完整範例-square-jack">完整範例：Square.jack</h3>
+<p>假設 Square.jack 的開頭如下：</p>
+<pre><code class="language-jack">// Square.jack
+// From Nand2Tetris
+class Square {
+    field int x, y;
+    field int size;
+    ...
+}
+</code></pre>
+<p>對應的 <code>SquareT.xml</code> 輸出：</p>
+<pre><code class="language-xml">&lt;tokens&gt;
+  &lt;keyword&gt; class &lt;/keyword&gt;
+  &lt;identifier&gt; Square &lt;/identifier&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;keyword&gt; field &lt;/keyword&gt;
+  &lt;keyword&gt; int &lt;/keyword&gt;
+  &lt;identifier&gt; x &lt;/identifier&gt;
+  &lt;symbol&gt; , &lt;/symbol&gt;
+  &lt;identifier&gt; y &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; field &lt;/keyword&gt;
+  &lt;keyword&gt; int &lt;/keyword&gt;
+  &lt;identifier&gt; size &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+&lt;/tokens&gt;
+</code></pre>
+<hr />
+<h2 id="10-4-3-parser-的輸出格式-xxx-xml">10.4.3 Parser 的輸出格式（<code>Xxx.xml</code>）</h2>
+<h3 id="格式規範">格式規範</h3>
+<p><code>Xxx.xml</code> 是 CompilationEngine 的輸出，使用 XML 標籤來表示語法結構的層次關係。</p>
+<h3 id="層次結構">層次結構</h3>
+<p>每個非終端符號（文法規則的左側）對應一對 XML 標籤：</p>
+<pre><code class="language-xml">&lt;class&gt;
+  &lt;keyword&gt; class &lt;/keyword&gt;
+  &lt;identifier&gt; Main &lt;/identifier&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;classVarDec&gt;
+    &lt;keyword&gt; field &lt;/keyword&gt;
+    &lt;keyword&gt; int &lt;/keyword&gt;
+    &lt;identifier&gt; x &lt;/identifier&gt;
+    &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;/classVarDec&gt;
+  &lt;subroutineDec&gt;
+    &lt;keyword&gt; function &lt;/keyword&gt;
+    &lt;keyword&gt; void &lt;/keyword&gt;
+    &lt;identifier&gt; main &lt;/identifier&gt;
+    &lt;symbol&gt; ( &lt;/symbol&gt;
+    &lt;parameterList&gt;
+    &lt;/parameterList&gt;
+    &lt;symbol&gt; ) &lt;/symbol&gt;
+    &lt;subroutineBody&gt;
+      &lt;symbol&gt; { &lt;/symbol&gt;
+      &lt;varDec&gt;
+        &lt;keyword&gt; var &lt;/keyword&gt;
+        &lt;keyword&gt; int &lt;/keyword&gt;
+        &lt;identifier&gt; x &lt;/identifier&gt;
+        &lt;symbol&gt; ; &lt;/symbol&gt;
+      &lt;/varDec&gt;
+      &lt;statements&gt;
+        &lt;letStatement&gt;
+          &lt;keyword&gt; let &lt;/keyword&gt;
+          &lt;identifier&gt; x &lt;/identifier&gt;
+          &lt;symbol&gt; = &lt;/symbol&gt;
+          &lt;expression&gt;
+            &lt;term&gt;
+              &lt;integerConstant&gt; 3 &lt;/integerConstant&gt;
+            &lt;/term&gt;
+          &lt;/expression&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/letStatement&gt;
+      &lt;/statements&gt;
+      &lt;symbol&gt; } &lt;/symbol&gt;
+    &lt;/subroutineBody&gt;
+  &lt;/subroutineDec&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+&lt;/class&gt;
+</code></pre>
+<h3 id="輸出規則">輸出規則</h3>
+<ol>
+<li><strong>結構性標籤</strong>（非終端符號）使用文法規則名稱，例如 <code>&lt;class&gt;</code>、<code>&lt;statements&gt;</code>、<code>&lt;expression&gt;</code></li>
+<li><strong>葉節點</strong>（終端符號 / token）直接輸出 token 的 XML 表示</li>
+<li>每一層增加兩個空格的縮排</li>
+<li><strong>空的結構</strong>也要輸出開始與結束標籤（例如空的 <code>&lt;parameterList&gt;</code> 或 <code>&lt;expressionList&gt;</code>）</li>
+</ol>
+<h3 id="常見的結構性標籤一覽">常見的結構性標籤一覽</h3>
+<pre><code>程式結構:     class, classVarDec, subroutineDec, parameterList,
+              subroutineBody, varDec
+
+語句:         statements, letStatement, ifStatement, whileStatement,
+              doStatement, returnStatement
+
+表達式:       expression, term, expressionList
+</code></pre>
+<hr />
+<h2 id="10-4-4-完整的-jack-原始碼-xml-對照範例">10.4.4 完整的 Jack 原始碼 → XML 對照範例</h2>
+<h3 id="輸入-main-jack">輸入：<code>Main.jack</code></h3>
+<pre><code class="language-jack">// This is a test file for the Jack compiler.
+class Main {
+    field int x, y;
+
+    constructor Square new(int Ax, int Ay) {
+        let x = Ax;
+        let y = Ay;
+        return this;
+    }
+
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    function void main() {
+        var Square s;
+        var int i;
+        let s = Main.new(100, 200);
+        let i = s.getX() + s.getY();
+        do Output.printInt(i);
+        do s.dispose();
+        return;
+    }
+}
+</code></pre>
+<h3 id="輸出-1-maint-xml-tokenizer-輸出">輸出 1：<code>MainT.xml</code>（Tokenizer 輸出）</h3>
+<pre><code class="language-xml">&lt;tokens&gt;
+  &lt;keyword&gt; class &lt;/keyword&gt;
+  &lt;identifier&gt; Main &lt;/identifier&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;keyword&gt; field &lt;/keyword&gt;
+  &lt;keyword&gt; int &lt;/keyword&gt;
+  &lt;identifier&gt; x &lt;/identifier&gt;
+  &lt;symbol&gt; , &lt;/symbol&gt;
+  &lt;identifier&gt; y &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; constructor &lt;/keyword&gt;
+  &lt;identifier&gt; Square &lt;/identifier&gt;
+  &lt;identifier&gt; new &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;keyword&gt; int &lt;/keyword&gt;
+  &lt;identifier&gt; Ax &lt;/identifier&gt;
+  &lt;symbol&gt; , &lt;/symbol&gt;
+  &lt;keyword&gt; int &lt;/keyword&gt;
+  &lt;identifier&gt; Ay &lt;/identifier&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;keyword&gt; let &lt;/keyword&gt;
+  &lt;identifier&gt; x &lt;/identifier&gt;
+  &lt;symbol&gt; = &lt;/symbol&gt;
+  &lt;identifier&gt; Ax &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; let &lt;/keyword&gt;
+  &lt;identifier&gt; y &lt;/identifier&gt;
+  &lt;symbol&gt; = &lt;/symbol&gt;
+  &lt;identifier&gt; Ay &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; return &lt;/keyword&gt;
+  &lt;keyword&gt; this &lt;/keyword&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+  &lt;keyword&gt; method &lt;/keyword&gt;
+  &lt;keyword&gt; void &lt;/keyword&gt;
+  &lt;identifier&gt; dispose &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;keyword&gt; do &lt;/keyword&gt;
+  &lt;identifier&gt; Memory &lt;/identifier&gt;
+  &lt;symbol&gt; . &lt;/symbol&gt;
+  &lt;identifier&gt; deAlloc &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;keyword&gt; this &lt;/keyword&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; return &lt;/keyword&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+  &lt;keyword&gt; function &lt;/keyword&gt;
+  &lt;keyword&gt; void &lt;/keyword&gt;
+  &lt;identifier&gt; main &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;keyword&gt; var &lt;/keyword&gt;
+  &lt;identifier&gt; Square &lt;/identifier&gt;
+  &lt;identifier&gt; s &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; var &lt;/keyword&gt;
+  &lt;keyword&gt; int &lt;/keyword&gt;
+  &lt;identifier&gt; i &lt;/identifier&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; let &lt;/keyword&gt;
+  &lt;identifier&gt; s &lt;/identifier&gt;
+  &lt;symbol&gt; = &lt;/symbol&gt;
+  &lt;identifier&gt; Main &lt;/identifier&gt;
+  &lt;symbol&gt; . &lt;/symbol&gt;
+  &lt;identifier&gt; new &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;integerConstant&gt; 100 &lt;/integerConstant&gt;
+  &lt;symbol&gt; , &lt;/symbol&gt;
+  &lt;integerConstant&gt; 200 &lt;/integerConstant&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; let &lt;/keyword&gt;
+  &lt;identifier&gt; i &lt;/identifier&gt;
+  &lt;symbol&gt; = &lt;/symbol&gt;
+  &lt;identifier&gt; s &lt;/identifier&gt;
+  &lt;symbol&gt; . &lt;/symbol&gt;
+  &lt;identifier&gt; getX &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; + &lt;/symbol&gt;
+  &lt;identifier&gt; s &lt;/identifier&gt;
+  &lt;symbol&gt; . &lt;/symbol&gt;
+  &lt;identifier&gt; getY &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; do &lt;/keyword&gt;
+  &lt;identifier&gt; Output &lt;/identifier&gt;
+  &lt;symbol&gt; . &lt;/symbol&gt;
+  &lt;identifier&gt; printInt &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;identifier&gt; i &lt;/identifier&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; do &lt;/keyword&gt;
+  &lt;identifier&gt; s &lt;/identifier&gt;
+  &lt;symbol&gt; . &lt;/symbol&gt;
+  &lt;identifier&gt; dispose &lt;/identifier&gt;
+  &lt;symbol&gt; ( &lt;/symbol&gt;
+  &lt;symbol&gt; ) &lt;/symbol&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;keyword&gt; return &lt;/keyword&gt;
+  &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+&lt;/tokens&gt;
+</code></pre>
+<h3 id="輸出-2-main-xml-parser-輸出">輸出 2：<code>Main.xml</code>（Parser 輸出）</h3>
+<pre><code class="language-xml">&lt;class&gt;
+  &lt;keyword&gt; class &lt;/keyword&gt;
+  &lt;identifier&gt; Main &lt;/identifier&gt;
+  &lt;symbol&gt; { &lt;/symbol&gt;
+  &lt;classVarDec&gt;
+    &lt;keyword&gt; field &lt;/keyword&gt;
+    &lt;keyword&gt; int &lt;/keyword&gt;
+    &lt;identifier&gt; x &lt;/identifier&gt;
+    &lt;symbol&gt; , &lt;/symbol&gt;
+    &lt;identifier&gt; y &lt;/identifier&gt;
+    &lt;symbol&gt; ; &lt;/symbol&gt;
+  &lt;/classVarDec&gt;
+  &lt;subroutineDec&gt;
+    &lt;keyword&gt; constructor &lt;/keyword&gt;
+    &lt;identifier&gt; Square &lt;/identifier&gt;
+    &lt;identifier&gt; new &lt;/identifier&gt;
+    &lt;symbol&gt; ( &lt;/symbol&gt;
+    &lt;parameterList&gt;
+      &lt;keyword&gt; int &lt;/keyword&gt;
+      &lt;identifier&gt; Ax &lt;/identifier&gt;
+      &lt;symbol&gt; , &lt;/symbol&gt;
+      &lt;keyword&gt; int &lt;/keyword&gt;
+      &lt;identifier&gt; Ay &lt;/identifier&gt;
+    &lt;/parameterList&gt;
+    &lt;symbol&gt; ) &lt;/symbol&gt;
+    &lt;subroutineBody&gt;
+      &lt;symbol&gt; { &lt;/symbol&gt;
+      &lt;statements&gt;
+        &lt;letStatement&gt;
+          &lt;keyword&gt; let &lt;/keyword&gt;
+          &lt;identifier&gt; x &lt;/identifier&gt;
+          &lt;symbol&gt; = &lt;/symbol&gt;
+          &lt;expression&gt;
+            &lt;term&gt;
+              &lt;identifier&gt; Ax &lt;/identifier&gt;
+            &lt;/term&gt;
+          &lt;/expression&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/letStatement&gt;
+        &lt;letStatement&gt;
+          &lt;keyword&gt; let &lt;/keyword&gt;
+          &lt;identifier&gt; y &lt;/identifier&gt;
+          &lt;symbol&gt; = &lt;/symbol&gt;
+          &lt;expression&gt;
+            &lt;term&gt;
+              &lt;identifier&gt; Ay &lt;/identifier&gt;
+            &lt;/term&gt;
+          &lt;/expression&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/letStatement&gt;
+        &lt;returnStatement&gt;
+          &lt;keyword&gt; return &lt;/keyword&gt;
+          &lt;expression&gt;
+            &lt;term&gt;
+              &lt;keyword&gt; this &lt;/keyword&gt;
+            &lt;/term&gt;
+          &lt;/expression&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/returnStatement&gt;
+      &lt;/statements&gt;
+      &lt;symbol&gt; } &lt;/symbol&gt;
+    &lt;/subroutineBody&gt;
+  &lt;/subroutineDec&gt;
+  &lt;subroutineDec&gt;
+    &lt;keyword&gt; method &lt;/keyword&gt;
+    &lt;keyword&gt; void &lt;/keyword&gt;
+    &lt;identifier&gt; dispose &lt;/identifier&gt;
+    &lt;symbol&gt; ( &lt;/symbol&gt;
+    &lt;parameterList&gt;
+    &lt;/parameterList&gt;
+    &lt;symbol&gt; ) &lt;/symbol&gt;
+    &lt;subroutineBody&gt;
+      &lt;symbol&gt; { &lt;/symbol&gt;
+      &lt;statements&gt;
+        &lt;doStatement&gt;
+          &lt;keyword&gt; do &lt;/keyword&gt;
+          &lt;identifier&gt; Memory &lt;/identifier&gt;
+          &lt;symbol&gt; . &lt;/symbol&gt;
+          &lt;identifier&gt; deAlloc &lt;/identifier&gt;
+          &lt;symbol&gt; ( &lt;/symbol&gt;
+          &lt;expressionList&gt;
+            &lt;expression&gt;
+              &lt;term&gt;
+                &lt;keyword&gt; this &lt;/keyword&gt;
+              &lt;/term&gt;
+            &lt;/expression&gt;
+          &lt;/expressionList&gt;
+          &lt;symbol&gt; ) &lt;/symbol&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/doStatement&gt;
+        &lt;returnStatement&gt;
+          &lt;keyword&gt; return &lt;/keyword&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/returnStatement&gt;
+      &lt;/statements&gt;
+      &lt;symbol&gt; } &lt;/symbol&gt;
+    &lt;/subroutineBody&gt;
+  &lt;/subroutineDec&gt;
+  &lt;subroutineDec&gt;
+    &lt;keyword&gt; function &lt;/keyword&gt;
+    &lt;keyword&gt; void &lt;/keyword&gt;
+    &lt;identifier&gt; main &lt;/identifier&gt;
+    &lt;symbol&gt; ( &lt;/symbol&gt;
+    &lt;parameterList&gt;
+    &lt;/parameterList&gt;
+    &lt;symbol&gt; ) &lt;/symbol&gt;
+    &lt;subroutineBody&gt;
+      &lt;symbol&gt; { &lt;/symbol&gt;
+      &lt;varDec&gt;
+        &lt;keyword&gt; var &lt;/keyword&gt;
+        &lt;identifier&gt; Square &lt;/identifier&gt;
+        &lt;identifier&gt; s &lt;/identifier&gt;
+        &lt;symbol&gt; ; &lt;/symbol&gt;
+      &lt;/varDec&gt;
+      &lt;varDec&gt;
+        &lt;keyword&gt; var &lt;/keyword&gt;
+        &lt;keyword&gt; int &lt;/keyword&gt;
+        &lt;identifier&gt; i &lt;/identifier&gt;
+        &lt;symbol&gt; ; &lt;/symbol&gt;
+      &lt;/varDec&gt;
+      &lt;statements&gt;
+        &lt;letStatement&gt;
+          &lt;keyword&gt; let &lt;/keyword&gt;
+          &lt;identifier&gt; s &lt;/identifier&gt;
+          &lt;symbol&gt; = &lt;/symbol&gt;
+          &lt;expression&gt;
+            &lt;term&gt;
+              &lt;identifier&gt; Main &lt;/identifier&gt;
+              &lt;symbol&gt; . &lt;/symbol&gt;
+              &lt;identifier&gt; new &lt;/identifier&gt;
+              &lt;symbol&gt; ( &lt;/symbol&gt;
+              &lt;expressionList&gt;
+                &lt;expression&gt;
+                  &lt;term&gt;
+                    &lt;integerConstant&gt; 100 &lt;/integerConstant&gt;
+                  &lt;/term&gt;
+                &lt;/expression&gt;
+                &lt;expression&gt;
+                  &lt;term&gt;
+                    &lt;integerConstant&gt; 200 &lt;/integerConstant&gt;
+                  &lt;/term&gt;
+                &lt;/expression&gt;
+              &lt;/expressionList&gt;
+              &lt;symbol&gt; ) &lt;/symbol&gt;
+            &lt;/term&gt;
+          &lt;/expression&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/letStatement&gt;
+        &lt;letStatement&gt;
+          &lt;keyword&gt; let &lt;/keyword&gt;
+          &lt;identifier&gt; i &lt;/identifier&gt;
+          &lt;symbol&gt; = &lt;/symbol&gt;
+          &lt;expression&gt;
+            &lt;term&gt;
+              &lt;identifier&gt; s &lt;/identifier&gt;
+              &lt;symbol&gt; . &lt;/symbol&gt;
+              &lt;identifier&gt; getX &lt;/identifier&gt;
+              &lt;symbol&gt; ( &lt;/symbol&gt;
+              &lt;expressionList&gt;
+              &lt;/expressionList&gt;
+              &lt;symbol&gt; ) &lt;/symbol&gt;
+            &lt;/term&gt;
+            &lt;symbol&gt; + &lt;/symbol&gt;
+            &lt;term&gt;
+              &lt;identifier&gt; s &lt;/identifier&gt;
+              &lt;symbol&gt; . &lt;/symbol&gt;
+              &lt;identifier&gt; getY &lt;/identifier&gt;
+              &lt;symbol&gt; ( &lt;/symbol&gt;
+              &lt;expressionList&gt;
+              &lt;/expressionList&gt;
+              &lt;symbol&gt; ) &lt;/symbol&gt;
+            &lt;/term&gt;
+          &lt;/expression&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/letStatement&gt;
+        &lt;doStatement&gt;
+          &lt;keyword&gt; do &lt;/keyword&gt;
+          &lt;identifier&gt; Output &lt;/identifier&gt;
+          &lt;symbol&gt; . &lt;/symbol&gt;
+          &lt;identifier&gt; printInt &lt;/identifier&gt;
+          &lt;symbol&gt; ( &lt;/symbol&gt;
+          &lt;expressionList&gt;
+            &lt;expression&gt;
+              &lt;term&gt;
+                &lt;identifier&gt; i &lt;/identifier&gt;
+              &lt;/term&gt;
+            &lt;/expression&gt;
+          &lt;/expressionList&gt;
+          &lt;symbol&gt; ) &lt;/symbol&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/doStatement&gt;
+        &lt;doStatement&gt;
+          &lt;keyword&gt; do &lt;/keyword&gt;
+          &lt;identifier&gt; s &lt;/identifier&gt;
+          &lt;symbol&gt; . &lt;/symbol&gt;
+          &lt;identifier&gt; dispose &lt;/identifier&gt;
+          &lt;symbol&gt; ( &lt;/symbol&gt;
+          &lt;expressionList&gt;
+          &lt;/expressionList&gt;
+          &lt;symbol&gt; ) &lt;/symbol&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/doStatement&gt;
+        &lt;returnStatement&gt;
+          &lt;keyword&gt; return &lt;/keyword&gt;
+          &lt;symbol&gt; ; &lt;/symbol&gt;
+        &lt;/returnStatement&gt;
+      &lt;/statements&gt;
+      &lt;symbol&gt; } &lt;/symbol&gt;
+    &lt;/subroutineBody&gt;
+  &lt;/subroutineDec&gt;
+  &lt;symbol&gt; } &lt;/symbol&gt;
+&lt;/class&gt;
+</code></pre>
+<hr />
+<h2 id="10-4-5-使用-textcomparer-驗證輸出">10.4.5 使用 TextComparer 驗證輸出</h2>
+<h3 id="nand2tetris-提供的比較工具">nand2tetris 提供的比較工具</h3>
+<p>nand2tetris 的 tools 目錄中包含了 <code>TextComparer.bat</code>（Windows）和 <code>TextComparer.sh</code>（Mac/Linux），用於逐行比對你的輸出與預期的參考輸出。</p>
+<h3 id="使用方式">使用方式</h3>
+<pre><code class="language-bash"># 比較 tokenizer 輸出
+./TextComparer.sh MainT.xml MyMainT.xml
+
+# 比較 parser 輸出
+./TextComparer.sh Main.xml MyMain.xml
+</code></pre>
+<p>其中：</p>
+<ul>
+<li>第一個參數是<strong>預期輸出</strong>（nand2tetris 提供的參考答案）</li>
+<li>第二個參數是<strong>你的輸出</strong></li>
+</ul>
+<h3 id="比對結果">比對結果</h3>
+<p>如果兩者完全一致，工具會顯示 <strong>&quot;Match&quot;</strong>。
+如果有任何差異，工具會標示出<strong>第一個不同的行號</strong>，方便你定位錯誤。</p>
+<pre><code>Comparison results:
+File 1: Main.xml
+File 2: MyMain.xml
+
+Mismatch found on line 42:
+  Expected: &quot;  &lt;identifier&gt; y &lt;/identifier&gt;&quot;
+  Got:      &quot;  &lt;identifier&gt; x &lt;/identifier&gt;&quot;
+</code></pre>
+<h3 id="替代方案-使用-diff">替代方案：使用 diff</h3>
+<p>如果沒有 TextComparer 工具，也可以使用系統的 <code>diff</code> 命令：</p>
+<pre><code class="language-bash">diff -u expected_main.xml MyMain.xml
+</code></pre>
+<p>或更直覺地使用 <code>diff</code> 的 side-by-side 模式：</p>
+<pre><code class="language-bash">diff -y expected_main.xml MyMain.xml
+</code></pre>
+<hr />
+<h2 id="10-4-6-測試策略與建議">10.4.6 測試策略與建議</h2>
+<h3 id="階段式測試">階段式測試</h3>
+<p>不要一次寫完整個編譯器再測試。建議按照以下順序逐步測試：</p>
+<p><strong>第一階段：Tokenizer 測試</strong></p>
+<p>先用最簡單的檔案測試 tokenizer：</p>
+<pre><code>// test.jack
+class Main {
+    function void main() {
+        return;
+    }
+}
+</code></pre>
+<p>驗證 <code>MainT.xml</code> 輸出正確。</p>
+<p><strong>第二階段：空的結構</strong></p>
+<p>測試 parser 能否處理最小的合法程式：</p>
+<pre><code class="language-jack">class Main {
+}
+</code></pre>
+<p><strong>第三階段：逐語言特性</strong></p>
+<p>依序加入每個語言特性並測試：</p>
+<ol>
+<li>變數宣告（<code>var</code>）</li>
+<li>let 語句（簡單賦值）</li>
+<li>do 語句（函式呼叫）</li>
+<li>if/else 語句</li>
+<li>while 語句</li>
+<li>return 語句</li>
+<li>表達式（含運算符）</li>
+<li>陣列存取</li>
+<li>類別的函式呼叫</li>
+</ol>
+<h3 id="自訂測試案例">自訂測試案例</h3>
+<p>nand2tetris 的 <code>test/</code> 目錄提供了許多預建的測試案例。以下是使用方式：</p>
+<ol>
+<li>找到 <code>test/</code> 目錄中對應的 <code>.jack</code> 檔案</li>
+<li>確認對應的預期 XML 輸出是否存在</li>
+<li>執行你的編譯器</li>
+<li>使用 TextComparer 比對</li>
+</ol>
+<h3 id="常見的測試檔案">常見的測試檔案</h3>
+<table>
+<thead>
+<tr>
+<th>測試檔案</th>
+<th>測試目的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Seven.jack</code></td>
+<td>基本的整數常量與算術運算</td>
+</tr>
+<tr>
+<td><code>ConvertToBin.jack</code></td>
+<td>位元運算與 while 迴圈</td>
+</tr>
+<tr>
+<td><code>Square.jack</code></td>
+<td>類別、方法、欄位變數</td>
+</tr>
+<tr>
+<td><code>Average.jack</code></td>
+<td>陣列、輸入處理</td>
+</tr>
+<tr>
+<td><code>Pong.jack</code></td>
+<td>完整的遊戲，全面測試</td>
+</tr>
+<tr>
+<td><code>ComplexArrays.jack</code></td>
+<td>複雜的表達式與陣列運算</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="10-4-7-常見錯誤與除錯技巧">10.4.7 常見錯誤與除錯技巧</h2>
+<h3 id="錯誤一-xml-特殊字元未轉義">錯誤一：XML 特殊字元未轉義</h3>
+<p><strong>症狀</strong>：TextComparer 報告第一行就不同，XML 工具無法解析輸出。</p>
+<p><strong>原因</strong>：<code>&lt;</code>、<code>&gt;</code>、<code>&amp;</code> 沒有被轉義。</p>
+<p><strong>修正</strong>：確保 tokenizer 在輸出 <code>symbol</code> 類型的 token 時進行轉義：</p>
+<pre><code class="language-python">XML_ESCAPE = {
+    &quot;&lt;&quot;: &quot;&amp;lt;&quot;,
+    &quot;&gt;&quot;: &quot;&amp;gt;&quot;,
+    &quot;&amp;&quot;: &quot;&amp;amp;&quot;,
+    '&quot;': &quot;&amp;quot;&quot;
+}
+
+def token_to_xml(self):
+    escaped = XML_ESCAPE.get(self.current_token, self.current_token)
+    return f&quot;&lt;symbol&gt; {escaped} &lt;/symbol&gt;&quot;
+</code></pre>
+<h3 id="錯誤二-空的-parameterlist-expressionlist-被省略">錯誤二：空的 parameterList / expressionList 被省略</h3>
+<p><strong>症狀</strong>：TextComparer 報告差異，預期有 <code>&lt;parameterList&gt;\n&lt;/parameterList&gt;</code>，但你的輸出省略了。</p>
+<p><strong>修正</strong>：即使參數列表或表達式列表是空的，也必須輸出開始和結束標籤：</p>
+<pre><code class="language-xml">&lt;!-- 正確：即使是空的也要輸出標籤 --&gt;
+&lt;parameterList&gt;
+&lt;/parameterList&gt;
+
+&lt;!-- 錯誤：省略了空標籤 --&gt;
+</code></pre>
+<h3 id="錯誤三-縮排不正確">錯誤三：縮排不正確</h3>
+<p><strong>症狀</strong>：內容正確但空格數量不同。</p>
+<p><strong>修正</strong>：確保每層縮排恰好使用 <strong>兩個空格</strong>，並在進入結構性標籤時增加、離開時減少。</p>
+<h3 id="錯誤四-token-值中多餘的空格">錯誤四：token 值中多餘的空格</h3>
+<p><strong>症狀</strong>：<code>&lt;keyword&gt; class&lt;/keyword&gt;</code> 少了前面或後面的空格。</p>
+<p><strong>修正</strong>：XML 格式要求標籤與值之間有一個空格，值與結束標籤之間也有空格：</p>
+<pre><code class="language-python">def token_to_xml(self):
+    return f&quot;&lt;{tag}&gt; {value} &lt;/{tag}&gt;&quot;
+#                    ^        ^
+#                  空格      空格
+</code></pre>
+<h3 id="錯誤五-符號-token-的-value-包含多個字元">錯誤五：符號 token 的 value 包含多個字元</h3>
+<p><strong>症狀</strong>：<code>&lt;=</code> 被拆成 <code>&lt;</code> 和 <code>=</code> 兩個 token，但有些地方沒有正確處理。</p>
+<p><strong>注意</strong>：Jack 只有 <code>&lt;</code> 和 <code>=</code> 是獨立的符號，<code>&lt;=</code> 不是 Jack 的合法符號。如果遇到 <code>&lt;</code> 後面跟 <code>=</code>，那是兩個獨立的 token。</p>
+<h3 id="錯誤六-字串常量中包含了引號">錯誤六：字串常量中包含了引號</h3>
+<p><strong>症狀</strong>：遇到 <code>&quot;Hello, World!&quot;</code> 時解析出錯。</p>
+<p><strong>修正</strong>：tokenizer 在遇到開頭的 <code>&quot;</code> 後，應該一直掃描到下一個 <code>&quot;</code> 為止，中間的所有字元（包括空格）都屬於字串內容。</p>
+<hr />
+<h2 id="10-4-8-整合測試-從-jack-到-xml">10.4.8 整合測試：從 .jack 到 .xml</h2>
+<p>以下是整合 tokenizer 和 parser 的完整主程式：</p>
+<pre><code class="language-python">import sys
+import os
+from JackTokenizer import JackTokenizer, tokenize_file
+from CompilationEngine import CompilationEngine
+
+
+def compile_jack(input_path: str) -&gt; None:
+    &quot;&quot;&quot;編譯一個 .jack 檔案，產生 .xml 和 .vm 輸出。&quot;&quot;&quot;
+    base = os.path.splitext(input_path)[0]
+
+    # 步驟 1：詞法分析，產生 XxxT.xml
+    tokenizer = JackTokenizer(input_path)
+    tokenizer_xml_path = base + &quot;T.xml&quot;
+    with open(tokenizer_xml_path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+        f.write(&quot;&lt;tokens&gt;\n&quot;)
+        while tokenizer.has_more_tokens():
+            tokenizer.advance()
+            f.write(&quot;  &quot; + tokenizer.token_to_xml() + &quot;\n&quot;)
+        f.write(&quot;&lt;/tokens&gt;\n&quot;)
+
+    print(f&quot;  Tokenizer output: {tokenizer_xml_path}&quot;)
+
+    # 步驟 2：語法分析，產生 Xxx.xml
+    tokenizer = JackTokenizer(input_path)  # 重新建立 tokenizer
+    parser_xml_path = base + &quot;.xml&quot;
+    engine = CompilationEngine(tokenizer, parser_xml_path)
+    engine.compile()
+
+    print(f&quot;  Parser output:    {parser_xml_path}&quot;)
+
+
+def main():
+    if len(sys.argv) &lt; 2:
+        print(&quot;Usage: python JackCompiler.py &lt;file.jack&gt; | &lt;directory&gt;&quot;)
+        sys.exit(1)
+
+    path = sys.argv[1]
+    if os.path.isdir(path):
+        jack_files = [
+            os.path.join(path, f)
+            for f in os.listdir(path)
+            if f.endswith(&quot;.jack&quot;)
+        ]
+    else:
+        jack_files = [path]
+
+    for jack_file in sorted(jack_files):
+        print(f&quot;Compiling: {jack_file}&quot;)
+        compile_jack(jack_file)
+
+    print(&quot;Done.&quot;)
+
+
+if __name__ == &quot;__main__&quot;:
+    main()
+</code></pre>
+<h3 id="使用方式">使用方式</h3>
+<pre><code class="language-bash"># 編譯單一檔案
+python JackCompiler.py Main.jack
+
+# 編譯整個目錄
+python JackCompiler.py MyProgram/
+</code></pre>
+<h3 id="輸出結果">輸出結果</h3>
+<pre><code>Compiling: Main.jack
+  Tokenizer output: MainT.xml
+  Parser output:    Main.xml
+Done.
+</code></pre>
+<hr />
+<h2 id="10-4-9-xml-輸出的限制與注意事項">10.4.9 XML 輸出的限制與注意事項</h2>
+<h3 id="字元編碼">字元編碼</h3>
+<p>XML 檔案應使用 UTF-8 編碼。確保在寫入時指定編碼：</p>
+<pre><code class="language-python">with open(output_path, &quot;w&quot;, encoding=&quot;utf-8&quot;) as f:
+    # ...
+</code></pre>
+<h3 id="行尾符號">行尾符號</h3>
+<p>不同作業系統使用不同的行尾符號（Windows 用 <code>\r\n</code>，Unix/Linux/Mac 用 <code>\n</code>）。nand2tetris 的 TextComparer 工具通常會忽略行尾符號的差異，但為了一致性，建議統一使用 <code>\n</code>。</p>
+<h3 id="大型檔案">大型檔案</h3>
+<p>XML 輸出對於小型的 <code>.jack</code> 檔案完全沒問題，但對於像 <code>Pong</code> 這樣的大專案，XML 檔案可能相當大。這是正常的——XML 只是驗證工具，完成驗證後可以刪除。</p>
+<h3 id="格式化的一致性">格式化的一致性</h3>
+<p>確保每行恰好一條 XML 標記或 token。不要在同一行寫多個標記，也不要把一條標記拆成多行。</p>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<p>本節完整介紹了 Jack 編譯器的 XML 輸出機制與測試方法：</p>
+<ul>
+<li><strong>XML 的選擇理由</strong>：結構化、自描述、易於比對，非常適合教學驗證。</li>
+<li><strong><code>XxxT.xml</code> 格式</strong>：tokenizer 的輸出，每個 token 用對應的 XML 標籤包圍。</li>
+<li><strong><code>Xxx.xml</code> 格式</strong>：parser 的輸出，以巢狀 XML 標籤表示語法樹的層次結構。</li>
+<li><strong>XML 轉義</strong>：<code>&lt;</code>、<code>&gt;</code>、<code>&amp;</code>、<code>&quot;</code> 四個字元必須被轉義。</li>
+<li><strong>TextComparer</strong>：nand2tetris 提供的比對工具，用於驗證輸出是否與預期一致。</li>
+<li><strong>測試策略</strong>：建議從最簡單的檔案開始，逐步加入語言特性，每個特性都驗證通過後再繼續。</li>
+<li><strong>常見錯誤</strong>：XML 轉義遺漏、空標籤省略、縮排錯誤、token 值前後空格缺失。</li>
+</ul>
+<p>至此，你已經具備了建立一個完整的 Jack 編譯器所需的所有知識。詞法分析器將字元流轉為 token 流，語法分析器將 token 流組織為語法樹，而 XML 輸出讓我們能夠驗證每一步的正確性。在後續的章節中，我們將在CompilationEngine 中加入 VM 碼的生成能力，讓編譯器的輸出不僅是 XML，更是真正可以在 VM 上執行的虛擬機碼。這將完成從高階語言到可執行程式的完整翻譯管線。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="10.3.html">⇦ 上一節</a><a class="nav-btn" href="11.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

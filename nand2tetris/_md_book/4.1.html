@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.1 硬體與軟體的交界：指令集架構（ISA）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link active" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="3.4.html">⇦ 上一節</a></div>
+  <div class="title">4.1 硬體與軟體的交界：指令集架構（ISA）</div>
+  <div class="nav-right"><a class="nav-btn" href="4.2.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch04.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="4-1-硬體與軟體的交界-指令集架構-isa">4.1 硬體與軟體的交界：指令集架構（ISA）</h1>
+<p>在前面三章中，我們分別打造了布林運算的基石（邏輯閘）、算術的核心（ALU）以及儲存狀態的單元（暫存器與記憶體）。然而，無論這些電路多麼精巧，它們都還只是一堆「會算數的矽片」——真正讓一台電腦成為「可程式化機器」的關鍵，是<strong>指令集架構（Instruction Set Architecture, ISA）</strong>。 ISA 是硬體與軟體之間的一紙合約：它定義了 CPU 究竟「聽得懂」哪些指令、每個指令如何被編碼成 0 與 1、以及執行指令時要用到哪些暫存器與記憶體。本章要從巨觀的計算機原理出發，認識機器語言的三個核心元素，並建立起「運算、資料位置、跳躍」這三根支柱，為下一節詳細介紹 Hack 機器語言規格打下基礎。</p>
+<h2 id="什麼是指令集架構-isa">什麼是指令集架構（ISA）</h2>
+<p>電腦的 CPU 無法直接懂得「<code>sum += i;</code>」這種高階語言的語法。它唯一能執行的，是本機的<strong>機器指令（machine instruction）</strong>——一串定義好的 0/1 位元。一個指令集架構，就是用來描述「CPU 能夠辨識與執行哪些指令」的完整規格，通常包含三大部分：</p>
+<table>
+<thead>
+<tr>
+<th>組成</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>指令格式</strong></td>
+<td>每條指令長幾個位元？欄位如何劃分？例如「前 4 個位元是操作碼」。</td>
+</tr>
+<tr>
+<td><strong>定址模式</strong></td>
+<td>資料從哪裡來、結果送到哪裡去？例如立即值、暫存器、記憶體位址。</td>
+</tr>
+<tr>
+<td><strong>行為語意</strong></td>
+<td>每個指令在硬體上做什麼事？例如「把 A 與 D 相加並存回 D」。</td>
+</tr>
+</tbody>
+</table>
+<p>我們常說「機器語言」或「組合語言」，其實都是 ISA 的不同面貌：</p>
+<ul>
+<li><strong>機器語言</strong>：完整的 0/1 位元編碼，CPU 直接執行。</li>
+<li><strong>組合語言</strong>：機器語言的助記式（mnemonic）寫法，用 <code>D=M+A</code>、<code>0;JMP</code> 這樣可讀的文字代替原始的位元串。</li>
+<li><strong>組譯器（Assembler）</strong>：把組合語言一行行翻譯成機器碼的程式。</li>
+</ul>
+<p>同一個 ISA 可以存在不同的助記元寫法（x86 有 AT&amp;T 與 Intel 兩種語法便是著名例子），但它們背後的位元編碼是同一個。在 Nand2Tetris 中，我們將設計一個非常精簡、可以完全自己動手實作出來的 16 位元 ISA：<strong>Hack 機器語言</strong>。設計 Hack 的最大好處是——它的完整規格只有兩頁，而且我們親手電路（第五章的 CPU）真的能執行它。</p>
+<h2 id="從高階語言到機器語言-抽象的階梯">從高階語言到機器語言：抽象的階梯</h2>
+<p>讓我們先感受一下同一段演算法在不同抽象層的樣貌。假設我們想知道「把變數 <code>a</code> 加 1 之後存入變數 <code>b</code>」，在每個層次大致長這樣：</p>
+<pre><code class="language-c">// 高階語言（C 語言風格）
+b = a + 1;
+</code></pre>
+<pre><code class="language-asm">// 組合語言（Hack）
+@a        // 把 a 的位址送進 A 暫存器
+D=M       // D = RAM[a]
+@b        // 把 b 的位址送進 A 暫存器
+M=D+1     // RAM[b] = D + 1
+</code></pre>
+<pre><code class="language-text">// 機器語言（對應到上述 4 條指令的二進位編碼）
+0000000000000000
+1111110000010000
+0000000000000001
+1110111111010001
+</code></pre>
+<p>從上到下，每一層都是上一層的「機械化」。高階語言的人力成本最低、離硬體最遠；組合語言與機器語言離硬體最近、但每一行都瑣碎。撰寫編譯器（本書第二部的目標）的任務，就是把高層的表達翻譯成底層的位元。理解了 ISA，你就同時掌握了軟體的最底層與硬體的最頂層——這就是本章標題「硬體與軟體的交界」的真正含義。</p>
+<h2 id="機器語言的三個核心元素">機器語言的三個核心元素</h2>
+<p>翻遍所有電腦的機器語言，無論是學生實作的 Hack、Arduino 的 AVR、手機的 ARM 或是伺服器的 x86，核心概念都繞不開三件事：<strong>運算（Operation）、資料位置（Operand Location）、跳躍（Jump）</strong>。我們依序說明。</p>
+<h3 id="第一個元素-運算-operation">第一個元素：運算（Operation）</h3>
+<p>運算描述「這一條指令要對資料做什麼」。常見的運算包括：</p>
+<table>
+<thead>
+<tr>
+<th>類別</th>
+<th>例子</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>算術運算</td>
+<td>加法、減法、遞增、遞減</td>
+</tr>
+<tr>
+<td>邏輯運算</td>
+<td>位元 AND、OR、NOT</td>
+</tr>
+<tr>
+<td>資料搬移</td>
+<td>把暫存器或記憶體的內容搬到目標</td>
+</tr>
+<tr>
+<td>流程控制</td>
+<td>條件跳躍或無條件跳躍</td>
+</tr>
+</tbody>
+</table>
+<p>在 Hack 中，一切運算都由 <strong>ALU</strong> 完成，因此「運算」欄位幾乎直接對應我們在第二章打造的 ALU 控制訊號。算術與邏輯運算其實是同一回事：<code>D+A</code>、<code>D&amp;A</code>、<code>!D</code> 通通是 ALU 能算的函數。</p>
+<h3 id="第二個元素-資料位置-operand-location">第二個元素：資料位置（Operand Location）</h3>
+<p>光有運算還不夠——我們必須指出「從哪裡取得運算元」以及「結果寫到哪裡」，這就是資料位置。程式語言的變數存取概念在機器層次被拆解成三種來源：</p>
+<ol>
+<li><strong>立即值（immediate）</strong>：常數直接寫在指令裡，例如「把 5 放進暫存器」。</li>
+<li><strong>暫存器（register）</strong>：CPU 內部的極高速儲存單元，例如「把 A 暫存器的值拿來用」。</li>
+<li><strong>記憶體（memory）</strong>：透過位址存取的較慢儲存空間，例如「把 RAM[100] 的值讀入」。</li>
+</ol>
+<p>Hack 把這三種來源融合得十分優雅：<code>@值</code> 指令（A-指令）負責把立即值送進 A 暫存器；之後的 C-指令只要提到 <code>A</code>，就用暫存器內容；只要提到 <code>M</code>，就自動以 <code>A</code> 作為記憶體位址去存取 RAM。如此一來「資料位置」的語法只有 A、D、M 三個代號，簡單卻威力十足。</p>
+<h3 id="第三個元素-跳躍-jump-flow-control">第三個元素：跳躍（Jump / Flow Control）</h3>
+<p>程式若只能一行接一行往下跑，將無法表達「迴圈」與「if-else」，也就無法寫出任何有意義的程式。跳躍指令改變程式計數器（PC）的值，讓 CPU 下一個循環去執行別的位置。跳躍分為兩類：</p>
+<ul>
+<li><strong>無條件跳躍</strong>：不管條件如何都跳，例如「跳到 LOOP 標籤」。</li>
+<li><strong>條件跳躍</strong>：根據上一次運算結果的性質決定跳不跳，例如「若結果大於 0 就跳」。</li>
+</ul>
+<p>每條 C-指令的 ALU 都會算出一個 16 位元的結果；Hack 的硬體會順便告訴我們這個結果是<strong>負、零、還是正</strong>，條件跳躍正是檢查這三個狀態。跳躍目標一律存在 A 暫存器中（下一節會詳細說明）。用流程圖思考的話，三種元素各負責一件事：</p>
+<pre><code class="language-text">運算    ：做什麼（compute）
+資料位置：從哪拿、放去哪（dest / source）
+跳躍    ：接下來去哪裡（jump）
+</code></pre>
+<p>一個 ISA 只要具備了這三個元素，理論上就能寫出任意的可計算程式——這正是圖靈完備性的實務意義。</p>
+<h2 id="儲存程式計算機-von-neumann-架構">儲存程式計算機：Von Neumann 架構</h2>
+<p>1945 年，馮紐曼（John von Neumann）提出了影響至今的「儲存程式計算機」概念。核心思想只有一句話：<strong>程式與資料存在同一個記憶體裡，指令依序被取出與執行</strong>。這聽起來理所當然，但在當時並非如此——早期的計算機是把程式「接線」在電路板上，想改程式就得改硬體。</p>
+<p>Von Neumann 架構由幾個關鍵元件組成：</p>
+<pre><code class="language-text">        ┌────────────────────────────────────┐
+        │                                     │
+        ▼                                     │
+  ┌──────────┐   位址/資料匯流排   ┌────────────┐
+  │   CPU    │◄──────────────────►│   記憶體    │
+  │  ┌─────┐ │    （同時存放      └────────────┘
+  │  │ ALU │ │     程式與資料）          ▲
+  │  ├─────┤ │                           │
+  │  │PC /  │ │        ┌──────────┐       │ I/O 映射
+  │  │暫存器│ │        │ 輸入/輸出 │◄──────┘
+  │  └─────┘ │        └──────────┘
+  └──────────┘
+</code></pre>
+<ol>
+<li><strong>CPU</strong>：負責解碼與執行指令，內部有 ALU、暫存器群與程式計數器 PC。</li>
+<li><strong>記憶體</strong>：同時存放「程式本身」與「程式要處理的資料」。</li>
+<li><strong>I/O</strong>：與外界溝通（螢幕、鍵盤）。</li>
+<li><strong>匯流排</strong>：串起上述元件的位址與資料傳輸線路。</li>
+</ol>
+<p>在 Nand2Tetris 中，Hack 電腦正是這樣一台標準的 Von Neumann 機器：程式被載入 ROM（唯讀記憶體，專門放程式），資料放在 RAM，兩者對 CPU 而言都是「記憶體」。第五章我們組裝這種架構時，會看到 PC 決定下一條要抓去執行的指令位址，形成一次次的「抓取—解碼—執行」循環：</p>
+<pre><code class="language-text">INFINITE LOOP {
+  instruction = ROM[PC]
+  PC = PC + 1                      // 先指向下一條指令
+  decode(instruction)              // 解讀操作碼與欄位
+  execute(instruction)             // 運算、搬移、視條件更新 PC
+  // 若是跳躍指令，PC 可能在 execute 中被覆寫
+}
+</code></pre>
+<p>這個循環是第四節「是否停止執行」以及後續「作業系統」所有章節的共同節奏：程式只是記憶體中的位元串，CPU 只是依照 PC 一路讀讀做做。</p>
+<h2 id="資料暫存器與記憶體的位址">資料暫存器與記憶體的位址</h2>
+<p>在 Hack 中，記憶體的一格是一個 16 位元字組（word），我們習慣用「RAM[i] = 第 i 個字組」。位址本身是 15 位元的非負整數，因此最多能定址 32768 個字組（0 到 32767，即 32K）。這意味著一切「說出位址」的場合，我們都只能表達 0～32767 的數字。</p>
+<p>暫存器與記憶體的最大差異在於<strong>速度與數量</strong>：暫存器在 CPU 內部，數量極少但極快；記憶體在外圍，數量多（32K）但速度較慢（在 Hack 這樣的教育性架構中，我們只需要在乎功能正確，不必在乎速度）。下面的對照表幫你記住 Hack 的世界觀：</p>
+<table>
+<thead>
+<tr>
+<th>面向</th>
+<th>立即值</th>
+<th>資料暫存器 D</th>
+<th>位址暫存器 A</th>
+<th>記憶體 M / RAM</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本質</td>
+<td>指令內嵌的常數</td>
+<td>CPU 內的暫存器</td>
+<td>CPU 內的暫存器</td>
+<td>外部 32K 字組</td>
+</tr>
+<tr>
+<td>數量</td>
+<td>每一條指令各有一個</td>
+<td>1 個</td>
+<td>1 個</td>
+<td>32768 個</td>
+</tr>
+<tr>
+<td>作用</td>
+<td>提供常數</td>
+<td>存放資料，可讀可取</td>
+<td>存放位址或資料</td>
+<td>以 A 為索引的資料空間</td>
+</tr>
+<tr>
+<td>存取語法</td>
+<td><code>@值</code></td>
+<td><code>D</code></td>
+<td><code>A</code></td>
+<td><code>M</code>（＝ RAM[A]）</td>
+</tr>
+</tbody>
+</table>
+<p>一個值得注意的 Hack 特色是：<strong>A 暫存器具有雙重身分</strong>。當我們只想「算一個常數」時，A 可以當暫存器用；當我們想要「讀寫記憶體」時，A 又變成記憶體的位址索引。這個設計讓指令格式可以極簡——只用兩類指令就涵蓋了立即值、暫存器、記憶體三種定址模式。下一節我們會看到，這一切的代價是：要存取記憶體，程式的第一步永遠必須是「先把位址載入 A」。</p>
+<h2 id="hack-機器語言的元件-a-d-m-三兄弟">Hack 機器語言的元件：A、D、M 三兄弟</h2>
+<p>來到壓軸：Hack 機器語言究竟有幾個「會動的零件」？答案只有三個，記住它們就記住了整個指令集的設計：</p>
+<h3 id="位址暫存器-a-16-位元">位址暫存器 A（16 位元）</h3>
+<ul>
+<li>唯一有能力「指出一個記憶體位址」的暫存器。</li>
+<li>由 A-指令載入：<code>@100</code> 表示「把 100 放進 A」。</li>
+<li>當需要算記憶體時，<code>M</code> 其實就是「RAM[A]」的縮寫。</li>
+<li>也可以乾脆當普通資料暫存器使用（例如 <code>D=A+D</code>）。</li>
+<li>同時是條件跳躍的目標位址來源。</li>
+</ul>
+<h3 id="資料暫存器-d-16-位元">資料暫存器 D（16 位元）</h3>
+<ul>
+<li>純粹存放資料用的暫存器，沒有任何位址意義。</li>
+<li>運算時盡量「先把東西抓回 D」，因為絕大多數 C-指令的第一個運算元是 D。</li>
+<li>它也是唯一能同時扮演「被讀取運算元」與「被寫入目標」的暫存器：<code>D=D+1</code> 完全合法。</li>
+</ul>
+<h3 id="記憶體-m-ram-中以-a-索引的那一格">記憶體 M（＝ RAM 中以 A 索引的那一格）</h3>
+<ul>
+<li>不是一個真實的暫存器，而是一個「虛擬同步參照」——只要程式的 A 暫存器指向某個位址，<code>M</code> 就代表那一格的內容。</li>
+<li>在 C-指令中，可以由 <code>M</code>（a=1）作為運算元來源，也可以寫入 <code>M</code>（dest 含 M）。</li>
+<li>是 I/O 的通道：螢幕、鍵盤都掛在記憶體的某些位址上（4.3 節）。</li>
+</ul>
+<p>用一張「程式設計師視角的記憶體模型」結束本節：</p>
+<pre><code class="language-text">        A（位址暫存器）             D（資料暫存器）
+              │                         │
+              │  @值 載入                │  運算、暫存
+              ▼                         ▼
+   ┌──────────────────────────────────────┐
+   │             ALU（第二章）             │
+   └──────────────────────────────────────┘
+              │       │
+              │       └─────► M = RAM[A]（記憶體、螢幕、鍵盤）
+              ▼
+           PC（程式計數器，第三章）：跳躍時改變執行流向
+</code></pre>
+<h2 id="設計思路與實作步驟">設計思路與實作步驟</h2>
+<p>如果在真實世界設計一個教育用 ISA，我們的決策過程大致如下：</p>
+<ol>
+<li><strong>決定字寬</strong>：指令與資料都統一用 16 位元，與第二章 ALU 的輸出寬度一致，管線最單純。</li>
+<li><strong>決定指令數</strong>：捨棄 x86 上百種指令的複雜度，只保留 A-指令與 C-指令兩類，把「運算」徹底交給 ALU 那 18 種函數——ISA 變薄，組譯器與 CPU 都好做。</li>
+<li><strong>整合定址模式</strong>：用「A 暫存器 + M 虛擬符號」一網打盡立即值、暫存器、記憶體三種資料位置，不必為每種定址模式另設計算指令。</li>
+<li><strong>把流程控制收到 C-指令裡</strong>：跳躍目標永遠放在 A 暫存器，條件以「結果的負/零/正」為主，跳躍欄位只是三個位元。</li>
+<li><strong>準備工具鏈</strong>：下一節先定義精確的位元編碼表，組譯器（第六章）才能把助記元翻譯成硬體看得懂的 0/1。</li>
+<li><strong>驗證</strong>：用 CPU 模擬器把每條指令的執行行為跑過一遍，並在第五章用真實電路驗收。</li>
+</ol>
+<p>這套「先有 ISA，再有組譯器，最後有 CPU」的順序，其實映射了真實世界的開發流程：<strong>指令集架構先行，軟硬體各自朝這份合約靠攏</strong>。</p>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>ISA 是硬體與軟體之間的合約</strong>：定義指令格式、定址模式與行為語意；機器語言是純位元，組合語言是可讀的助記形式。</li>
+<li><strong>機器語言的三個核心元素</strong>：運算（做什麼）、資料位置（從哪拿、放哪）、跳躍（接下來去哪裡），三者齊備才足以寫出任意的可計算程式。</li>
+<li><strong>Von Neumann 架構</strong>：程式與資料同存於記憶體，CPU 依 PC 進行「抓取—解碼—執行」的無限循環；Hack 電腦即此架構的教科書級實作。</li>
+<li><strong>A、D、M 三兄弟</strong>：A 是唯一的位址暫存器（可兼任資料），D 是純資料暫存器，M 是「RAM[A]」的虛擬參照；記憶體全址為 0～32767 的 16 位元字組。</li>
+<li><strong>設計原則</strong>：極簡雙指令、把運算外包給 ALU、跳躍目標統一放 A 暫存器——以最少的硬體零件支撐完整的程式語言能力。</li>
+</ul>
+<p>有了對 ISA 的整體認識，下一步就是拿起放大鏡，把 A-指令與 C-指令的每一個位元欄位逐一解剖——那就是 4.2 節的工作。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="3.4.html">⇦ 上一節</a><a class="nav-btn" href="4.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

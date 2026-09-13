@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>9.1 Jack 語言語法簡介：物件導向與語法結構</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link active" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="8.4.html">⇦ 上一節</a></div>
+  <div class="title">9.1 Jack 語言語法簡介：物件導向與語法結構</div>
+  <div class="nav-right"><a class="nav-btn" href="9.2.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch09.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="9-1-jack-語言語法簡介-物件導向與語法結構">9.1 Jack 語言語法簡介：物件導向與語法結構</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明 Jack 語言在整個 Nand2Tetris 工具鏈中的定位</li>
+<li>列出 Jack 語言的完整語法結構（類別、方法、函式、建構子）</li>
+<li>使用 Jack 語言的五種基本型別（<code>int</code>、<code>boolean</code>、<code>char</code>、<code>void</code>、物件型別）</li>
+<li>撰寫包含陣列、陳述式、運算式的 Jack 程式</li>
+<li>區分 <code>constructor</code>、<code>method</code>、<code>function</code> 三種子程式的差異與用途</li>
+<li>撰寫一個完整的、可編譯執行的 Jack 最小類別</li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>從第 4 章的 Hack 機器語言，到第 7-8 章的虛擬機中間碼，我們一路「向下」理解了計算機系統的每一層翻譯。現在，是時候回頭「向上」了——用一種<strong>人類看得懂、但仍然足夠貼近底層</strong>的語言來寫程式。這就是 Jack 語言。</p>
+<p>Jack 語言是 Nand2Tetris 課程專門設計的高階程式語言。它在語法上接近 C 與 Java 的交集，刻意砍掉了指標、繼承、泛型等複雜特性，只保留最核心的物件導向結構。這種「有控制的簡化」有兩個目的：</p>
+<ol>
+<li><strong>降低編譯器實作的門檻</strong>：第 10-11 章你要自己寫編譯器，Jack 的語法設計恰好讓「寫一個能用的編譯器」成為可能；</li>
+<li><strong>揭露高階語言的底層本質</strong>：當你用 Jack 寫出 <code>var Array a;</code>，背後的 VM 編譯器會把它翻成對 heap 的配置指令——你親眼看見「物件」被拆成「記憶體位址 + 偏移量」的過程。</li>
+</ol>
+<p>本節帶你完整走一遍 Jack 語言的語法結構。不需要死背，因為接下來兩節你會用它來寫遊戲——<strong>學語法最快的方式是用它寫東西</strong>。</p>
+<hr />
+<h2 id="1-jack-語言的定位-c-java-的精簡子集">1. Jack 語言的定位：C/Java 的精簡子集</h2>
+<p>Jack 語言在整個 Nand2Tetris 工具鏈中的位置如下：</p>
+<pre><code>Jack 源碼 (.jack)
+    │
+    ▼ Jack Compiler（第 10-11 章實作）
+VM 中間碼 (.vm)
+    │
+    ▼ VM Translator（第 7-8 章實作）
+Hack 組合語言 (.asm)
+    │
+    ▼ Assembler（第 6 章實作）
+Hack 機器碼 (.hack)
+    │
+    ▼ 載入到 Hack 電腦（第 5 章實作）
+硬體執行
+</code></pre>
+<p>Jack 語言做了以下取捨：</p>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>Jack 語言</th>
+<th>C / Java</th>
+<th>取捨原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>基本型別</td>
+<td><code>int</code>（16-bit）、<code>char</code>、<code>boolean</code></td>
+<td>8/16/32/64-bit 多種</td>
+<td>Hack 只有 16-bit word</td>
+</tr>
+<tr>
+<td>陣列</td>
+<td>✅ 一維</td>
+<td>✅ 多維</td>
+<td>二維用物件模擬</td>
+</tr>
+<tr>
+<td>物件導向</td>
+<td>✅ 類別、方法、欄位</td>
+<td>✅ 加上繼承、介面</td>
+<td>砍掉繼承以簡化編譯器</td>
+</tr>
+<tr>
+<td>字串</td>
+<td><code>String</code> 類別</td>
+<td>內建型別</td>
+<td>用陣列實作</td>
+</tr>
+<tr>
+<td>指標</td>
+<td>❌ 不直接支援</td>
+<td>✅</td>
+<td>陣列 + 物件已可達成</td>
+</tr>
+<tr>
+<td>遞迴</td>
+<td>✅</td>
+<td>✅</td>
+<td>VM 呼叫堆疊天然支援</td>
+</tr>
+<tr>
+<td>全域變數</td>
+<td>✅ static 變數</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>區域變數</td>
+<td>✅ var</td>
+<td>✅</td>
+<td>對應 VM local 段</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="2-程式結構-檔案即類別">2. 程式結構：檔案即類別</h2>
+<p>Jack 程式的結構遵循「<strong>一個檔案 = 一個類別</strong>」的原則。每個 <code>.jack</code> 檔案包含一個類別的完整定義。</p>
+<h3 id="2-1-類別的骨架">2.1 類別的骨架</h3>
+<pre><code class="language-jack">class ClassName {
+
+    // 欄位（field）宣告
+    field int x;
+    field int y;
+
+    // 靜態變數（static）宣告
+    static boolean initialized;
+
+    // 建構子（constructor）
+    constructor ClassName new(int ax, int ay) {
+        let x = ax;
+        let y = ay;
+        return this;
+    }
+
+    // 方法（method）
+    method void move(int dx, int dy) {
+        let x = x + dx;
+        let y = y + dy;
+    }
+
+    // 函式（function）—— 不與物件綁定
+    function void printStatus() {
+        Output.printString(&quot;position: &quot;);
+        Output.printInt(x);
+    }
+}
+</code></pre>
+<h3 id="2-2-語法要素總覽">2.2 語法要素總覽</h3>
+<p>一個完整的 Jack 類別由以下元素組成：</p>
+<pre><code>class 宣告       →  class 類別名 {
+變數宣告（零或多）  →  field / static + 型別 + 名稱;
+子程式（零或多）   →  constructor / method / function + 回傳型別 + 名稱(參數列表) { 語句 }
+                      }
+</code></pre>
+<p><strong>語法规則</strong>：</p>
+<ul>
+<li>類別名稱、變數名稱、子程式名稱：必須以英文字母開頭，後接英文字母或數字，大小寫敏感</li>
+<li>註解：<code>//</code> 行註解（與 Hack 相同）</li>
+<li>語句以分號 <code>;</code> 結尾</li>
+<li>大括號 <code>{}</code> 用於區隔程式區塊</li>
+</ul>
+<hr />
+<h2 id="3-型別系統">3. 型別系統</h2>
+<h3 id="3-1-基本型別">3.1 基本型別</h3>
+<p>Jack 只有四種基本型別：</p>
+<pre><code class="language-jack">int x;          // 16-bit 有號整數，範圍 -32768 到 32767
+char c;         // 字元（本質上是 16-bit 整數的 ASCII 碼）
+boolean flag;   // 布林值，true 或 false（底層為 0 或 -1）
+void v;         // 無回傳值（只用於函式/方法的回傳型別）
+</code></pre>
+<p><strong>重點理解</strong>：在 Hack 硬體層，所有東西都是 16-bit 位元組。<code>int</code>、<code>char</code>、<code>boolean</code> 的差別只在<strong>語意層</strong>，底層完全相同。<code>boolean</code> 的 <code>true</code> 在 Hack 裡是 <code>-1</code>（全部位元設為 1），<code>false</code> 是 <code>0</code>。</p>
+<h3 id="3-2-物件型別-class-as-type">3.2 物件型別（class as type）</h3>
+<p>除了基本型別之外，任何已定義的類別都可以當作型別使用：</p>
+<pre><code class="language-jack">// 假設已有一個 MyClass 類別
+var MyClass obj;    // 宣告一個 MyClass 型別的變數
+var Array arr;      // 宣告一個 Array 型別的變數
+</code></pre>
+<p>在底層，物件型別的變數實際上儲存的是一個<strong>記憶體位址</strong>（指向 heap 中的物件實體），這在 9.2 節會深入討論。</p>
+<h3 id="3-3-關鍵字與識別字">3.3 關鍵字與識別字</h3>
+<p>Jack 的保留字：</p>
+<pre><code>class  constructor  method  function
+var    field   static   let
+if     else    while    do
+return true    false    null
+this    void
+</code></pre>
+<hr />
+<h2 id="4-變數種類">4. 變數種類</h2>
+<p>Jack 有四種變數，分別對應到 VM 的四個記憶體段：</p>
+<h3 id="4-1-欄位-field">4.1 欄位（field）</h3>
+<p>物件導向的「成員變數」，每個物件實例各有一份。</p>
+<pre><code class="language-jack">class Point {
+    field int x;   // 每個 Point 物件都有自己的 x
+    field int y;   // 每個 Point 物件都有自己的 y
+}
+</code></pre>
+<ul>
+<li>底層對應：VM 的 <code>this</code> 段（物件的 heap 位址 + 偏移量）</li>
+<li>只能在 <code>constructor</code> 或 <code>method</code> 中存取（不能在 <code>function</code> 中）</li>
+</ul>
+<h3 id="4-2-靜態變數-static">4.2 靜態變數（static）</h3>
+<p>類別共用的變數，整個程式只有一份。</p>
+<pre><code class="language-jack">class Game {
+    static int score;    // 所有 Game 操作共享同一個 score
+    static int level;
+}
+</code></pre>
+<ul>
+<li>底層對應：VM 的 <code>static</code> 段（編譯器自動分配的全域位址）</li>
+<li>可在任何子程式中存取</li>
+</ul>
+<h3 id="4-3-局部變數-local">4.3 局部變數（local）</h3>
+<p>在子程式內部宣告的變數。</p>
+<pre><code class="language-jack">function int add(int a, int b) {
+    var int result;          // 局部變數
+    let result = a + b;
+    return result;
+}
+</code></pre>
+<ul>
+<li>底層對應：VM 的 <code>local</code> 段</li>
+<li>宣告語法：<code>var 型別 名稱;</code>（可一次宣告多個：<code>var int x, y, z;</code>）</li>
+</ul>
+<h3 id="4-4-參數-argument">4.4 參數（argument）</h3>
+<p>傳入子程式的參數。</p>
+<pre><code class="language-jack">method void moveTo(int newX, int newY) {   // newX, newY 是 argument
+    let x = newX;
+    let y = newY;
+}
+</code></pre>
+<ul>
+<li>底層對應：VM 的 <code>argument</code> 段</li>
+<li>宣告語法：在子程式參數列表中指定</li>
+</ul>
+<hr />
+<h2 id="5-陳述式-statements">5. 陳述式（Statements）</h2>
+<p>Jack 有五種陳述式：</p>
+<h3 id="5-1-let-敘述-賦值">5.1 let 敘述（賦值）</h3>
+<pre><code class="language-jack">let x = 5;              // 基本賦值
+let y = x + 3;          // 運算式賦值
+let name = &quot;hello&quot;;     // 字串賦值（字串是物件）
+</code></pre>
+<p><strong>注意</strong>：Jack 強制使用 <code>let</code> 關鍵字來賦值（不同於 C/Java），這是為了語法解析的明確性。</p>
+<h3 id="5-2-if-敘述-條件分支">5.2 if 敘述（條件分支）</h3>
+<pre><code class="language-jack">if (x &gt; 10) {
+    // 當 x &gt; 10 時執行
+    let y = 1;
+} else {
+    // 否則執行
+    let y = 0;
+}
+</code></pre>
+<p><strong>規則</strong>：條件必須包在小括號 <code>()</code> 中，執行區塊必須包在大括號 <code>{}</code> 中。<code>else</code> 是可選的。</p>
+<h3 id="5-3-while-敘述-迴圈">5.3 while 敘述（迴圈）</h3>
+<pre><code class="language-jack">var int i;
+let i = 0;
+while (i &lt; 10) {
+    // 迴圈體
+    let i = i + 1;
+}
+</code></pre>
+<h3 id="5-4-do-敘述-方法呼叫">5.4 do 敘述（方法呼叫）</h3>
+<pre><code class="language-jack">do Screen.drawRectangle(10, 10, 50, 50);
+do Output.printString(&quot;hello&quot;);
+</code></pre>
+<p><strong>規則</strong>：呼叫「回傳 void 的方法或函式」時，必須用 <code>do</code> 開頭。呼叫有回傳值的函式時，不能用 <code>do</code>（用在運算式中）。</p>
+<h3 id="5-5-return-敘述">5.5 return 敘述</h3>
+<pre><code class="language-jack">return;          // 回傳 void
+return x + 1;    // 回傳值
+</code></pre>
+<h3 id="5-6-let-敘述的特殊用法-陣列元素賦值">5.6 let 敘述的特殊用法：陣列元素賦值</h3>
+<pre><code class="language-jack">var Array arr;
+let arr = Array.new(10);        // 建立長度 10 的陣列
+let arr[0] = 42;                // 設定第一個元素
+let arr[3] = arr[0] + arr[1];   // 用運算式索引
+</code></pre>
+<hr />
+<h2 id="6-運算式-expressions">6. 運算式（Expressions）</h2>
+<p>Jack 的運算式遵循直覺的優先順序：</p>
+<h3 id="6-1-算術運算">6.1 算術運算</h3>
+<pre><code class="language-jack">let sum = a + b;
+let diff = a - b;
+let prod = a * b;
+let quot = a / b;       // 整數除法
+let rem  = a % b;       // 餘數（注意：Jack 規格中 % 不是標準運算符，請用 Math 模組）
+</code></pre>
+<h3 id="6-2-邏輯運算">6.2 邏輯運算</h3>
+<pre><code class="language-jack">let result = (a &gt; b) &amp; (c &lt; d);    // AND（位元運算）
+let result = (a &gt; b) | (c &lt; d);    // OR（位元運算）
+let result = ~flag;                 // NOT（位元取補）
+</code></pre>
+<p><strong>重要</strong>：Jack 的邏輯運算使用位元運算符 <code>&amp;</code>、<code>|</code>、<code>~</code>（而非 <code>&amp;&amp;</code>、<code>||</code>、<code>!</code>），這是刻意的設計——在 16-bit word 上，位元 AND/OR/NOT 和布林 AND/OR/NOT 是等價的。</p>
+<h3 id="6-3-比較運算">6.3 比較運算</h3>
+<pre><code class="language-jack">(a == b)     // 等於
+(a != b)     // 不等於
+(a &lt; b)      // 小於
+(a &gt; b)      // 大於
+(a &lt;= b)     // 小於等於
+(a &gt;= b)     // 大於等於
+</code></pre>
+<h3 id="6-4-運算優先順序">6.4 運算優先順序</h3>
+<table>
+<thead>
+<tr>
+<th>優先順序（高→低）</th>
+<th>運算符</th>
+<th>說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><code>()</code></td>
+<td>括號</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>-</code>（一元）、<code>~</code></td>
+<td>一元負號、位元取補</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>*</code>、<code>/</code></td>
+<td>乘法、除法</td>
+</tr>
+<tr>
+<td>3</td>
+<td><code>+</code>、<code>-</code></td>
+<td>加法、減法</td>
+</tr>
+<tr>
+<td>4</td>
+<td><code>&amp;</code>、<code>\|</code></td>
+<td>位元 AND、OR</td>
+</tr>
+<tr>
+<td>5</td>
+<td><code>==</code>、<code>!=</code>、<code>&lt;</code>、<code>&gt;</code>、<code>&lt;=</code>、<code>&gt;=</code></td>
+<td>比較</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="7-函式-方法與建構子">7. 函式、方法與建構子</h2>
+<p>這是 Jack 語言最關鍵的設計，三種子程式的差異決定了它們在底層如何被翻譯成 VM 碼。</p>
+<h3 id="7-1-constructor-建構子">7.1 constructor（建構子）</h3>
+<p>建立新物件、配置記憶體。</p>
+<pre><code class="language-jack">class Point {
+    field int x;
+    field int y;
+
+    constructor Point new(int ax, int ay) {
+        var Point p;
+        let p = Point.new(ax, ay);
+        let p.x = ax;
+        let p.y = ay;
+        return p;
+    }
+}
+</code></pre>
+<p><strong>底層翻譯</strong>：</p>
+<ol>
+<li>呼叫 <code>Memory.alloc</code> 配置物件大小的 heap 空間</li>
+<li>把配到的位址當作 <code>this</code></li>
+<li>執行建構子本體</li>
+<li>回傳 <code>this</code>（即新物件的位址）</li>
+</ol>
+<h3 id="7-2-method-方法">7.2 method（方法）</h3>
+<p>物件導向的「成員函式」，自動擁有 <code>this</code> 參數。</p>
+<pre><code class="language-jack">class Point {
+    field int x;
+    field int y;
+
+    method void move(int dx, int dy) {
+        let x = x + dx;    // 直接存取 field（底層透過 this 偏移量）
+        let y = y + dy;
+    }
+}
+</code></pre>
+<p><strong>底層翻譯</strong>：</p>
+<ol>
+<li>隱含一個第一參數 <code>this</code>（物件位址），由編譯器自動傳入</li>
+<li>在方法內部，<code>x</code> 被翻譯為 <code>this</code> 段的第 0 個偏移，<code>y</code> 為第 1 個偏移</li>
+</ol>
+<p><strong>呼叫方式</strong>：</p>
+<pre><code class="language-jack">var Point p;
+let p = Point.new(3, 4);    // 呼叫 constructor
+do p.move(1, 2);            // 呼叫 method（p 自動成為 this）
+</code></pre>
+<h3 id="7-3-function-靜態函式">7.3 function（靜態函式）</h3>
+<p>不與任何物件實例綁定的函式，類似 Java 的 <code>static</code> 方法或 C 的自由函式。</p>
+<pre><code class="language-jack">class Math {
+    static int abs(int x) {
+        if (x &lt; 0) {
+            return -x;
+        }
+        return x;
+    }
+}
+</code></pre>
+<p><strong>底層翻譯</strong>：</p>
+<ol>
+<li>沒有隱含的 <code>this</code> 參數</li>
+<li>只能存取 <code>static</code> 變數和參數、局部變數</li>
+<li>不能存取 <code>field</code> 變數（因為沒有物件實例）</li>
+</ol>
+<h3 id="7-4-三種子程式對比">7.4 三種子程式對比</h3>
+<table>
+<thead>
+<tr>
+<th>特性</th>
+<th>constructor</th>
+<th>method</th>
+<th>function</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>隱含 <code>this</code> 參數</td>
+<td>✅（新物件位址）</td>
+<td>✅（呼叫者位址）</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>可存取 <code>field</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>可存取 <code>static</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>可存取 <code>argument</code>/<code>local</code></td>
+<td>✅</td>
+<td>✅</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>需要 <code>return this</code></td>
+<td>✅（constructor）</td>
+<td>❌</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>記憶體配置</td>
+<td><code>Memory.alloc</code></td>
+<td>不配置</td>
+<td>不配置</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="8-完整的-jack-類別範例">8. 完整的 Jack 類別範例</h2>
+<p>下面給出一個完整的、可編譯的 Jack 程式。這個範例展示了所有語法元素：類別定義、三種子程式、field/static 變數、陣列操作、條件與迴圈。</p>
+<h3 id="8-1-rectangle-jack-繪製矩形的類別">8.1 Rectangle.jack —— 繪製矩形的類別</h3>
+<pre><code class="language-jack">// Rectangle.jack
+// 一個在螢幕上繪製矩形的類別
+
+class ScreenTest {
+
+    field int x;
+    field int y;
+    field int width;
+    field int height;
+
+    static int count;
+
+    constructor ScreenTest new(int ax, int ay, int aw, int ah) {
+        let x = ax;
+        let y = ay;
+        let width = aw;
+        let height = ah;
+        let count = count + 1;
+        return this;
+    }
+
+    method void draw() {
+        var int i;
+        let i = 0;
+        while (i &lt; height) {
+            do Screen.drawRectangle(x, y + i, x + width, y + i);
+            let i = i + 1;
+        }
+    }
+
+    method void moveDown(int step) {
+        let y = y + step;
+    }
+
+    method int getX() {
+        return x;
+    }
+
+    method int getY() {
+        return y;
+    }
+
+    function int getCount() {
+        return count;
+    }
+}
+</code></pre>
+<h3 id="8-2-main-jack-主程式入口">8.2 Main.jack —— 主程式入口</h3>
+<pre><code class="language-jack">// Main.jack
+// 程式進入點：建立矩形並繪製
+
+class Main {
+
+    function void main() {
+        var ScreenTest rect;
+
+        let rect = ScreenTest.new(20, 20, 80, 40);
+        do rect.draw();
+
+        let rect = ScreenTest.new(150, 100, 60, 60);
+        do rect.draw();
+
+        Output.printString(&quot;Created &quot;);
+        Output.printInt(ScreenTest.getCount());
+        Output.printString(&quot; rectangles.&quot;);
+
+        return;
+    }
+}
+</code></pre>
+<h3 id="8-3-編譯與執行流程">8.3 編譯與執行流程</h3>
+<pre><code>1. 編寫原始碼
+   ScreenTest.jack + Main.jack
+
+2. 編譯（使用第 10-11 章的 Jack Compiler）
+   JackCompiler Main.jack
+   → 產生 Main.vm, ScreenTest.vm
+
+3. 載入 VM 模擬器執行
+   VMEmulator → 載入 *.vm → 執行 → 螢幕上出現兩個矩形
+</code></pre>
+<hr />
+<h2 id="9-完整語法規則-ebnf-簡化版">9. 完整語法規則（EBNF 簡化版）</h2>
+<p>為了嚴謹起見，這裡列出 Jack 語言的完整語法規則。這也是你在第 10 章寫 parser 時的規格說明：</p>
+<pre><code>program         = class* ;
+class           = 'class' className '{' classVarDec* subroutineDec* '}' ;
+classVarDec     = ('field' | 'static') type varName (',' varName)* ';' ;
+type            = 'int' | 'char' | 'boolean' | className ;
+subroutineDec   = ('constructor' | 'function' | 'method')
+                   subroutineName '(' parameterList ')'
+                   subroutineBody ;
+parameterList   = (type varName (',' type varName)*)? ;
+subroutineBody  = '{' varDec* statements '}' ;
+varDec          = 'var' type varName (',' varName)* ';' ;
+
+className       = identifier ;
+subroutineName  = identifier ;
+varName         = identifier ;
+identifier      = letter (letter | digit)* ;
+
+statements      = statement* ;
+statement       = letStatement | ifStatement | whileStatement |
+                  doStatement | returnStatement ;
+letStatement    = 'let' varName ('[' expression ']')? '=' expression ';' ;
+ifStatement     = 'if' '(' expression ')' '{' statements '}'
+                  ('else' '{' statements '}')? ;
+whileStatement  = 'while' '(' expression ')' '{' statements '}' ;
+doStatement     = 'do' subroutineCall ';' ;
+returnStatement = 'return' expression? ';' ;
+
+expression      = term (op term)* ;
+term            = unaryOp term | '(' expression ')' |
+                  integerConstant | stringConstant |
+                  keywordConstant | varName |
+                  varName '[' expression ']' | subroutineCall ;
+subroutineCall  = subroutineName '(' expressionList ')' |
+                  (className | varName) '.' subroutineName '(' expressionList ')' ;
+expressionList  = (expression (',' expression)*)? ;
+op              = '+' | '-' | '*' | '/' | '&amp;' | '|' | '&lt;' | '&gt;' | '=' ;
+unaryOp         = '-' | '~' ;
+keywordConstant = 'true' | 'false' | 'null' | 'this' ;
+</code></pre>
+<hr />
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li>Jack 語言是 Nand2Tetris 專門設計的高階語言，語法接近 C/Java 的精簡子集。</li>
+<li><strong>一個檔案 = 一個類別</strong>。類別內可包含 <code>field</code>（物件欄位）、<code>static</code>（共用變數）和三種子程式。</li>
+<li>三種子程式的差異是核心：<code>constructor</code>（建立物件）、<code>method</code>（物件操作，隱含 <code>this</code>）、<code>function</code>（靜態函式，無 <code>this</code>）。</li>
+<li>Jack 只有四種基本型別（<code>int</code>、<code>char</code>、<code>boolean</code>、<code>void</code>），物件型別由類別定義。</li>
+<li>陣列是內建支援的，但只有一維——二維用物件模擬。</li>
+<li>陳述式有五種：<code>let</code>（賦值）、<code>if</code>（分支）、<code>while</code>（迴圈）、<code>do</code>（void 方法呼叫）、<code>return</code>（回傳）。</li>
+<li>運算式使用 <code>&amp;</code>、<code>|</code>、<code>~</code> 作為邏輯運算（位元等價），比較運算回傳 <code>boolean</code>。</li>
+<li>這些語法設計的每一個選擇，都在為第 10-11 章的編譯器實作降低難度——同時讓你親眼看到「高階語法結構如何被拆解為記憶體操作」。</li>
+</ul>
+<p>在下一節 9.2 中，我們會把鏡頭拉近，看看物件、陣列在記憶體裡到底是什麼——你會發現，<strong>「物件」只是一段連續記憶體的位址，「陣列」也不過是指標語法糖</strong>。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="8.4.html">⇦ 上一節</a><a class="nav-btn" href="9.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

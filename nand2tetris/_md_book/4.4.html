@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>4.4 寫入你的第一個 Hack 組合語言程式</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link active" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="4.3.html">⇦ 上一節</a></div>
+  <div class="title">4.4 寫入你的第一個 Hack 組合語言程式</div>
+  <div class="nav-right"><a class="nav-btn" href="5.1.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch04.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="4-4-寫入你的第一個-hack-組合語言程式">4.4 寫入你的第一個 Hack 組合語言程式</h1>
+<p>前三節分別建立了理論（ISA）、規格（A/C-指令編碼）與硬體介面（記憶體映射 I/O），現在是成果驗收的時刻：把原本只存在紙上的指令集，真正寫成一支能動的 Hack 組合語言程式，並在 CPU 模擬器中看到它執行。本節從最基本的語法開始，依序練習「數值相加、記憶體存取、迴圈、條件判斷」四大基本功，最後組合成兩支完整的範例程式（累加與乘法），教你如何在模擬器上載入、逐步執行與觀察暫存器變化。</p>
+<h2 id="組合語言語法速覽">組合語言語法速覽</h2>
+<p>Hack 組合語言（<code>.asm</code>）的語法非常輕量，幾乎沒有多餘的規則：</p>
+<pre><code class="language-text"></code></pre>
+<p>語法規則總表：</p>
+<table>
+<thead>
+<tr>
+<th>規則</th>
+<th>說明</th>
+<th>範例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>註解</td>
+<td><code>//</code> 之後到行末全部忽略</td>
+<td><code>@1 // 取得 1</code></td>
+</tr>
+<tr>
+<td>白空格</td>
+<td>空白、Tab、空行皆可忽略</td>
+<td>每行前後可自由縮排</td>
+</tr>
+<tr>
+<td>大小寫</td>
+<td><strong>區分大小寫</strong>，符號需一致</td>
+<td><code>LOOP</code> 與 <code>loop</code> 是不同符號</td>
+</tr>
+<tr>
+<td>一行一式</td>
+<td>每行一條指令、一個標籤或一個「@值」</td>
+<td>不可一行塞兩條</td>
+</tr>
+<tr>
+<td>指令元素</td>
+<td><code>@xxx</code> 或 <code>dest=comp;jump</code>，<code>dest=</code> 與 <code>;jump</code> 皆可略</td>
+<td><code>D=M</code>、<code>0;JMP</code></td>
+</tr>
+<tr>
+<td>標籤格式</td>
+<td><code>(名稱)</code>，可作為跳躍目標，出現在 <code>@名稱</code></td>
+<td><code>(LOOP) … @LOOP</code></td>
+</tr>
+</tbody>
+</table>
+<p><strong>符號系統</strong>：<code>@</code> 後面可以接數字，也可以接「符號」。符號有三種來源，組譯器會自動辨識與解析：</p>
+<ol>
+<li><strong>預先定義符號</strong>：R0～R15（＝0～15）、SCREEN（＝16384）、KBD（＝24576）、SP/LCL/ARG/THIS/THAT（＝0～4）。</li>
+<li><strong>標籤</strong>：程式裡用 <code>(名稱)</code> 宣告的位置，<code>@名稱</code> 代表該指令在 ROM 中的位址。</li>
+<li><strong>變數</strong>：第一次在 <code>@</code> 出現、又不是上述兩類的符號，會被配置到記憶體 16 起的位址。</li>
+</ol>
+<p>把高階語言想成「抽象概念」，組合語言就是「指令與位址的流水帳」——玩法很瑣碎，但每一步都透明可見。</p>
+<h2 id="第一個練習-設定位址-搬移資料">第一個練習：設定位址、搬移資料</h2>
+<p>在動手寫大程式前，先釐清三種最基礎的資料搬移，因為它們是後面所有程式的原子操作。我們以「把 RAM 位址 10 設為 10」與「D=A」系列操作為例：</p>
+<pre><code class="language-asm"></code></pre>
+<p>這六行雖然做著最無聊的事，卻涵蓋了 Hack 的全部「資料位置」語法。我們用一張表總結「誰會被讀、誰會被寫」：</p>
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>讀</th>
+<th>寫</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>@10</code></td>
+<td>—</td>
+<td>A</td>
+<td>把立即值 10 送進 A</td>
+</tr>
+<tr>
+<td><code>D=A</code></td>
+<td>A</td>
+<td>D</td>
+<td>D = 位址本身（把位址當資料）</td>
+</tr>
+<tr>
+<td><code>M=D</code></td>
+<td>D</td>
+<td>RAM[A]</td>
+<td>先定址再寫入</td>
+</tr>
+<tr>
+<td><code>A=M</code></td>
+<td>RAM[A]</td>
+<td>A</td>
+<td>先定址再讀出，結果放回 A（指標解參考）</td>
+</tr>
+<tr>
+<td><code>D=M</code></td>
+<td>RAM[A]</td>
+<td>D</td>
+<td>D = 記憶體內容</td>
+</tr>
+</tbody>
+</table>
+<p>記住這個口訣：<strong><code>D=A</code> 是把「位址」當資料，<code>D=M</code> 是把「內容」當資料</strong>。兩者一字之差，代表完全不同的兩件事。</p>
+<h2 id="範例一-把幾個數相加">範例一：把幾個數相加</h2>
+<p>最簡單的「有意義」程式：計算兩個常數的和，存入記憶體：</p>
+<pre><code class="language-asm"></code></pre>
+<p>觀察要點：</p>
+<ul>
+<li><code>D=A</code> → <code>D=D+A</code> 是「載入常數後累加」的標準旋律，靠 D 暫存器充當累加器。</li>
+<li>最後的 <code>(END) / @END / 0;JMP</code> 是 Hack 的「程式結束」慣例——因為 CPU 用完 RAM 會一路抓後面的記憶體當指令執行，必須用「跳到自己的無窮迴圈」停下來。往後每個程式結束前都會放這個尾巴。</li>
+</ul>
+<h2 id="範例二-記憶體對記憶體的加總">範例二：記憶體對記憶體的加總</h2>
+<p>常數相加不過癮，來真的：把「RAM[0] 的內容」與「RAM[1] 的內容」相加，存到 RAM[2]：</p>
+<pre><code class="language-asm"></code></pre>
+<p>這支程式（即 4.2 節手工組譯的 Add2.asm）示範了記憶體存取的完整來回：<strong>「先 <code>@位址</code>，再用 <code>D=M</code> 讀、用 <code>M=D</code> 寫」</strong>。你在模擬器上可以把 RAM[0]=5、RAM[1]=12，執行結束後觀察 RAM[2]=17。</p>
+<h2 id="範例三-迴圈與計數-累加-1-到-100">範例三：迴圈與計數（累加 1 到 100）</h2>
+<p>迴圈是三元素中「跳躍」的實戰演練。計算 1+2+…+100，並把結果放進 RAM[0]：</p>
+<pre><code class="language-asm"></code></pre>
+<p>拆解這個程式的控制流：</p>
+<pre><code class="language-text"></code></pre>
+<p>技術重點：</p>
+<ol>
+<li><strong>計數模式</strong>：先判斷（<code>D=M</code> 讀計數器）再操作（<code>M=D+M</code>、<code>M=M-1</code>），這是「while 迴圈」的機械翻譯。</li>
+<li><strong>forward 跳躍</strong>：<code>@STOP</code> 出現在 <code>(STOP)</code> 標籤宣告之前的行——組譯器會用兩階段掃描解決這種「往後跳」，你寫程式時不必管行號。</li>
+<li><strong>變數符號</strong>：<code>n</code> 與 <code>sum</code> 會由組譯器自動配置到記憶體位址 16 與 17。</li>
+</ol>
+<h2 id="範例四-條件判斷-取最大值">範例四：條件判斷（取最大值）</h2>
+<p>條件判斷是「跳躍」的另一面：依結果做不同路線。取 <code>RAM[0]</code>、<code>RAM[1]</code> 的較大者放到 <code>RAM[2]</code>：</p>
+<pre><code class="language-asm"></code></pre>
+<p>判斷的祕訣在於「<strong>相減看正負」</strong>：因為 ALU 的跳躍條件只認「結果是負/零/正」，所以拿 <code>RAM[0]-RAM[1]</code> 的正負來決定誰大誰小。對應到流程：</p>
+<pre><code class="language-text"></code></pre>
+<p>這就是所有 <code>if-else</code> 在 Hack 層的共同基因：<strong>先設法把「條件」變成「某個運算結果的正負零」，再用條件跳躍分岔</strong>。</p>
+<h2 id="範例五-完整註解的乘法程式-三寶大合體">範例五：完整註解的乘法程式（三寶大合體）</h2>
+<p>最後一個範例同時使用「記憶體存取、迴圈、條件判斷」，是 4.4 節的總驗收：</p>
+<pre><code class="language-asm"></code></pre>
+<p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20int%20main()%20%7B%0A%2F%2F%20%20%20%20int%20R0%20%3D%203%3B%0A%2F%2F%20%20%20%20int%20R1%20%3D%205%3B%0A%2F%2F%20%3D%3E%20%20%20%20int%20R2%20%3D%200%3B%0A%402%0AM%3D0%0A%2F%2F%20%20%20%20while%20(R0%20%3E%200)%20%7B%0A%2F%2F%20%3D%3E%20loop%3A%0A(loop)%0A%2F%2F%20%3D%3E%20%20%20%20if%20(R0%20%3C%3D%200)%20goto%20exit1%3B%0A%400%0AD%3DM%0A%40exit1%0AD%3BJLE%0A%0A%2F%2F%20%3D%3E%20%20R2%20%3D%20R2%20%2B%20R1%3B%0A%401%0AD%3DM%0A%402%0AM%3DD%2BM%0A%0A%2F%2F%20%3D%3E%20%20R0%20%3D%20R0%20-%201%3B%0A%400%0AM%3DM-1%0A%0A%2F%2F%20%20%20%20printf(%22R0%3D%25d%20R1%3D%25d%20R2%3D%25d%5Cn%22%2C%20R0%2C%20R1%2C%20R2)%3B%0A%2F%2F%20%3D%3E%20%20goto%20loop%3B%0A%40loop%0A0%3BJMP%0A%0A%2F%2F%20%3D%3E%20exit1%3A%0A(exit1)%0A%40exit1%0A0%3BJMP%0A%2F%2F%20%7D&amp;ram=0:3,1:5">習題模擬</a></p>
+<p>試著自己追蹤一遍：RAM[2] 從 0 開始，每一圈加一次 RAM[1]，共加 RAM[0] 圈，最後恰為積。這支程式的另一個刻意設計是 <strong>指標/計數器分離</strong>（R3 保存副本），讓你體會「避免破壞來源資料」的程式設計紀律。</p>
+<h2 id="如何在-cpu-模擬器中執行">如何在 CPU 模擬器中執行</h2>
+<p>Nand2Tetris 工具組提供 <strong>CPU Emulator（CPU 模擬器）</strong>，直接載入 <code>.asm</code> 檔（它會自動幫你組譯）或事先組譯好的 <code>.hack</code> 檔。完整流程：</p>
+<ol>
+<li><strong>開啟模擬器</strong>：在軟體工具目錄中執行 <code>CPUEmulator.sh</code>（macOS/Linux）或 <code>CPUEmulator.bat</code>（Windows）。</li>
+<li><strong>載入程式</strong>：從功能表選 <strong>File → Load Program</strong>，選擇 <code>.asm</code>（或 <code>.hack</code>）。載入後程式的二進位內容會被放進 <strong>ROM</strong> 區塊，從位址 0 開始。</li>
+<li><strong>設定初始資料</strong>：在 <strong>RAM</strong> 面板中直接點擊格子，輸入初值（例如把 <code>RAM[0]=3</code>、<code>RAM[1]=4</code>）。</li>
+<li><strong>重置與執行</strong>：
+<ul>
+<li>按 <strong>Reset</strong>（把 PC 歸零）。</li>
+<li>按一次 <strong>Single Step</strong> 即執行一條指令，便於逐步教學。</li>
+<li>按 <strong>Run (No Animation)</strong> 一口氣跑到底（記得結束尾巴要寫 <code>0;JMP</code> 無窮迴圈，以免程式暴走）。</li>
+</ul>
+</li>
+<li><strong>觀察結果</strong>：看 <strong>A/D 暫存器</strong>、<strong>PC</strong> 與 <strong>RAM</strong> 的變化。螢幕與鍵盤程式（4.3 節的 Fill）則看模擬器裡的 <strong>Screen / Keyboard</strong> 視窗，在螢幕上按下滑鼠即可「發送按鍵訊號」。</li>
+<li><strong>除錯技巧</strong>：
+<ul>
+<li>每執行一條指令就檢查一次 D/A 與 PC，用肉眼追蹤「兩步舞」是否正確。</li>
+<li>確認 <code>@</code> 後面的位址值與你想指的記憶體一致（<code>@R0</code>＝0、<code>@SCREEN</code>＝16384）。</li>
+<li>迴圈卡死？檢查 <code>0;JMP</code> 是否真的把 PC 導到正確標籤。</li>
+</ul>
+</li>
+</ol>
+<p>如果不先用模擬器，也可以照第六章的流程，用 <strong>Assembler</strong> 工具把 <code>.asm</code> 組譯成 <code>.hack</code>，再交給硬體模擬器（第五章的 Computer 晶片）執行——路線殊途同歸，目的都是驗證這四節建立的心智模型與真實電路一致。</p>
+<h2 id="設計思路與實作步驟">設計思路與實作步驟</h2>
+<p>從零到一支可執行的 Hack 程式，按這份 SOP 走最不容易出錯：</p>
+<ol>
+<li><strong>先用中文/虛擬碼寫出演算法</strong>，確定輸入、輸出與變數（例如「要把 1..100 加總，結果放 RAM[0]」）。</li>
+<li><strong>分配記憶體</strong>：決定哪些位址放資料（R0～R15 或 16 起的變數），哪些做成計數器、累加器、指標。</li>
+<li><strong>規劃控制流</strong>：畫出流程圖，標出迴圈頂點（LOOP）與結束點（STOP/END），決定每一條跳躍的條件（正/零/負）。</li>
+<li><strong>逐行翻譯</strong>：依照「<code>@位址</code> → <code>D=M</code>（讀）」與「<code>@位址</code> → <code>M=D</code>（寫）」的口訣，把每一步改成 Hack 指令。</li>
+<li><strong>補上註解</strong>：每一行都寫明「現在在幹嘛」，對齊 4.2 節的編碼表逐行檢查。</li>
+<li><strong>載入 CPU 模擬器驗證</strong>：設好測試輸入、逐步執行、比對 RAM 結果；有錯就回到第 3 步修正控制流或第 4 步的位址。</li>
+</ol>
+<p>「設計思路」層面還有兩條心法要記住：<strong>先想清楚資料住哪裡，再想指令怎麼走</strong>（組合語言是資料導向的思考）；以及<strong>條件只認負零正</strong>，任何 if 都要先化成一次減法或比較運算。</p>
+<h2 id="本章小結">本章小結</h2>
+<ul>
+<li><strong>語法</strong>：註解用 <code>//</code>、白空格忽視、符號區分大小寫；指令只有 <code>@xxx</code> 或 <code>dest=comp;jump</code> 兩種形式，<code>dest=</code> 與 <code>;jump</code> 可省略，程式結束用 <code>0;JMP</code> 無窮迴圈。</li>
+<li><strong>資料搬移三寶</strong>：<code>D=A</code>（位址當資料）、<code>D=M</code>（內容讀進 D）、<code>M=D</code>（存回記憶體），皆以「先 <code>@位址</code> 定址」為前提。</li>
+<li><strong>基本程式四大件</strong>：常數相加（<code>D=A</code>→<code>D=D+A</code>）、記憶體加總（<code>D=M</code>→<code>D=D+M</code>→<code>M=D</code>）、迴圈（計數器 <code>M=M-1</code>＋條件跳躍）、條件判斷（相減看正負＋<code>D;JGT</code> 分岔）。</li>
+<li><strong>兩支完整範例</strong>：累加 1~100（while 型迴圈）與乘法（化乘為加的累進迴圈），涵蓋了本節全部語法元件。</li>
+<li><strong>執行流程</strong>：在 CPU Emulator 載入 <code>.asm</code> → 設定 RAM 初值 → Reset → Run；用 Single Step 逐步檢查 A/D/PC/RAM 即可完成除錯。</li>
+<li><strong>認知收穫</strong>：你已經能獨立閱讀與撰寫 Hack 組合語言——下一章，我們將把這些指令真正「接通電」，組裝出能執行它們的 CPU 與完整電腦。</li>
+</ul>
+<p>至此第四節結束，整個第四章（ISA、A/C-指令編碼、記憶體映射 I/O、第一個程式）也告一個段落。接下來第五章，我們要把這 16 位元的指令集化為真實電路，迎接「手寫電腦」計畫的第一座里程碑：一台可以執行我們親手寫的組合語言的完整計算機。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="4.3.html">⇦ 上一節</a><a class="nav-btn" href="5.1.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

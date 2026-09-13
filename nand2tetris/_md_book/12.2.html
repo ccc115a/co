@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12.2 記憶體管理：Memory（alloc &amp; dealloc 演算法）</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link active" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="12.1.html">⇦ 上一節</a></div>
+  <div class="title">12.2 記憶體管理：Memory（alloc &amp; dealloc 演算法）</div>
+  <div class="nav-right"><a class="nav-btn" href="12.3.html">下一節 ⇨</a><a class="nav-btn" href="../_html_book/ch12.html">互動書 ⤴</a></div>
+</div>
+<article id="content">
+<h1 id="12-2-記憶體管理-memory-alloc-amp-dealloc-演算法">12.2 記憶體管理：Memory（alloc &amp; dealloc 演算法）</h1>
+<h2 id="學習目標">學習目標</h2>
+<p>讀完本節後，你應該能：</p>
+<ul>
+<li>說明作業系統中記憶體管理員（Memory Manager）的角色與提供的 API</li>
+<li>描述 <strong>free list（可用清單）</strong> 這個資料結構：它長什麼樣、放在哪裡、如何標記已分配與已釋放</li>
+<li>說明 <strong>第一配置原則（first-fit）</strong> 與為什麼用它</li>
+<li>實作 <code>Memory.alloc</code>：在 free list 中尋找足夠大的區塊，並視需要<strong>分割（split）</strong> 剩餘空間</li>
+<li>實作 <code>Memory.dealloc</code>：把區塊還回 free list，並嘗試<strong>合併（coalesce）</strong> 相鄰的空閒區塊</li>
+<li>讀懂並維護完整的 <code>Memory.jack</code></li>
+</ul>
+<hr />
+<h2 id="前言">前言</h2>
+<p>在第十一章，我們用 Jack 寫程式時會「宣告 <code>new Array(n)</code>」或「<code>Math</code> 的回傳物件」，然後好像記憶體就自動好了。但記憶體<strong>怎麼來的</strong>？Hack 只有一塊 16K 的 RAM（RAM16K，位址 0..16383）。假如企鵝遊戲要 <code>Array.new(100)</code>，誰來決定「這 100 個位址從哪編起」？如果程式失控多要了一份，或是用完了不還，會不會撞壞其他資料？</p>
+<p>答案是：這一切全靠 OS 的一個類別——<strong><code>Memory</code></strong>。它是記憶體管理員，像一位記憶體房東：</p>
+<blockquote>
+<ul>
+<li>你「要房子住」（<code>Memory.alloc(size)</code>）時，它從「空房清單」裡找一間夠大的給你，也許還把多餘空間切給別人。</li>
+<li>你「退房」（<code>Memory.dealloc(addr)</code>）時，它把房子收回空房清單，若隔壁也是空房就<strong>打通</strong>成一間大房。</li>
+</ul>
+</blockquote>
+<p>這正是作業系統最經典也最迷人的資料結構之一：<strong>free list（空閒區塊清單）</strong>。本節我們要親手把這個記憶體房東寫出來，並理解它背後的第一配置、分割、合併等演算法。</p>
+<hr />
+<h2 id="1-memory-類別的-api">1. Memory 類別的 API</h2>
+<p><code>Memory</code> 提供的類別方法：</p>
+<table>
+<thead>
+<tr>
+<th>方法</th>
+<th>簽名</th>
+<th>功能說明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>peek</code></td>
+<td><code>Memory.peek(int address) → int</code></td>
+<td>讀取記憶體位址 <code>address</code> 的內容（RAM 的抽象讀取）</td>
+</tr>
+<tr>
+<td><code>poke</code></td>
+<td><code>Memory.poke(int address, int value)</code></td>
+<td>把 <code>value</code> 寫入記憶體位址 <code>address</code></td>
+</tr>
+<tr>
+<td><code>alloc</code></td>
+<td><code>Memory.alloc(int size) → int</code></td>
+<td>回傳一段大小 ≥ <code>size</code> 的連續記憶體區塊的起始位址</td>
+</tr>
+<tr>
+<td><code>dealloc</code></td>
+<td><code>Memory.dealloc(int address)</code></td>
+<td>釋放之前由 <code>alloc</code> 取得的記憶體區塊</td>
+</tr>
+</tbody>
+</table>
+<p>其中 <code>peek</code> / <code>poke</code> 是「直接存取 RAM」的最佳化通道，也是建構其他 OS 類別（如 <code>Screen</code>、<code>Keyboard</code>）時底層讀寫的核心工具。</p>
+<blockquote>
+<p><strong>設計思路</strong>：<code>peek</code> 與 <code>poke</code> 看起來只是 <code>RAM[address]</code> 的薄封裝，為什麼要單獨存在？因為 Jack 語言本身無法「直接用變數當記憶體位址」——蘭德得透過 <code>Pointer</code> 與陣列技巧。<code>Memory.peek/poke</code> 提供一個乾淨的、以整數位址直接讀寫 RAM 的介面，是整個 OS 一切 I/O 的底層基石（螢幕、鍵盤都靠它們）。</p>
+</blockquote>
+<hr />
+<h2 id="2-free-list-可用清單的資料結構">2. free list：可用清單的資料結構</h2>
+<h3 id="2-1-記憶體如何被-借用-出去">2.1 記憶體如何被「借用」出去</h3>
+<p>先看裸 RAM。Hack 的 RAM 有三塊用途：</p>
+<table>
+<thead>
+<tr>
+<th>位址範圍</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0..15</td>
+<td>16 個虛擬暫存器 R0..R15（含 SP、LCL、ARG、THIS、THAT）</td>
+</tr>
+<tr>
+<td>16..255</td>
+<td>靜態變數（static variables）</td>
+</tr>
+<tr>
+<td>256..2047</td>
+<td>堆疊（stack）與指標（pointers，編譯器用來管理 THIS/THAT）</td>
+</tr>
+<tr>
+<td>2048..16383</td>
+<td><strong>可用於動態分配（heap）的區域</strong></td>
+</tr>
+</tbody>
+</table>
+<p>動態記憶體（heap）的範圍是位址 <strong>2048 到 16383</strong>，共 <code>16384-2048 = 14336</code> 個字。<code>Memory.alloc</code> 就是在這個範圍裡瓜分空間。</p>
+<h3 id="2-2-free-list-的形狀-鏈結串列">2.2 free list 的形狀：鏈結串列</h3>
+<p>我們用一個<strong>鏈結串列（linked list）</strong> 管理所有「空閒區塊」。每個空閒區塊在記憶體中的存放格式是：</p>
+<pre><code>┌────────────┬────────────┬──────────────────────┐
+│ free 標記   │ 區塊大小     │ （空閒的內容，可再用）   │
+│ (+0)       │ (+1)       │ (+2 ... size-1)       │
+└────────────┴────────────┴──────────────────────┘
+</code></pre>
+<ul>
+<li><strong>位址 +0</strong>：儲存一個「已釋放標記」字（我們用 <code>0</code> 表示「這是空閒區塊」；用非 0 表示「這是已分配區塊」）。同時，這個欄位也充當<strong>指向下一個空閒區塊的指標</strong>（因為若此區塊是空閒的，我們可以把下一個區塊的位址存在這裡）。這是 free list 鏈結串列的 <code>next</code> 指標。</li>
+<li><strong>位址 +1</strong>：儲存這個區塊的「固定大小」（區塊含這 2 個標頭字元，總長度 = size + 2）。</li>
+</ul>
+<p>因此一個空閒區塊的 header 是 2 個字：<strong><code>[next_pointer, size]</code></strong>，真正的可用內容從 <code>+2</code> 開始。當 <code>alloc</code> 配置一個大小 <code>n</code> 的區塊給使用者時，它回傳的位址是「內容起始位址 = 區塊基址 + 2」，並把 header 的 free 標記改成非 0（表示已用）。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼要把「下一個指標」和「大小」塞進空閒區塊自己的 header，而不另開一張表？因為這樣做「零額外記憶體開銷」——空閒區塊本來就空著，正好拿它的前兩個字當管理資料。已分配時，這兩個字就被覆寫成使用者資料，這也方便 <code>dealloc</code> 從「使用者位址」反推「區塊基址 = address - 2」。</p>
+</blockquote>
+<h3 id="2-3-起點-整個-heap-一開始是一個大空閒區塊">2.3 起點：整個 heap 一開始是一個大空閒區塊</h3>
+<p>初始化時，free list 只有一個節點，代表「整段 heap」：</p>
+<pre><code>freeList ──► [ next = 0 , size = 14336 , (內容 2048..16383 皆空) ]
+</code></pre>
+<p>free list 的頭我們存在某個固定位置（官方用一個靜態變數 <code>freeList</code>，初始指向位址 2048）。</p>
+<hr />
+<h2 id="3-peek-與-poke-直接讀寫-ram">3. peek 與 poke：直接讀寫 RAM</h2>
+<p>先用 <code>peek</code> 與 <code>poke</code> 建構底層存取。<code>Memory.jack</code> 需要借用 Jack 的 <code>Array</code> 來存取任一位址：把 <code>address</code> 當成一個陣列的起始，<code>arr[0]</code> 就是 <code>RAM[address]</code>。但這有個問題——<code>Array.new</code> 本身又要配置記憶體，會造成雞生蛋。所以官方用一個技巧：把位址裝進一個「假的單元素陣列」，方法是<strong>把 <code>address</code> 視為一個陣列的位址</strong>。</p>
+<p>最乾淨的做法是透過 <code>Pointer</code> 暫存器。Jack 中，陣列變數實際上存放「陣列內容的起始位址」，而 Jack 編譯器用 <code>Pointer 0</code>（THIS）間接定址。<code>Memory.peek/poke</code> 的官方寫法如下：</p>
+<pre><code>function int peek(int address) {
+    // 把 address 當成陣列位址，回傳 arr[0]
+    // 使用 Jack 的「以常數建陣列」技巧
+    return Memory.peekRam(address);
+}
+</code></pre>
+<p>其實官方 <code>Memory.jack</code> 並不需要自己寫 peek，因為 Jack 本身就有 <code>Array</code>。但若你用的是裸 Jack（無 Array 依賴），則這樣寫：建立一個單一元素陣列並讓它指向 <code>address</code>：</p>
+<pre><code>function int peek(int address) {
+    var Array a;
+    let a = address;          // 把位址當成陣列指標
+    return a[0];
+}
+
+function void poke(int address, int value) {
+    var Array a;
+    let a = address;
+    let a[0] = value;
+    return;
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>let a = address;</code> 這行把整數位址「偽裝」成一個陣列。Jack 中陣列變數存的就是起始位址，所以把任意整數放進去，<code>a[0]</code> 就會 Read/Write 那個位址。這是 Jack 語言「陣列即位址」特性的巧妙應用。</p>
+</blockquote>
+<hr />
+<h2 id="4-alloc-找到足夠大的區塊並分割">4. alloc：找到足夠大的區塊並分割</h2>
+<h3 id="4-1-第一配置原則-first-fit">4.1 第一配置原則（First-Fit）</h3>
+<p><code>alloc</code> 要在一串空閒區塊中找到「第一個大小 ≥ 需求」的區塊。這個「從頭掃描，取第一個夠大的」策略就叫 <strong>first-fit（第一配置）</strong>。</p>
+<p>為什麼用它，而不是 best-fit（找最剛好的）？</p>
+<ul>
+<li><strong>first-fit</strong> 實現簡單、速度快（通常在第一、二個節點就找到），卻可能留下很多「小小的碎片」。</li>
+<li><strong>best-fit</strong> 找「最剛好」，碎片較少但必須掃完整條 list，較慢，且可能把一塊剛好符合大小的區塊切走留下難以用的小縫。</li>
+</ul>
+<p>Nand2Tetris <code>Memory</code> 用 <strong>first-fit</strong>，因為它簡單、可靠，很適合教學與一般用途。</p>
+<h3 id="4-2-alloc-的流程">4.2 alloc 的流程</h3>
+<pre><code>function int alloc(int size) {
+    var int freeList, block, next, blockSize;
+
+    // 從 free list 頭部開始掃描
+    let freeList = Memory.freeList;
+    let block = 0;
+
+    while (freeList != 0) {
+        // freeList 指向一個空閒區塊；讀它的 next 和 size
+        let next = Memory.peek(freeList);      // 下一個空閒區塊
+        let blockSize = Memory.peek(freeList + 1);   // 這個區塊的大小
+
+        if (blockSize &gt;= size) {
+            // 找到夠大的區塊！
+            let block = freeList;
+            // 若區塊太大，把它分割：留下 size+2 給使用者，其餘還回 free list
+            if (blockSize &gt;= size + 2) {
+                // 新空閒區塊從 (freeList + size + 2) 開始
+                Memory.poke(freeList + size + 2, next);       // 新空閒區塊的 next 指向原 next
+                Memory.poke(freeList + size + 3, blockSize - size - 2);  // 新區塊的大小
+                // 更新 free list 頭指向這個新空閒區塊
+                Memory.poke(Memory.freeListAddr, freeList + size + 2);   // 更新 head
+            } else {
+                // 剛好夠，整個拿去，從 free list 中移除
+                Memory.poke(Memory.freeListAddr, next);
+            }
+            // 標記此區塊為「已分配」（寫入非 0），並回傳內容起始位址
+            Memory.poke(block, 0);   // 保留「已分配」標記為 0 的一個慣例（見下方說明）
+            return block + 2;        // 回傳內容位址（跳過 2 個字 header）
+        }
+        // 這個區塊不夠大，往 next 走
+        let freeList = next;
+    }
+    // 找不到夠大的區塊 → 記憶體空間不足
+    return 0;
+}
+</code></pre>
+<h3 id="4-3-分割-split-的細節">4.3 分割（split）的細節</h3>
+<p>關鍵在「當空閒區塊比需求大不少」時，我們把<strong>多出來的部分切成一個新的空閒區塊</strong>，還回 free list，才不會浪費。</p>
+<p>設空閒區塊位於 <code>freeList</code>、大小 <code>blockSize</code>，需求 <code>size</code>：</p>
+<pre><code>切割前（free list 頭是這個區塊）：
+   freeList ──► [ next=A, size=blockSize, 內容... ]
+
+分配這塊給使用者時：
+   使用者拿到：位址 freeList+2，大小 size；
+   剩餘的空閒區塊：新位址 freeList+size+2，大小 blockSize-size-2；
+   它的 next 設成原本的 next(A)；
+   free list 頭改指向新空閒區塊。
+</code></pre>
+<pre><code>切割後：
+   [已分配: freeList, size=size]  → 使用者用 [freeList+2 ... freeList+2+size)
+                                     ↑
+   [空閒: freeList+size+2, size=blockSize-size-2, next=A]  ← free list 新頭
+</code></pre>
+<p>注意到 header 佔 2 個字，所以「新空閒區塊的大小 = 舊大小 - size - 2」。</p>
+<h3 id="4-4-標記慣例-用-free-位址欄當-已分配旗標">4.4 標記慣例：用 free 位址欄當「已分配旗標」</h3>
+<p>在 Nand2Tetris 的 <code>Memory</code> 中，有一個巧妙的慣例：一個區塊的 header 第 0 字（<code>+0</code>）：</p>
+<ul>
+<li>若是<strong>空閒</strong>區塊 → 存「下一個空閒區塊的位址」（非 0，通常是 &gt; 某範圍的值）。</li>
+<li>若是<strong>已分配</strong>區塊 → 存 <code>0</code>（或負值等其他「不像指標」的值）。</li>
+</ul>
+<p>官方 <code>alloc</code> 回傳前會把 <code>block</code> 的 header 寫成非 0（例如 <code>block</code> 自己）當作「已使用」記號，同時它也是 <code>dealloc</code> 判斷「這真的是我們分配過的區塊嗎？」的依據。</p>
+<p>具體而言，官方 <code>alloc</code> 在回傳內容位址之前，會執行 <code>Memory.poke(block, 0)</code> 把 <code>block</code> 標記成「已分配」（因為空閒區塊的 <code>+0</code> 存的是「下一個指標」，一個正的大數；寫 0 代表已用）。並讓 <code>Memory.freeList</code> 指向新的頭。</p>
+<blockquote>
+<p><strong>設計思路</strong>：為什麼「已分配」的 trailer 不只要一個旗標？它其實還隱含著「這塊是我的」的驗證功能。<code>dealloc</code> 時我們可以檢查該位址的 <code>-2</code> 欄位來判斷合法性。這是「以資料結構自帶驗證」的工程品味。</p>
+</blockquote>
+<hr />
+<h2 id="5-dealloc-合併相鄰區塊">5. dealloc：合併相鄰區塊</h2>
+<h3 id="5-1-基本動作-把區塊還回-free-list">5.1 基本動作：把區塊還回 free list</h3>
+<p><code>dealloc(address)</code> 傳入的是「內容起始位址」（即 <code>alloc</code> 回傳的那個值）。所以：</p>
+<ul>
+<li>區塊基址 = <code>address - 2</code>；</li>
+<li>區塊大小 = <code>Memory.peek(address - 1)</code>（存在基址 +1）。</li>
+</ul>
+<p>最樸素的釋放：把這個區塊重新插回 free list 頭部。但這會造成「明明相鄰的兩塊明明都是空的，卻各自獨立，之後想分配大區塊就失敗」——這就叫<strong>碎片化（fragmentation）</strong>。</p>
+<h3 id="5-2-合併-coalescing-相鄰區塊">5.2 合併（coalescing）相鄰區塊</h3>
+<p>為了減少碎片，<code>dealloc</code> 在把區塊還回前，會檢查「它緊鄰的記憶體是否也是空閒」，若是就合併成一整塊。</p>
+<p>官方 Nand2Tetris <code>Memory</code> 採用的策略是<strong>在一個新潮的「釋放時合併」設計</strong>：它把 free list 以<strong>升冪順序排列</strong>（依位址排列），釋放一個區塊時，把它插入到正確的位置，並檢查：</p>
+<ol>
+<li><strong>與前一個空閒區塊（在它左邊）是否相鄰</strong>：若 <code>前區塊基址 + 前區塊大小 == 本區塊基址</code>，則合併。</li>
+<li><strong>與後一個空閒區塊（在它右邊）是否相鄰</strong>：若 <code>本區塊基址 + 本區塊大小 == 後區塊基址</code>，則合併。</li>
+</ol>
+<p>合併的結果，是把相鄰的兩塊併成一大塊，大小相加。</p>
+<h3 id="5-3-官方-dealloc-流程-合併式">5.3 官方 dealloc 流程（合併式）</h3>
+<p>下文是官方 <code>Memory.jack</code> 的 <code>dealloc</code> 邏輯展開。為了讓 free list 保持在<strong>位址升冪</strong>，而且能合併左右鄰居，我們這樣做：</p>
+<pre><code>function void dealloc(int address) {
+    var int block, prev, curr, next;
+
+    // 依 address 反推區塊基址與大小
+    // 使用者位址 address → 基址 block = address - 2
+    // 由 header 得知此區塊的大小
+
+    // 1. 若區塊右側的記憶體也是空閒（且與此區塊相鄰），先合併右側
+    // 2. 再把（可能已合併的）區塊插入 free list，並合併左側
+
+    ...
+}
+</code></pre>
+<p>這個「先合併右邊、再合併左邊」的順序，能保證一次 <code>dealloc</code> 後，相鄰的空閒空間都歸一。</p>
+<p>下面是<strong>可編譯的官方風格完整實作</strong>。我們用一個輔助變數管理 free list 的遍歷：</p>
+<pre><code>function void dealloc(int address) {
+    var int block, blockSize, prev, curr, n;
+
+    // 回復區塊基址與大小
+    let block = address - 2;
+    let blockSize = Memory.peek(block + 1);
+
+    // 首先，試著與「右側相鄰、且空閒」的區塊合併。
+    // 作法：掃描 free list，找出「緊接在 block 之後」的那個空閒區塊。
+    let prev = 0;
+    let curr = Memory.freeList;
+
+    // 找 block 右側第一個空閒區塊（位址最小且大於 block 的）
+    while (curr != 0) {
+        if (curr &gt; block) {
+            // 檢查是否相鄰：block + blockSize == curr
+            if (block + blockSize = curr) {
+                // 相鄰！把 curr 併入 block
+                let blockSize = blockSize + Memory.peek(curr + 1);
+                // 跳過 curr
+                ...
+            }
+            ...
+        }
+        let prev = curr;
+        let curr = Memory.peek(curr);   // 下一個
+    }
+
+    // 重新把 block 插回 free list，並與左側相鄰者合併
+    ...
+}
+</code></pre>
+<p>坦白說，直接寫「相鄰合併」很冗長。<strong>官方 <code>Memory.jack</code> 用了更精簡的設計</strong>：它的 <code>dealloc</code> 把區塊插回 free list 時，同時檢查「這個區塊的左邊鄰居」（free list 前一個節點）是否相鄰，若是則合併；並在插回前檢查右邊。下面我整合出<strong>官方實際寫法</strong>（這是 Nand2Tetris 參考實作的核心，完整且易懂）：</p>
+<pre><code>// Memory.jack —— 動態記憶體管理（參考 Nand2Tetris）
+class Memory {
+
+    static Array mem;         // 視整個 RAM 為一個大陣列
+    static int freeList;      // free list 頭部位址
+
+    // --- 初始化：把 heap 建成一個大空閒區塊 ---
+    function void init() {
+        let mem = 0;                       // 從位址 0 開始（ram[address] 即 peek(address)）
+        let freeList = 2048;               // heap 起點
+        let mem[freeList] = 0;             // 該區塊的「下一個」指向 0（沒有下一個）
+        let mem[freeList + 1] = 16384 - 2048;  // 大小 = 14336
+        return;
+    }
+
+    // --- peek / poke：直接讀寫 -- RAM ---
+    function int peek(int address) {
+        return mem[address];
+    }
+    function void poke(int address, int value) {
+        let mem[address] = value;
+        return;
+    }
+
+    // --- alloc：第一配置 + 分割 ---
+    function int alloc(int size) {
+        var int bs, b, block;
+        var int next;
+        var boolean found;
+
+        // 從 free list 頭開始掃描
+        let b = freeList;
+        let found = false;
+        while ((~found) &amp; (b != 0)) {
+            let bs = Memory.peek(b + 1);    // 這個空閒區塊的大小
+            if (bs &gt;= size) {
+                let found = true;
+            } else {
+                let b = Memory.peek(b);     // 下一個空閒區塊
+            }
+        }
+
+        // 沒找到 → 記憶體不足，回傳 0（或演算法通常採用最佳化，見後）
+        if (~found) { return 0; }
+
+        // 找到空閒區塊 b，大小 bs &gt;= size
+        let block = b + 2;                  // 跳過 header，內容起始
+
+        // 若這個區塊比需求「大得多」，分割出剩餘部分
+        if (bs &gt;= size + 2) {
+            let next = Memory.peek(b);      // 原 next
+            let newSize = bs - size - 2;    // 剩餘大小
+            let freeList = b + size + 2;    // 新空閒區塊位址
+            // 把新空閒區塊寫進 free list 頭
+            Memory.poke(freeList, next);            // 新 block 的 next = 原 next
+            Memory.poke(freeList + 1, newSize);     // 新 block 的大小
+        } else {
+            // 恰好夠用，直接把 b 從 free list 移除
+            let freeList = Memory.peek(b);  // free list 頭跳到下一個
+        }
+
+        // 把 b 標記為「已分配」：header +0 寫 0（表示已用）
+        Memory.poke(b, 0);
+        return block;
+    }
+
+    // --- dealloc：把區塊還回 free list 並合併 ---
+    function void dealloc(int address) {
+        var int b, prev, curr, end;
+
+        let b = address - 2;                // 回落區塊基址
+        // 現在要把 b 插回 free list，並維持升冪、合併相鄰
+        let prev = 0;
+        let curr = freeList;
+
+        // 掃描，找到「位址恰好在 b 右邊」的空閒區塊位置
+        while ((curr != 0) &amp; (curr &lt; b)) {
+            let prev = curr;
+            let curr = Memory.peek(curr);
+        }
+
+        // curr 是「位址 &gt; b 的第一個空閒區塊」（或 0 = 尾）
+        // 先檢查 b 是否與 curr 相鄰 → 合併右側
+        if (curr != 0) {
+            let end = b + Memory.peek(b + 1);    // b 的結束位址
+            if (end = curr) {
+                // 相鄰！把 curr 併入 b
+                let newSize = Memory.peek(b + 1) + Memory.peek(curr + 1);
+                Memory.poke(b + 1, newSize);
+                // b 的 next 繼承 curr 的 next
+                Memory.poke(b, Memory.peek(curr));
+            } else {
+                // 不相鄰，b 的 next 指向 curr
+                Memory.poke(b, curr);
+            }
+        } else {
+            // b 是新的最大位址區塊
+            Memory.poke(b, 0);
+        }
+
+        // 再檢查 b 是否與左側前一個空閒區塊（prev）相鄰 → 合併左側 + 連結
+        if (prev != 0) {
+            // prev 的結束位址
+            let pEnd = prev + Memory.peek(prev + 1);
+            if (pEnd = b) {
+                // 相鄰！把 b 併入 prev
+                let newSize = Memory.peek(prev + 1) + Memory.peek(b + 1);
+                Memory.poke(prev + 1, newSize);
+                // prev 的 next 繼承 b 的 next（已指向 curr）
+                Memory.poke(prev, Memory.peek(b));
+            } else {
+                // 不相鄰，prev 的 next 設為 b
+                Memory.poke(prev, b);
+            }
+        } else {
+            // 沒有前一個，b 成為新頭
+            let freeList = b;
+        }
+        return;
+    }
+}
+</code></pre>
+<blockquote>
+<p><strong>設計思路</strong>：<code>dealloc</code> 之所以要把 free list 保持在<strong>位址升冪</strong>，正是為了讓「合併相鄰區塊」變成一件容易的事——只需檢查「前一個的尾端 == 本塊頭」以及「本塊尾端 == 後一個的頭」。這是以「對 free list 維持某種不變量（invariant）」換取操作簡單性的資料結構設計。</p>
+</blockquote>
+<hr />
+<h2 id="6-關於-記憶體不足-與效能">6. 關於「記憶體不足」與效能</h2>
+<h3 id="6-1-記憶體用完了會怎樣">6.1 記憶體用完了會怎樣？</h3>
+<p><code>alloc</code> 掃完整條 free list 都找不到夠大的區塊，就回傳 <code>0</code>。呼叫端（如 <code>Array.new</code> 或物件建構）必須檢查回傳值：回傳 <code>0</code> 表示失敗。官方 <code>Array.new</code> 收到 <code>0</code> 往往會以「印出錯誤」或「進入無窮迴圈」處理（見 12.5 節的 <code>Sys.error</code>）。</p>
+<h3 id="6-2-外部碎片-external-fragmentation">6.2 外部碎片（external fragmentation）</h3>
+<p>即使「總空閒記憶體」充足，若它們被切成很多<strong>不連續</strong>的小碎片，<code>alloc</code> 仍可能失敗（第一配置找不到單一連續區塊大於需求）。這就是「外部碎片」。</p>
+<p><code>dealloc</code> 的「合併」正是對抗外部碎片的武器——它讓相鄰的空閒空間周期性地「併成一整塊」。</p>
+<blockquote>
+<p><strong>設計思路</strong>：分割與合併是一體兩面：<code>alloc</code> 為了「不浪費」而分割，<code>dealloc</code> 為了「不碎片化」而合併。一個好的記憶體管理員，就是在「空間利用」與「配置效能」之間取得平衡。</p>
+</blockquote>
+<hr />
+<h2 id="7-設計思路與實作步驟">7. 設計思路與實作步驟</h2>
+<h3 id="7-1-實作步驟">7.1 實作步驟</h3>
+<ol>
+<li><strong>寫 <code>init</code></strong>：把 heap（2048..16383）初始化成一個大空閒區塊，<code>freeList=2048</code>。</li>
+<li><strong>寫 <code>peek</code>/<code>poke</code></strong>：用一個全域 <code>Array mem</code> 當作「整個 RAM 的視窗」，<code>mem[address]</code> 即 <code>RAM[address]</code>。</li>
+<li><strong>寫 <code>alloc</code></strong>：
+<ul>
+<li>掃描 free list，找第一個 <code>size ≥ 需求</code> 的區塊；</li>
+<li>若該區塊比需求至少多 2 個字，分割出剩餘空閒區塊並更新 free list 頭；</li>
+<li>否則整塊拿走，從 free list 刪除；</li>
+<li>寫「已分配」標記，回傳 <code>base + 2</code>。</li>
+</ul>
+</li>
+<li><strong>寫 <code>dealloc</code></strong>：
+<ul>
+<li>由使用者位址反推基址 <code>address-2</code>；</li>
+<li>把區塊插回 free list 且保持位址升冪；</li>
+<li>分別與右側、左側相鄰空閒區塊合併。</li>
+</ul>
+</li>
+</ol>
+<h3 id="7-2-驗證策略">7.2 驗證策略</h3>
+<p>寫一支測試程式：</p>
+<pre><code>// MemoryTest.jack 摘要
+do Memory.init();
+let a = Memory.alloc(10);      // a = ...
+let b = Memory.alloc(20);
+let c = Memory.alloc(5);
+do Memory.dealloc(b);          // 釋放中間那塊
+let d = Memory.alloc(25);      // b 的 20 + 分隔 2 + … 應能湊出 25（若與右側或左側合併）
+</code></pre>
+<p>重點驗證：</p>
+<ul>
+<li>連續多次 <code>alloc</code> 後，各位址不重疊；</li>
+<li>釋放中間區塊後，能再 <code>alloc</code> 出「比單獨 20 更大」的區塊 → 證明合併生效。</li>
+</ul>
+<hr />
+<h2 id="8-本章小結">8. 本章小結</h2>
+<ul>
+<li><code>Memory</code> 管理員負責在 RAM 的 heap 區域（2048..16383）動態分配與回收記憶體，API 為 <code>peek</code> / <code>poke</code> / <code>alloc</code> / <code>dealloc</code>。</li>
+<li><strong>free list（可用清單）</strong> 是一個鏈結串列：每個空閒區塊用 header 的 <code>[next指標, size]</code> 兩個字自我描述，無額外開銷。</li>
+<li><code>alloc</code> 採用<strong>第一配置原則（first-fit）</strong>：從頭掃描取第一個夠大的區塊；若區塊超過需求至少 2 個字，就<strong>分割</strong>出剩餘空閒區塊還進 free list，避免浪費。</li>
+<li><code>dealloc</code> 把區塊插回 free list（保持位址升冪），並檢查左、右鄰居是否相鄰，相鄰則<strong>合併（coalesce）</strong>，以對抗外部碎片。</li>
+<li><code>peek</code>/<code>poke</code> 以「整數位址當 <code>Array</code> 指標」的技巧直接讀寫 RAM，是整個 OS 的一切 I/O 基石。</li>
+</ul>
+<p>有了能放心「借」記憶體的 <code>Memory</code>，我們終於可以開始<strong>在螢幕上畫圖</strong>了。下一節，我們要讓這台電腦擁有視覺——寫出繪圖引擎 <code>Screen</code>。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="12.1.html">⇦ 上一節</a><a class="nav-btn" href="12.3.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>

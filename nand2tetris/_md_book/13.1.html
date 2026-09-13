@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 13 章　軟硬體全棧鏈條整合測試</title>
+<link rel="stylesheet" href="assets/github.min.css">
+<link rel="stylesheet" href="assets/book.css">
+<script>window.MathJax = { tex: {inlineMath:[['$','$']], displayMath:[['$$','$$']]}, svg: {fontCache:'global'} };</script>
+<script defer src="assets/mathjax.js"></script>
+<script defer src="assets/highlight.min.js"></script>
+<script defer src="assets/book.js"></script>
+</head>
+<body>
+<nav id="sidebar">
+<a class="sidebar-link" href="index.html">📚 目錄</a>
+<div class="sidebar-chapter">導論</div>
+<a class="sidebar-link" href="00.1.html">00.1  《從0到1：手寫電腦的奇幻之旅 —— 基於 Nand2Tetris </a>
+<div class="sidebar-chapter">第 1 章</div>
+<a class="sidebar-link" href="1.1.html">1.1  布林代數與邏輯閘基礎</a>
+<a class="sidebar-link" href="1.2.html">1.2  宇宙的基石：Nand 閘</a>
+<a class="sidebar-link" href="1.3.html">1.3  構建基礎邏輯閘：Not, And, Or, Xor</a>
+<a class="sidebar-link" href="1.4.html">1.4  多路復用與多通道邏輯閘：Mux, Demux, Multi-bit</a>
+<a class="sidebar-link" href="1.5.html">1.5  實作與測試：使用 Hardware Description Lang</a>
+<div class="sidebar-chapter">第 2 章</div>
+<a class="sidebar-link" href="2.1.html">2.1  二進位加法與半加器、全加器（Half/Full Adder）</a>
+<a class="sidebar-link" href="2.2.html">2.2  增量器與多位元加法器（Inc / Add16）</a>
+<a class="sidebar-link" href="2.3.html">2.3  邏輯與運算結合：設計 Hack ALU</a>
+<a class="sidebar-link" href="2.4.html">2.4  ALU 標誌位與運算邏輯驗證</a>
+<div class="sidebar-chapter">第 3 章</div>
+<a class="sidebar-link" href="3.1.html">3.1  第 3.1 章：觸發器（D Flip-Flop）—— 引入時間與狀態</a>
+<a class="sidebar-link" href="3.2.html">3.2  第 3.2 章：1-bit 與 16-bit 暫存器（Registe</a>
+<a class="sidebar-link" href="3.3.html">3.3  第 3.3 章：記憶體層級架構——RAM8 到 RAM16K</a>
+<a class="sidebar-link" href="3.4.html">3.4  第 3.4 章：程式計數器（Program Counter, PC）</a>
+<div class="sidebar-chapter">第 4 章</div>
+<a class="sidebar-link" href="4.1.html">4.1  硬體與軟體的交界：指令集架構（ISA）</a>
+<a class="sidebar-link" href="4.2.html">4.2  Hack 機器語言規格：A-指令與 C-指令</a>
+<a class="sidebar-link" href="4.3.html">4.3  記憶體映射 I/O：螢幕與鍵盤的控制原理</a>
+<a class="sidebar-link" href="4.4.html">4.4  寫入你的第一個 Hack 組合語言程式</a>
+<div class="sidebar-chapter">第 5 章</div>
+<a class="sidebar-link" href="5.1.html">5.1  第五章 從晶片到電腦：系統整合與實作</a>
+<a class="sidebar-link" href="5.2.html">5.2  記憶體晶片與匯流排整合（Memory Module）</a>
+<a class="sidebar-link" href="5.3.html">5.3  構建完整電腦：Computer 晶片與執行循環</a>
+<a class="sidebar-link" href="5.4.html">5.4  硬體模擬器上的系統調試</a>
+<div class="sidebar-chapter">第 6 章</div>
+<a class="sidebar-link" href="6.1.html">6.1  組譯器的工作原理：文字解析與二進位轉譯</a>
+<a class="sidebar-link" href="6.2.html">6.2  符號表（Symbol Table）與標號解析（Labels & Va</a>
+<a class="sidebar-link" href="6.3.html">6.3  兩階段掃描（Two-Pass）組譯器實作</a>
+<a class="sidebar-link" href="6.4.html">6.4  測試你的組譯器：將 .asm 編譯為 .hack</a>
+<div class="sidebar-chapter">第 7 章</div>
+<a class="sidebar-link" href="7.1.html">7.1  為何需要虛擬機？跨平台與中間語言構想</a>
+<a class="sidebar-link" href="7.2.html">7.2  堆疊（Stack）資料結構與運算機制</a>
+<a class="sidebar-link" href="7.3.html">7.3  VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt..</a>
+<a class="sidebar-link" href="7.4.html">7.4  記憶體段（Memory Segments）的映射與存取</a>
+<div class="sidebar-chapter">第 8 章</div>
+<a class="sidebar-link" href="8.1.html">8.1  控制流翻譯：條件與無條件跳躍（goto / if-goto）</a>
+<a class="sidebar-link" href="8.2.html">8.2  函數呼叫機制：call, function, return</a>
+<a class="sidebar-link" href="8.3.html">8.3  呼叫堆疊（Call Stack）與區域變數維護</a>
+<a class="sidebar-link" href="8.4.html">8.4  打造完整的 VM Translator</a>
+<div class="sidebar-chapter">第 9 章</div>
+<a class="sidebar-link" href="9.1.html">9.1  Jack 語言語法簡介：物件導向與語法結構</a>
+<a class="sidebar-link" href="9.2.html">9.2  物件、陣列與指標的底層本質</a>
+<a class="sidebar-link" href="9.3.html">9.3  使用 Jack 編寫第一個圖形化小遊戲</a>
+<div class="sidebar-chapter">第 10 章</div>
+<a class="sidebar-link" href="10.1.html">10.1  第十章：編譯器 —— 從高階語言到虛擬機碼</a>
+<a class="sidebar-link" href="10.2.html">10.2  第十章第二節：詞法分析（Lexical Analysis / Tok</a>
+<a class="sidebar-link" href="10.3.html">10.3  第十章第三節：語法分析（Parsing / Context-Free</a>
+<a class="sidebar-link" href="10.4.html">10.4  第十章第四節：語法樹與 XML 結構輸出測試</a>
+<div class="sidebar-chapter">第 11 章</div>
+<a class="sidebar-link" href="11.1.html">11.1  符號表設計：類別級別與方法級別作用域</a>
+<a class="sidebar-link" href="11.2.html">11.2  物件導向特性的底層翻譯：Constructors, Methods,</a>
+<a class="sidebar-link" href="11.3.html">11.3  陣列與指標運算的 VM 指令生成</a>
+<a class="sidebar-link" href="11.4.html">11.4  完工：將 Jack 源碼直接編譯為 VM 代碼</a>
+<div class="sidebar-chapter">第 12 章</div>
+<a class="sidebar-link" href="12.1.html">12.1  數學庫：Math（乘除法、開根號）</a>
+<a class="sidebar-link" href="12.2.html">12.2  記憶體管理：Memory（alloc & dealloc 演算法）</a>
+<a class="sidebar-link" href="12.3.html">12.3  螢幕與繪圖：Screen（畫線、畫圓演算法）</a>
+<a class="sidebar-link" href="12.4.html">12.4  字型與輸入：Output & Keyboard</a>
+<a class="sidebar-link" href="12.5.html">12.5  系統基礎：String, Array, Sys</a>
+<div class="sidebar-chapter">第 13 章</div>
+<a class="sidebar-link active" href="13.1.html">13.1  第 13 章　軟硬體全棧鏈條整合測試</a>
+<a class="sidebar-link" href="13.2.html">13.2  第 13 章（續）　從 Jack 編譯到 Hardware 執行的完</a>
+<a class="sidebar-link" href="13.3.html">13.3  第 13 章（續）　回顧與展望：現代計算機架構的演進</a>
+</nav>
+<div id="main">
+<div id="topbar">
+  <div class="nav-left"><a class="nav-btn" href="index.html">📚</a><a class="nav-btn" href="12.5.html">⇦ 上一節</a></div>
+  <div class="title">第 13 章　軟硬體全棧鏈條整合測試</div>
+  <div class="nav-right"><a class="nav-btn" href="13.2.html">下一節 ⇨</a></div>
+</div>
+<article id="content">
+<h1 id="第-13-章-軟硬體全棧鏈條整合測試">第 13 章　軟硬體全棧鏈條整合測試</h1>
+<h2 id="前言">前言</h2>
+<p>從第 1 章的 NAND 閘出發，歷經邏輯閘、組合邏輯、序序邏輯、CPU、組譯器、虛擬機、編譯器、作業系統，一路走到第 12 章的圖形化應用程式——我們已經分別征服了每一個抽象層級。然而，這些模組在各自獨立測試時「通過」，不代表串接在一起時仍能正確運作。本章的任務就是把整條鏈路串起來，進行全棧整合測試，驗證一個 Jack 程式從原始碼到硬體執行的每一步都正確無誤。</p>
+<h2 id="13-1-1-回顧-從邏輯閘到作業系統的完整鏈條">13.1.1　回顧：從邏輯閘到作業系統的完整鏈條</h2>
+<p>讓我們先用一張表回顧每一層的輸入、輸出與負責的工具：</p>
+<table>
+<thead>
+<tr>
+<th>層級</th>
+<th>輸入</th>
+<th>輸出</th>
+<th>工具</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1. 基本邏輯閘</td>
+<td>真值表</td>
+<td>HDL 電路</td>
+<td>NAND, AND, OR, NOT, MUX…</td>
+</tr>
+<tr>
+<td>2. ALU</td>
+<td>控制位元 + 兩個輸入</td>
+<td>運算結果 + 條件碼</td>
+<td>ALU.hdl</td>
+</tr>
+<tr>
+<td>3. 暫存器</td>
+<td>資料 + 時脈</td>
+<td>狀態保存</td>
+<td>PC, ARegister, DRegister</td>
+</tr>
+<tr>
+<td>4. 記憶體</td>
+<td>位址 + 資料</td>
+<td>記憶體矩陣</td>
+<td>RAM8…RAM16K, Screen, Keyboard</td>
+</tr>
+<tr>
+<td>5. CPU</td>
+<td>機器碼指令</td>
+<td>PC + 資料暫存器狀態</td>
+<td>CPU.hdl → Computer.hdl</td>
+</tr>
+<tr>
+<td>6. 組譯器</td>
+<td>.asm 文字檔</td>
+<td>.hack 二進位檔</td>
+<td>Assembler</td>
+</tr>
+<tr>
+<td>7. 虛擬機</td>
+<td>.vm 中間碼</td>
+<td>.asm 組語</td>
+<td>VM Translator</td>
+</tr>
+<tr>
+<td>8. 編譯器</td>
+<td>.jack 原始碼</td>
+<td>.vm 中間碼</td>
+<td>Jack Compiler</td>
+</tr>
+<tr>
+<td>9. 作業系統</td>
+<td>OS 模組 (Math, Screen, Keyboard…)</td>
+<td>系統服務</td>
+<td>Jack OS (用 Jack 寫成)</td>
+</tr>
+</tbody>
+</table>
+<p>每一層的輸出恰好是下一層的輸入——這就是 nand2tetris 的核心設計哲學：<strong>層層抽象、逐層實作</strong>。</p>
+<h2 id="13-1-2-全棧整合的意義">13.1.2　全棧整合的意義</h2>
+<p>「整合」不只是把模組接起來，而是要驗證：</p>
+<ol>
+<li><strong>介面相容性</strong>：上一層的輸出格式是否完全符合下一層的輸入規格？例如 VM Translator 產生的組語指令，Assembler 是否全部能解碼？</li>
+<li><strong>語意正確性</strong>：每一層的轉換是否保持原始程式的語意？例如編譯器把 <code>if (x &lt; 5)</code> 翻成 VM 的 <code>if-goto</code>，語意是否完全等價？</li>
+<li><strong>端到端可觀測性</strong>：最終在 CPU 模擬器上執行時，畫面上出現的結果是否與原始 Jack 程式的預期行為一致？</li>
+</ol>
+<p>整合測試的價值在於：<strong>單元測試只能證明個別模組正確，整合測試才能證明整個系統正確</strong>。</p>
+<h2 id="13-1-3-工具鏈的搭配流程">13.1.3　工具鏈的搭配流程</h2>
+<p>完整的工具鏈執行流程如下：</p>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│  Jack 程式 (.jack)                                  │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  Jack Compiler                                │  │
+│  │  輸入: *.jack                                 │  │
+│  │  輸出: *.vm (虛擬機中間碼)                     │  │
+│  └───────────────────────────────────────────────┘  │
+│                      ↓                              │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  VM Translator                                │  │
+│  │  輸入: *.vm                                   │  │
+│  │  輸出: *.asm (組合語言)                        │  │
+│  └───────────────────────────────────────────────┘  │
+│                      ↓                              │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  Assembler                                    │  │
+│  │  輸入: *.asm                                  │  │
+│  │  輸出: *.hack (二進位機器碼)                   │  │
+│  └───────────────────────────────────────────────┘  │
+│                      ↓                              │
+│  ┌───────────────────────────────────────────────┐  │
+│  │  CPU Simulator / Hardware Simulator            │  │
+│  │  輸入: Computer.hdl + *.hack ROM 映像         │  │
+│  │  輸出: 螢幕畫面、鍵盤互動                      │  │
+│  └───────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────┘
+</code></pre>
+<h3 id="以命令列驅動的完整流程">以命令列驅動的完整流程</h3>
+<pre><code class="language-bash"># 步驟 1：編譯 Jack → VM
+java -cp JackCompiler.jar JackCompiler MyProgram/
+
+# 步驟 2：翻譯 VM → ASM
+java -cp VMTranslator.jar VMTranslator MyProgram/
+
+# 步驟 3：組譯 ASM → HACK
+java -cp Assembler.jar Assembler MyProgram/MyProgram.asm
+
+# 步驟 4：載入硬體模擬器執行
+# 用 CPU Emulator 載入 Computer.hdl，並將 MyProgram.hack
+# 載入為 ROM 映像，按 Yes 重置後按 Run
+</code></pre>
+<p>每一步的輸出都可以獨立檢查：</p>
+<ul>
+<li><strong>Compiler 輸出</strong>：檢查 <code>.vm</code> 檔案中的虛擬碼是否合理（是否有 <code>push</code>, <code>pop</code>, <code>call</code>, <code>function</code> 等正確指令）。</li>
+<li><strong>VM Translator 輸出</strong>：檢查 <code>.asm</code> 中的組語是否有正確的標籤、跳轉、以及對 Hack 指令集的正確使用。</li>
+<li><strong>Assembler 輸出</strong>：檢查 <code>.hack</code> 檔案的每一行是否為 16 個 0/1 組成的字串，且行數符合預期。</li>
+</ul>
+<h2 id="13-1-4-驗證整條鏈路的策略">13.1.4　驗證整條鏈路的策略</h2>
+<h3 id="策略一-已知輸入-輸出法">策略一：已知輸入/輸出法</h3>
+<p>撰寫一個簡單的 Jack 程式，其輸出是已知的。例如：</p>
+<pre><code class="language-jack">class Main {
+    function void main() {
+        do Output.printInt(42);
+        return;
+    }
+}
+</code></pre>
+<p>預期輸出為 <code>42</code>。如果全棧整合正確，硬體模擬器的螢幕上應該顯示 <code>42</code>。</p>
+<h3 id="策略二-漸進式替換法">策略二：漸進式替換法</h3>
+<p>先用提供的官方工具走完全流程確認正確。然後逐步用自己的實作替換每一層：</p>
+<ol>
+<li>先用自己的 Assembler 替換官方 Assembler，確認結果一致。</li>
+<li>再用自己的 VM Translator 替換，確認結果一致。</li>
+<li>最後用自己的 Compiler 替換，確認結果一致。</li>
+</ol>
+<p>每一步替換後都重新執行全棧測試，確保不引入回歸問題。</p>
+<h3 id="策略三-邊界值測試">策略三：邊界值測試</h3>
+<p>測試極端情況：</p>
+<ul>
+<li><strong>空程式</strong>：<code>Main.main()</code> 只有 <code>return;</code>，確認工具鏈不會崩潰。</li>
+<li><strong>大量運算</strong>：遞迴計算費波那契數，確認暫存器和記憶體不會溢位。</li>
+<li><strong>邊界記憶體位址</strong>：存取最高位址的 RAM，確認記憶體映射正確。</li>
+</ul>
+<h2 id="13-1-5-常見的整合問題與除錯">13.1.5　常見的整合問題與除錯</h2>
+<table>
+<thead>
+<tr>
+<th>症狀</th>
+<th>可能原因</th>
+<th>除錯方向</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CPU 模擬器顯示空白</td>
+<td>ROM 未正確載入</td>
+<td>檢查 <code>.hack</code> 檔案是否為空或格式錯誤</td>
+</tr>
+<tr>
+<td>程式卡在無限迴圈</td>
+<td>VM <code>if-goto</code> 標籤不正確</td>
+<td>檢查 VM Translator 的標籤生成</td>
+</tr>
+<tr>
+<td>螢幕出現亂碼</td>
+<td>記憶體映射錯誤</td>
+<td>檢查 Screen RAM 的位址範圍 (16384–24576)</td>
+</tr>
+<tr>
+<td>鍵盤輸入無反應</td>
+<td>Keyboard 暫存器未接線</td>
+<td>檢查 Computer.hdl 的 Keyboard 連接</td>
+</tr>
+<tr>
+<td>運算結果不正確</td>
+<td>ALU 控制位元錯誤</td>
+<td>回頭測試 ALU 的真值表</td>
+</tr>
+</tbody>
+</table>
+<p>除錯的核心方法是<strong>隔離法</strong>：先確定問題出在哪一層，再在該層內定位具體的錯誤。</p>
+<h2 id="本章小結">本章小結</h2>
+<p>本章回顧了 nand2tetris 的完整工具鏈，從 NAND 閘到 Jack 程式語言，每一層都有明確的輸入輸出介面。全棧整合測試的意義在於驗證這些層級串接後仍能正確運作。我們提出了三種驗證策略——已知輸入/輸出法、漸進式替換法、邊界值測試——並整理了常見的整合問題與除錯方向。有了這些方法論，讀者就可以自信地把自己的實作物件接成一條完整的管道，讓一個 Jack 程式從編譯一路跑到硬體模擬器上執行。</p>
+
+</article>
+<nav id="bottom-nav"><a class="nav-btn" href="12.5.html">⇦ 上一節</a><a class="nav-btn" href="13.2.html">下一節 ⇨</a></nav>
+</div>
+</body>
+</html>
