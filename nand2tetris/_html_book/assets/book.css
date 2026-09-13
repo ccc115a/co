@@ -326,3 +326,22 @@ section.ex .body a.weda {
   background: #00000006;
 }
 section.ex .body a.weda:hover { background: #00000012; }
+
+/* 電子書（_md_book）章節連結 */
+p.mdline { margin: 4px 0 12px; font-size: 13.5px; color: var(--ink-dim); }
+p.mdline a { color: var(--accent); text-decoration: none; border-bottom: 1px dotted #9cc8bc; }
+p.mdline a:hover { border-bottom-style: solid; }
+p.mdline a.pill {
+  display: inline-block; margin: 0 2px; padding: 1px 10px;
+  border: 1px solid #cfe5df; border-bottom: 1px solid #cfe5df; border-radius: 999px;
+  background: #f2faf7; color: var(--accent-2); font-weight: 600;
+}
+p.mdline a.pill:hover { background: var(--accent-soft); border-color: var(--accent); }
+section.ex .body a.mdbook,
+a.mdbook {
+  display: inline-block; margin-top: 10px; margin-left: 6px;
+  padding: 3px 12px; font-size: 13px; font-weight: 600;
+  border: 1px solid #cfe5df; border-radius: 999px;
+  color: var(--accent-2); text-decoration: none; background: #f2faf7;
+}
+a.mdbook:hover { background: var(--accent-soft); border-color: var(--accent); }

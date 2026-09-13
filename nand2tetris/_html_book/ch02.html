@@ -9,6 +9,8 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 2 章</span>算術單元：加法器與 ALU</h1>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/2.1.md" title="電子書：第 2.1 節 二進位加法與半加器、全加器（Half/Full Adder）">§2.1</a>、<a class="pill" target="mdbook" href="../_md_book/2.2.md" title="電子書：第 2.2 節 增量器與多位元加法器（Inc / Add16）">§2.2</a>、<a class="pill" target="mdbook" href="../_md_book/2.3.md" title="電子書：第 2.3 節 邏輯與運算結合：設計 Hack ALU">§2.3</a>、<a class="pill" target="mdbook" href="../_md_book/2.4.md" title="電子書：第 2.4 節 ALU 標誌位與運算邏輯驗證">§2.4</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+
   <p class="lead">把第 1 章的閘拿來做「算數」：從半加器一路蓋到 Hack 的中央運算核心——ALU。
   這章做完，你的電腦已經「會算」了。</p>
 
@@ -26,7 +28,8 @@
       <label class="done"><input type="checkbox" data-ex-id="ch02-01"> 我會了</label></header>
     <div class="body">
       <div data-widget="hdl" data-dir="../02" data-top="HalfAdder"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/HalfAdder.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../02/HalfAdder.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/2.1.md" title="電子書：第 2.1 節 二進位加法與半加器、全加器（Half/Full Adder）">電子書 §2.1 ↗</a>
     </div>
   </section>
 
@@ -39,7 +42,8 @@
       <p>新出現的 <code>c</code> 是低位送來的進位。標準接法：先 Sum(a,b)→s1、Carry(a,b)→c1；
       再把 s1 與 c 送入第二顆半加器，兩顆的進位用 Or 合併。</p>
       <div data-widget="hdl" data-dir="../02" data-top="FullAdder"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/FullAdder.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../02/FullAdder.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/2.1.md" title="電子書：第 2.1 節 二進位加法與半加器、全加器（Half/Full Adder）">電子書 §2.1 ↗</a>
     </div>
   </section>
 
@@ -51,7 +55,8 @@
     <div class="body">
       <p>最高位的進位直接丟棄（本書採 16 位元環狀算術，溢位會自己消失）。</p>
       <div data-widget="hdl" data-dir="../02" data-top="Add16"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/Add16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../02/Add16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/2.2.md" title="電子書：第 2.2 節 增量器與多位元加法器（Inc / Add16）">電子書 §2.2 ↗</a>
     </div>
   </section>
 
@@ -63,7 +68,8 @@
     <div class="body">
       <p>其實就是 Add16 的另一個輸入固定接 <code>1</code>。程式計數器 PC 就靠它「往前走一格」。</p>
       <div data-widget="hdl" data-dir="../02" data-top="Inc16"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/Inc16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../02/Inc16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/2.2.md" title="電子書：第 2.2 節 增量器與多位元加法器（Inc / Add16）">電子書 §2.2 ↗</a>
     </div>
   </section>
 
@@ -87,7 +93,8 @@
     <div class="body">
       <p>先跳過比較旗標，專心把運算樹蓋出來（調教→選運算→取非）。</p>
       <div data-widget="hdl" data-dir="../02" data-top="ALU-nostat"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/ALU-nostat.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../02/ALU-nostat.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/2.3.md" title="電子書：第 2.3 節 邏輯與運算結合：設計 Hack ALU">電子書 §2.3 ↗</a>
     </div>
   </section>
 
@@ -100,7 +107,8 @@
       <p>由「結果」倒退：<code>ng</code> 就是結果的最高位元；<code>zr</code> 在所有位元都為 0 時為 1
       （可用 <code>Or8Way</code> 們，最後再 Not 一下）。</p>
       <div data-widget="hdl" data-dir="../02" data-top="ALU"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/ALU.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../02/ALU.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
+  <a class="mdbook" target="mdbook" href="../_md_book/2.4.md" title="電子書：第 2.4 節 ALU 標誌位與運算邏輯驗證">電子書 §2.4 ↗</a>
     </div>
   </section>
 

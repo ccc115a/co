@@ -9,6 +9,8 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 4 章</span>機器語言（Hack 組語）</h1>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/4.1.md" title="電子書：第 4.1 節 硬體與軟體的交界：指令集架構（ISA）">§4.1</a>、<a class="pill" target="mdbook" href="../_md_book/4.2.md" title="電子書：第 4.2 節 Hack 機器語言規格：A-指令與 C-指令">§4.2</a>、<a class="pill" target="mdbook" href="../_md_book/4.3.md" title="電子書：第 4.3 節 記憶體映射 I/O：螢幕與鍵盤的控制原理">§4.3</a>、<a class="pill" target="mdbook" href="../_md_book/4.4.md" title="電子書：第 4.4 節 寫入你的第一個 Hack 組合語言程式">§4.4</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+
   <p class="lead">硬體線邁向完成之前，先學會「對機器說話」。本章要交付兩支組合語言程式：
   乘法 <b>Mult.asm</b> 與螢幕反白 <b>Fill.asm</b>。卡上的互動面板會真的幫你組譯、執行、看暫存器。</p>
 
@@ -29,14 +31,16 @@
   </div>
 
   <h2>習題一：Mult.asm — 乘法 R2 = R0 × R1</h2>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/4.4.md" title="電子書：第 4.4 節 寫入你的第一個 Hack 組合語言程式">§4.4</a></p>
   <p>用「重複加法」實現：<code>R2</code> 從 0 開始，每圈 <code>R1</code> 加一次、<code>R0</code> 減一次，
   直到 <code>R0 ≤ 0</code> 為止。面板已把輸入預設為 R0=3、R1=5：組譯 → 執行，看看最後 R2 是不是 15。</p>
   <div data-widget="emu" data-asm="#multAsm" data-setup="0=3 1=5"
        data-screen="false" data-keys="false" data-hint="R0=3 × R1=5 → R2 應為 15"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/index.html?asm=%2F%2F%20int%20main()%20%7B%0A%2F%2F%20%20%20%20int%20R0%20%3D%203%3B%0A%2F%2F%20%20%20%20int%20R1%20%3D%205%3B%0A%2F%2F%20%3D%3E%20%20%20%20int%20R2%20%3D%200%3B%0A%402%0AM%3D0%0A%2F%2F%20%20%20%20while%20(R0%20%3E%200)%20%7B%0A%2F%2F%20%3D%3E%20loop%3A%0A(loop)%0A%2F%2F%20%3D%3E%20%20%20%20if%20(R0%20%3C%3D%200)%20goto%20exit1%3B%0A%400%0AD%3DM%0A%40exit1%0AD%3BJLE%0A%0A%2F%2F%20%3D%3E%20%20R2%20%3D%20R2%20%2B%20R1%3B%0A%401%0AD%3DM%0A%402%0AM%3DD%2BM%0A%0A%2F%2F%20%3D%3E%20%20R0%20%3D%20R0%20-%201%3B%0A%400%0AM%3DM-1%0A%0A%2F%2F%20%20%20%20printf(%22R0%3D%25d%20R1%3D%25d%20R2%3D%25d%5Cn%22%2C%20R0%2C%20R1%2C%20R2)%3B%0A%2F%2F%20%3D%3E%20%20goto%20loop%3B%0A%40loop%0A0%3BJMP%0A%0A%2F%2F%20%3D%3E%20exit1%3A%0A(exit1)%0A%40exit1%0A0%3BJMP%0A%2F%2F%20%7D&amp;ram=0:3,1:5" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/index.html?asm=%2F%2F%20int%20main()%20%7B%0A%2F%2F%20%20%20%20int%20R0%20%3D%203%3B%0A%2F%2F%20%20%20%20int%20R1%20%3D%205%3B%0A%2F%2F%20%3D%3E%20%20%20%20int%20R2%20%3D%200%3B%0A%402%0AM%3D0%0A%2F%2F%20%20%20%20while%20(R0%20%3E%200)%20%7B%0A%2F%2F%20%3D%3E%20loop%3A%0A(loop)%0A%2F%2F%20%3D%3E%20%20%20%20if%20(R0%20%3C%3D%200)%20goto%20exit1%3B%0A%400%0AD%3DM%0A%40exit1%0AD%3BJLE%0A%0A%2F%2F%20%3D%3E%20%20R2%20%3D%20R2%20%2B%20R1%3B%0A%401%0AD%3DM%0A%402%0AM%3DD%2BM%0A%0A%2F%2F%20%3D%3E%20%20R0%20%3D%20R0%20-%201%3B%0A%400%0AM%3DM-1%0A%0A%2F%2F%20%20%20%20printf(%22R0%3D%25d%20R1%3D%25d%20R2%3D%25d%5Cn%22%2C%20R0%2C%20R1%2C%20R2)%3B%0A%2F%2F%20%3D%3E%20%20goto%20loop%3B%0A%40loop%0A0%3BJMP%0A%0A%2F%2F%20%3D%3E%20exit1%3A%0A(exit1)%0A%40exit1%0A0%3BJMP%0A%2F%2F%20%7D&amp;ram=0:3,1:5" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
   <div class="tip">跟著上面的「等效 C 語言」註解讀程式：每一段組語都對應一行高階程式，這正是第四章講義〈從 C 到組合語言〉的精神。</div>
 
   <h2>習題二：Fill.asm — 螢幕反白控制</h2>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/4.3.md" title="電子書：第 4.3 節 記憶體映射 I/O：螢幕與鍵盤的控制原理">§4.3</a></p>
   <p>無窮迴圈：偵測 <b>KBD</b> —— 有按鍵就把整個螢幕寫 -1（全黑），沒按鍵就寫 0（全白）。
   這支程式永遠不會「跑完」，你要觀察的是執行過程中 SCREEN 的變化：</p>
   <ol>
@@ -47,7 +51,7 @@
   </ol>
   <div data-widget="emu" data-asm="#fillAsm"
        data-screen="true" data-keys="true" data-hint="KBD≠0 → 螢幕全黑；KBD=0 → 全白"></div>
-  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/index.html?asm=%2F%2F%20Runs%20an%20infinite%20loop%20that%20listens%20to%20the%20keyboard%20input.%0A%2F%2F%20When%20a%20key%20is%20pressed%20(any%20key)%2C%20the%20program%20blackens%20the%20screen.%0A%2F%2F%20When%20no%20key%20is%20pressed%2C%20the%20program%20clears%20the%20screen.%0A%0A(FOREVER)%0A%2F%2F%20arr%20%3D%20SCREEN%0A%40SCREEN%0AD%3DA%0A%40arr%0AM%3DD%0A%0A%2F%2F%20n%3D8192%0A%408192%0AD%3DA%0A%40n%0AM%3DD%0A%2F%2F%20i%20%3D%200%0A%40i%0AM%3D0%0A(LOOP)%0A%2F%2F%20if%20(i%3D%3Dn)%20goto%20ENDLOOP%0A%40i%0AD%3DM%0A%40n%0AD%3DD-M%0A%40ENDLOOP%0AD%3BJEQ%0A%0A%2F%2F%20if%20(*KBD%20!%3D%200)%0A%40KBD%0AD%3DM%0A%40ELSE%0AD%3BJEQ%0A%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%20-1%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D-1%0A%0A%40ENDIF%0A0%3BJMP%0A(ELSE)%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%200%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D0%0A%0A(ENDIF)%0A%2F%2F%20i%2B%2B%0A%40i%0AM%3DM%2B1%0A%0A%40LOOP%0A0%3BJMP%0A%0A(ENDLOOP)%0A%40FOREVER%0A0%3BJMP" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <a class="weda" target="weda" href="../_web_eda/dist/index.html?asm=%2F%2F%20Runs%20an%20infinite%20loop%20that%20listens%20to%20the%20keyboard%20input.%0A%2F%2F%20When%20a%20key%20is%20pressed%20(any%20key)%2C%20the%20program%20blackens%20the%20screen.%0A%2F%2F%20When%20no%20key%20is%20pressed%2C%20the%20program%20clears%20the%20screen.%0A%0A(FOREVER)%0A%2F%2F%20arr%20%3D%20SCREEN%0A%40SCREEN%0AD%3DA%0A%40arr%0AM%3DD%0A%0A%2F%2F%20n%3D8192%0A%408192%0AD%3DA%0A%40n%0AM%3DD%0A%2F%2F%20i%20%3D%200%0A%40i%0AM%3D0%0A(LOOP)%0A%2F%2F%20if%20(i%3D%3Dn)%20goto%20ENDLOOP%0A%40i%0AD%3DM%0A%40n%0AD%3DD-M%0A%40ENDLOOP%0AD%3BJEQ%0A%0A%2F%2F%20if%20(*KBD%20!%3D%200)%0A%40KBD%0AD%3DM%0A%40ELSE%0AD%3BJEQ%0A%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%20-1%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D-1%0A%0A%40ENDIF%0A0%3BJMP%0A(ELSE)%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%200%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D0%0A%0A(ENDIF)%0A%2F%2F%20i%2B%2B%0A%40i%0AM%3DM%2B1%0A%0A%40LOOP%0A0%3BJMP%0A%0A(ENDLOOP)%0A%40FOREVER%0A0%3BJMP" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
 
   <div class="note">這兩支程式也是第 5 章 <code>Computer*</code>.tst 會拿去實測的程式；
   想看看「組語真的在你自己設計的 CPU 上跑」，去 Ch05。</div>

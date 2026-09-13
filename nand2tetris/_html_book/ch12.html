@@ -9,6 +9,8 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 12 章</span>作業系統：用 Jack 寫標準程式庫</h1>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/12.1.md" title="電子書：第 12.1 節 數學庫：Math（乘除法、開根號）">§12.1</a>、<a class="pill" target="mdbook" href="../_md_book/12.2.md" title="電子書：第 12.2 節 記憶體管理：Memory（alloc & dealloc 演算法）">§12.2</a>、<a class="pill" target="mdbook" href="../_md_book/12.3.md" title="電子書：第 12.3 節 螢幕與繪圖：Screen（畫線、畫圓演算法）">§12.3</a>、<a class="pill" target="mdbook" href="../_md_book/12.4.md" title="電子書：第 12.4 節 字型與輸入：Output & Keyboard">§12.4</a>、<a class="pill" target="mdbook" href="../_md_book/12.5.md" title="電子書：第 12.5 節 系統基礎：String, Array, Sys">§12.5</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+
   <p class="lead">最後一章：寫一個真的能在你自己 Hack 電腦上跑的 OS——而且是用你上章寫的 Jack 編譯器寫的。
   做完這章，整條 Nand2Tetris 鏈正式封頂。</p>
 
@@ -33,6 +35,7 @@
   </ul>
 
   <h3>範例：Memory.alloc（堆積分配的心臟）</h3>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/12.2.md" title="電子書：第 12.2 節 記憶體管理：Memory（alloc & dealloc 演算法）">§12.2</a></p>
   <pre class="plain">// Free block structure:
 //   word 0: size (含 2 個 header word)
 //   word 1: 下一個 free block 位址
