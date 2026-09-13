@@ -1,6 +1,6 @@
 # jackNoOs — 不需要作業系統的 Jack 程式範例
 
-這些程式**不依賴 `../12`（或 `../_eda/gen/os_src`）的作業系統**：
+這些程式**不依賴 `../12`（或 `../_rust_eda/gen/os_src`）的作業系統**：
 不呼叫 `Sys`、`Memory`、`Math`、`Output`、`Screen`、`String`、`Array`
 等 OS 類別的服務，每個程式自備自己的 `Sys.jack`（提供開機進入點 `Sys.init`）。
 
@@ -32,7 +32,7 @@
 
 ```bash
 # 以 Sum 為例：Jack → VM → ASM → HACK → 執行
-cd _eda
+cd _rust_eda
 
 # jack2vm 以「目錄」為輸入
 ./target/debug/jack2vm -o /tmp/SumVm ../11/jackNoOs/Sum

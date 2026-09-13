@@ -70,7 +70,7 @@ echo "== v0.8：網頁 bundle（dist/embed.js＋app.js 語法，file:// 直開�
 node tools/embed.js
 node --check dist/embed.js
 node --check dist/app.js
-grep -q 'src="embed.js"' dist/index.html && grep -q 'src="app.js"' dist/index.html
+grep -Eq 'src="embed.js(\\?v=[0-9a-z]+)?"' dist/index.html && grep -Eq 'src="app.js(\\?v=[0-9a-z]+)?"' dist/index.html
 echo "== v0.9：hdl.html 瀏覽器全路徑（語料 40/40 內建案例 + 頁面語法）=="
 node tools/gen_corpus.js
 node tools/embed.js

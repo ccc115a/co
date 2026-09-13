@@ -54,7 +54,7 @@ for t in MathTest StringTest ScreenTest HeapTest; do
     node cli/hackemu.js --headless gen/m73/$t.bin --max 50000000 --dump 100,110 2>/dev/null | grep "RAM\[100..=110\]" || true
 done
 # v0.8：網頁 bundle 冒煙（embed + 語法檢查 + index 引用）
-node tools/embed.js && node --check dist/embed.js && node --check dist/app.js && grep -q 'src="embed.js"' dist/index.html || true
+node tools/embed.js && node --check dist/embed.js && node --check dist/app.js && grep -Eq 'src="embed.js(\\?v=[0-9a-z]+)?"' dist/index.html || true
 # v0.9：hdl.html 瀏覽器全路徑（語料 40/40 + 頁面語法）
 node tools/gen_corpus.js && node tools/embed.js && node tools/browser_smoke.js || true
 node --check dist/corpus.js && node --check dist/hdl-rt.js && node --check dist/hdl.js || true

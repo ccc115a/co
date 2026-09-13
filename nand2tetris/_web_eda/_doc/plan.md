@@ -1,6 +1,6 @@
-# _html 工具鏈版本規劃（hackjs，JavaScript 版）
+# _web_eda 工具鏈版本規劃（hackjs，JavaScript 版）
 
-> 目標：模仿 `_eda/`（hackeda，Rust），把 Nand2Tetris 的 `.hdl` / `.asm` / `.vm` / `.jack`
+> 目標：模仿 `_rust_eda/`（hackeda，Rust），把 Nand2Tetris 的 `.hdl` / `.asm` / `.vm` / `.jack`
 > 整條工具鏈用 **JavaScript** 重做一遍。主 CLI 叫 `hdl2js`（HDL → JS 模擬器，對應 `hdl2rs`）。
 > 與 Rust 版最大的差別，也是本版的第一設計原則：
 >
@@ -15,7 +15,7 @@
 
 Rust 版走「HDL 編譯成原生程式（cargo build）＋伺服器＋WS 協定」；本版走純前端路線。
 
-| | `_eda/`（hackeda） | `_html/`（hackjs） |
+| | `_rust_eda/`（hackeda） | `_web_eda/`（hackjs） |
 |---|---|---|
 | 語言 / 執行環境 | Rust，編譯成二進位 | JavaScript（ES Modules），瀏覽器原生直跑 |
 | HDL 模擬 | `.hdl → codegen → cargo build` 產獨立 crate | `.hdl → codegen → .js` 模組，`import()` 即跑 |
@@ -50,9 +50,9 @@ Rust 版走「HDL 編譯成原生程式（cargo build）＋伺服器＋WS 協定
 ## 目錄架構
 
 ```
-_html/
+_web_eda/
 ├─ package.json            # scripts: test / build / dev；dependencies: 無
-├─ README.md               # 對應 _eda/README.md
+├─ README.md               # 對應 _rust_eda/README.md
 ├─ _doc/
 │  ├─ plan.md              # 本檔（roadmap）
 │  ├─ getting_started.md
@@ -279,7 +279,7 @@ node --test test/            # 單元測試
 7. v0.7：ch12 裁剪版 OS headless（Math/String/Screen/Memory 模組標記）；
 8. **byte-compat oracle**：JS 版與 C oracle（plain `gcc -O2` 編 `06/asm.cpp`、
    `08/vm2asm.c`、`11/c/jack2vm.c`，**別加 -fsanitize**）逐位元 diff；
-   再與 Rust 二進位（`_eda/target/release/{hackasm,vm2asm,jack2vm}`）交叉比對；
+   再與 Rust 二進位（`_rust_eda/target/release/{hackasm,vm2asm,jack2vm}`）交叉比對；
 9. **dist 冒煙**：`tools/build.js` 產出 `dist/*.html`，檢查（a）語料完整內嵌、
    （b）無殘留 ESM `import`、（c）引擎符號齊備、檔案可被解析；
 10. **自訂貼上回歸**：直接呼叫同一顆 `lib/` API（與 `node --test` 共用測試情境），

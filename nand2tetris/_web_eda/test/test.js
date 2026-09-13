@@ -547,7 +547,7 @@ function osTmp() {
 // ==================== v0.8：網頁 bundle 回歸 ====================
 describe('dist/embed.js 瀏覽器 bundle（v0.8）', () => {
   it('embed.js eval 後提供 HackVM/HackAsm，且範例乘法程式執行正確', () => {
-    const embed = fs.readFileSync(path.resolve(REPO, '_html', 'dist', 'embed.js'), 'utf8');
+    const embed = fs.readFileSync(path.resolve(REPO, '_web_eda', 'dist', 'embed.js'), 'utf8');
     const g = globalThis;
     const prev = g.window;
     g.window = g;

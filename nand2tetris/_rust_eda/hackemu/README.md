@@ -11,7 +11,7 @@
 ## 用法（CLI）
 
 ```bash
-# 在 _eda/ 下
+# 在 _rust_eda/ 下
 cargo run -p hackemu gen/chain/chain.hack          # 開 GUI 並載入程式
 target/debug/hackemu                                            # 開 GUI（空）
 target/debug/hackemu --headless file.bin --max 500000          # 無視窗跑 50 萬條

@@ -7,6 +7,7 @@
     program: document.getElementById('program'),
     withOS: document.getElementById('withOS'),
     run: document.getElementById('run'),
+    emu: document.getElementById('emu'),
     status: document.getElementById('status'),
     fname: document.getElementById('fname'),
     addfile: document.getElementById('addfile'),
@@ -135,7 +136,7 @@
   function compileAll(files) {
     // files: [{path, src}]（src 為 .jack 原始碼）；回傳 .vm 字串列表
     const vmFiles = [];
-    if (files.some((f) => f.custom) && el.withOS.checked) {
+    if (el.withOS.checked) {
       for (const k of jackSources(OS_DIR)) {
         vmFiles.push({ path: k.split('/').pop().replace(/\.jack$/, '.vm'), src: compileJack(corpus[k]).join('\n') + '\n' });
       }
@@ -211,6 +212,54 @@
   el.mode.onchange = applyMode;
   el.program.onchange = () => { applyMode(); };
   el.run.onclick = doRun;
+
+  const emuState = { win: null, ready: false, pending: null, pingT: null, tries: 0 };
+  function emuReply() {
+    if (emuState.pending !== null && emuState.ready && emuState.win && !emuState.win.closed) {
+      emuState.win.postMessage({ type: 'hackjs-load', asm: emuState.pending }, '*');
+      setStatus(`已送出 ${emuState.pending.length} 字元組語到 Emulator（新視窗可玩可觀察）`);
+      emuState.pending = null;
+      if (emuState.pingT) { clearInterval(emuState.pingT); emuState.pingT = null; }
+    }
+  }
+  function emuPing() {
+    if (emuState.pingT) { clearInterval(emuState.pingT); emuState.pingT = null; }
+    emuState.tries = 0;
+    emuState.pingT = setInterval(() => {
+      if (emuState.pending === null || emuState.ready || !emuState.win || emuState.win.closed) {
+        clearInterval(emuState.pingT); emuState.pingT = null; return;
+      }
+      try { emuState.win.postMessage({ type: 'hackjs-ping' }, '*'); } catch (_) {}
+      emuState.tries++;
+      if (emuState.tries === 15 && emuState.win && !emuState.win.closed) {
+        setStatus('Emulator 無回應，強制重新載入一次…');
+        try { emuState.win.location.href = 'index.html?er=' + Date.now(); } catch (_) {}
+        emuState.ready = false;
+        emuState.tries = 0;
+      } else if (emuState.tries > 22) {
+        clearInterval(emuState.pingT); emuState.pingT = null;
+        setStatus('Emulator 視窗一直未回應（請對該視窗按 ⌘⇧R 重新整理後重試）');
+      }
+    }, 250);
+  }
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.type === 'hackjs-ready' && emuState.win && !emuState.win.closed) {
+      emuState.ready = true;
+      emuReply();
+    }
+  });
+  el.emu.onclick = () => {
+    if (!lastRun.hack) doRun();
+    if (!lastRun.asm) return;
+    if (!emuState.win || emuState.win.closed) {
+      emuState.win = window.open('index.html', 'hackjs-emu');
+      emuState.ready = false;
+    }
+    emuState.pending = lastRun.asm;
+    if (emuState.ready) emuReply();
+    else { setStatus('等待 Emulator 就緒…'); emuPing(); }
+  };
   el.addfile.onclick = () => {
     const n = el.fname.value.trim();
     if (!n.endsWith('.jack')) { el.errlog.textContent = '檔名需以 .jack 結尾'; return; }

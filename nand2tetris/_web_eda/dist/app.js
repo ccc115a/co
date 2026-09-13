@@ -174,6 +174,21 @@
   }
   requestAnimationFrame(tick);
 
+  if (window.opener) window.opener.postMessage({ type: 'hackjs-ready' }, '*');
+  window.addEventListener('message', (e) => {
+    const d = e.data || {};
+    if (d.type === 'hackjs-ping') {
+      if (window.opener) window.opener.postMessage({ type: 'hackjs-ready' }, '*');
+    } else if (d.type === 'hackjs-load' && typeof d.asm === 'string') {
+      console.log('[hackjs] 收到 jack.html 的組語', d.asm.length, '字元');
+      el.ta.value = d.asm;
+      load(d.asm);
+      running = true;
+      el.runBtn.textContent = '暫停 ⏸';
+      setStatus('已接收 Jack 編譯結果（← jack.html），可執行程式並觀察暫存器/RAM/螢幕');
+    }
+  });
+
   const sample = `// 示範：R0 = R1 * R2（2 × 5 = 10）
 @2
 D=A

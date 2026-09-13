@@ -1,6 +1,6 @@
 # 環境建置與快速入門（Getting Started）
 
-這份文件說明如何在乾淨機器上把 `_eda/`（Rust 工具鏈）建起來、跑驗收，
+這份文件說明如何在乾淨機器上把 `_rust_eda/`（Rust 工具鏈）建起來、跑驗收，
 以及每個章節對應的工具怎麼用。全部命令在 macOS / Linux 執行。
 
 ## 1. 前置需求
@@ -28,7 +28,7 @@ rustc --version && cargo --version
 ## 3. 建置與單元測試
 
 ```bash
-cd nand2tetris/_eda
+cd nand2tetris/_rust_eda
 cargo build                 # 產出 target/debug/{hackasm,vm2asm,jack2vm,hackemu,...}
 cargo test -q               # 30 個單元測試（hackhdl/hackrt/hdl2rs/hackasm/vm2asm/jack2vm/hackemu）
 ```

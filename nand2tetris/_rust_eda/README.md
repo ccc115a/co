@@ -1,6 +1,6 @@
 # hackeda — Nand2Tetris 全工具鏈（Rust）
 
-本專案統稱 **hackeda**（位於 `_eda/`）。以「Verilator 精神」把 Nand2Tetris
+本專案統稱 **hackeda**（位於 `_rust_eda/`）。以「Verilator 精神」把 Nand2Tetris
 由硬體到高階語言整條工具鏈用 Rust 實作：`.hdl` 電路可直接轉譯成 Rust 模擬器、
 跑官方 `.tst` / `.cmp` 驗證；組合語言、VM、Jack 各有對應工具；最後用虛擬機與
 網頁模擬器把程式「跑起來」。
@@ -13,7 +13,7 @@
 ## 架構
 
 ```
-_eda/
+_rust_eda/
 ├─ hackhdl/    .hdl parser + AST + elaboration（選路、拓撲排序、OUT 全覆蓋檢查）── library
 ├─ hackrt/     執行期：.tst 解析器 + 模擬 runner + .cmp 逐位元格式化 ── library
 ├─ hdl2rs/     主 CLI：讀 .hdl → 產出獨立 Rust crate → cargo build → 跑官方測試
@@ -25,7 +25,7 @@ _eda/
 └─ web/        瀏覽器前端（純 HTML/JS/Canvas，無框架、無 build step）
 ```
 
-建置與單元測試（在 `_eda/` 下）：
+建置與單元測試（在 `_rust_eda/` 下）：
 
 ```bash
 cargo build           # 產出 target/debug/{hdl2rs,hackasm,vm2asm,jack2vm,hackemu,hackserve}

@@ -13,7 +13,7 @@ cargo run -q -p hdl2rs -- --dir ../01 --dir ../02 --out gen
 # 只跑單一測試
 cargo run -q -p hdl2rs -- --dir ../01 --test ../02/ALU.tst --out gen
 
-# 整章回歸（ch01~ch05，見 _eda/verify.sh）
+# 整章回歸（ch01~ch05，見 _rust_eda/verify.sh）
 bash verify.sh
 ```
 

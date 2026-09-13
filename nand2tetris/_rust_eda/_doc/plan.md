@@ -1,4 +1,4 @@
-# _eda 工具鏈版本規劃（roadmap）
+# _rust_eda 工具鏈版本規劃（roadmap）
 
 > 目標：以 Verilator 精神，把 Nand2Tetris 的 `.hdl` 逐步轉譯成 Rust 模擬器，
 > 一個版本打通一個章節（或一組里程碑），最終組成完整的 HACK 開發鏈：

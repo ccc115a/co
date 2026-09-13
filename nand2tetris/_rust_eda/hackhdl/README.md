@@ -38,4 +38,4 @@
 cargo test -p hackhdl
 ```
 
-`hdl2rs` 的整合測試（ch01–05 全部 `.tst`）跑 `_eda/verify.sh`。
+`hdl2rs` 的整合測試（ch01–05 全部 `.tst`）跑 `_rust_eda/verify.sh`。

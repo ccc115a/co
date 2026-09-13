@@ -6,7 +6,7 @@
 ## 用法（CLI）
 
 ```bash
-# 在 _eda/ 下
+# 在 _rust_eda/ 下
 target/debug/vm2asm out.asm in.vm            # 單一檔案（不含 bootstrap）
 target/debug/vm2asm out.asm dir/             # 目錄（自動收集所有 .vm，照檔名排序）
 target/debug/vm2asm out.asm a.vm b.vm c.vm   # 多檔案
@@ -41,4 +41,4 @@ cargo test -p vm2asm
 ```
 
 byte 相容驗證：07 全部 6 檔 + 08 全部 11 檔與 `/tmp/coracle/vm2asm`
-（plain-gcc 編譯的 C 版）比對，`cmp` 零差異（記錄於 `_eda/_doc/v0.5.md`）。
+（plain-gcc 編譯的 C 版）比對，`cmp` 零差異（記錄於 `_rust_eda/_doc/v0.5.md`）。

@@ -6,7 +6,7 @@
 ## 用法（CLI）
 
 ```bash
-# 在 _eda/ 下
+# 在 _rust_eda/ 下
 target/debug/jack2vm ../../nand2tetris/11/jack/Seven/Main.jack   # 單一檔案
 target/debug/jack2vm ../../nand2tetris/11/jack/Seven             # 整個目錄（*.jack）
 target/debug/jack2vm -o out/ ../../nand2tetris/11/jack/Seven     # 指定輸出目錄
@@ -41,4 +41,4 @@ cargo test -p jack2vm
 ```
 
 byte 相容驗證：`11/jack` 全部 11 支 Jack 程式與 `/tmp/coracle/jack2vm`
-（plain-gcc 編譯的 C 版）單檔模式比對，`cmp` 零差異（`_eda/_doc/v0.5.md`）。
+（plain-gcc 編譯的 C 版）單檔模式比對，`cmp` 零差異（`_rust_eda/_doc/v0.5.md`）。

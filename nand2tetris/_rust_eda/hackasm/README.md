@@ -6,7 +6,7 @@
 ## 用法（CLI）
 
 ```bash
-# 在 _eda/ 下
+# 在 _rust_eda/ 下
 target/debug/hackasm file.asm                 # 產生 file.hack（或先 cargo build -p hackasm）
 target/debug/hackasm file.asm out.hack        # 指定輸出檔名
 target/debug/hackasm file.asm file.hack --bin # 外加 file.bin（little-endian u16）
@@ -39,4 +39,4 @@ cargo test -p hackasm
 ```
 
 組譯結果可接著餵給 hdl2rs（`Computer.hdl`）或 `hackemu` 的 `--headless`
-交叉驗證（見 `_eda/verify.sh`）。
+交叉驗證（見 `_rust_eda/verify.sh`）。
