@@ -289,8 +289,8 @@ def build_page(title, sidebar, topbar, body, bottom_nav):
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html_mod.escape(title)}</title>
-<link rel="stylesheet" href="assets/github.min.css">
-<link rel="stylesheet" href="assets/book.css">
+<link rel="stylesheet" href="assets/github.min.css?v=2">
+<link rel="stylesheet" href="assets/book.css?v=2">
 <script>window.MathJax = {{ tex: {{inlineMath:[['$','$']], displayMath:[['$$','$$']]}}, svg: {{fontCache:'global'}} }};</script>
 <script defer src="assets/mathjax.js"></script>
 <script defer src="assets/highlight.min.js"></script>
