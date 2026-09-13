@@ -69,6 +69,16 @@
       html += `<div class="${cls}"><span class="pc">${mark}</span> ${lines[i]}</div>`;
     }
     el.listing.innerHTML = html;
+    const cur = el.listing.querySelector('.cur');
+    if (!cur) return;
+    const cont = el.listing.parentElement;
+    const cr = cont.getBoundingClientRect();
+    const lr = cur.getBoundingClientRect();
+    const cTop = lr.top - cr.top + cont.scrollTop;
+    const vBottom = cont.scrollTop + cont.clientHeight;
+    if (cTop < cont.scrollTop || cTop + lr.height > vBottom) {
+      cont.scrollTop = Math.max(0, Math.round(cTop - cont.clientHeight / 2 + lr.height / 2));
+    }
   }
 
   function buildLineMap(asmSrc) {
