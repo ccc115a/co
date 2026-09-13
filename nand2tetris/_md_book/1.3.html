@@ -154,7 +154,18 @@ $$</div>
 \boxed{Not(x) = Nand(x,\ x)}
 $$</div>
 <h3 id="hdl-程式碼">HDL 程式碼</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Not.hdl
+// 用單一顆 Nand 建構：把 a 與 b 接成同一個訊號 x。
+
+CHIP Not {
+    IN  in;
+    OUT out;
+
+    PARTS:
+    Nand(a=in, b=in, out=out);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Not.tst&amp;run=1">習題模擬</a></p>
 <p>解讀這份 HDL：</p>
 <ul>
@@ -209,7 +220,19 @@ $$</div>
 $$</div>
 <p>內部第一顆 Nand 產生 <code>t = ¬(x·y)</code>，第二顆 Nand 把兩個輸入都接上 <code>t</code>，輸出 <code>¬t = ¬¬(x·y) = x·y</code>。</p>
 <h3 id="hdl-程式碼">HDL 程式碼</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// And.hdl
+// 兩顆 Nand：第一顆做 Nand，第二顆當 NOT 用。
+
+CHIP And {
+    IN  a, b;
+    OUT out;
+
+    PARTS:
+    Nand(a=a, b=b, out=na);     // na = Nand(a,b) = ¬(a·b)
+    Nand(a=na, b=na, out=out);  // out = Not(na) = a·b
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/And.tst&amp;run=1">習題模擬</a></p>
 <p>注意 HDL 中的一個細膩設計：內部訊號的命名。我們給第一顆 Nand 的輸出取名 <code>na</code>（not-and），它是<strong>本 chip 內部的暫存訊號</strong>，沒有對外介面。接著把它同時接到第二顆 Nand 的 <code>a</code> 與 <code>b</code>（<code>a=na, b=na</code>）——這就是「用相同訊號接兩個接腳」的標準做法。兩顆 Nand 串成鏈，邏輯上完全對應上面的布林式。</p>
 <h2 id="1-3-3-de-morgan-的勝利-用-nand-建構-or">1.3.3 De Morgan 的勝利：用 Nand 建構 Or</h2>
@@ -309,11 +332,35 @@ $$</div>
 </table>
 <p>最右欄完全符合 OR 的真值表。</p>
 <h3 id="hdl-程式碼">HDL 程式碼</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Or.hdl
+// 方法一：全用 Nand，依 De Morgan 定則：先取反再 Nand。
+
+CHIP Or {
+    IN  a, b;
+    OUT out;
+
+    PARTS:
+    Nand(a=a, b=a, out=na);     // na = Not(a)
+    Nand(a=b, b=b, out=nb);     // nb = Not(b)
+    Nand(a=na, b=nb, out=out);  // out = Nand(na, nb) = a + b
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Or.tst&amp;run=1">習題模擬</a></p>
 <h3 id="另一個同等正確的-or-交叉印證">另一個同等正確的 Or（交叉印證）</h3>
 <p>有趣的是，Nand 的世界裡同一函數常有不同接法。既然 <code>Not(x)=Nand(x,x)</code>，而「AND 取反 = NAND」，下面這顆 Or 在邏輯上也完全正確（把 Not 當成兩個輸入相連的 Nand）：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Or.hdl（等價版本）
+CHIP Or {
+    IN  a, b;
+    OUT out;
+
+    PARTS:
+    Not(in=a, out=na);
+    Not(in=b, out=nb);
+    Nand(a=na, b=nb, out=out);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Or.tst&amp;run=1">習題模擬</a></p>
 <p>這份版本直接引用了我們自己開發的 <code>Not</code> chip——<strong>層次化設計</strong>的第一次練習：先組出 Not，再用 Not 組 Or。兩種版本輸出一模一樣，模擬器會驗證它們的行為等價。</p>
 <h2 id="1-3-4-最難的一塊拼圖-用-nand-建構-xor">1.3.4 最難的一塊拼圖：用 Nand 建構 Xor</h2>
@@ -383,15 +430,65 @@ $$</div>
 <p>（關於公式的閱讀：上式雖然「維度很大」，但每一層都是前面已經建立的 Nand 圖案——<code>Nand(u,u)</code> 是 Not，<code>Nand(Nand(u,v),Nand(u,v))</code> 是 And，外層再一層 Nand 就是 Or 的 De Morgan 版。硬體設計的藝術，正是把這些圖案深深烙印在眼中。）</p>
 <h3 id="hdl-程式碼">HDL 程式碼</h3>
 <p><strong>第一版：組合式（用已有的 Not/And/Or，最清晰）</strong></p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Xor.hdl
+// 邏輯式：Xor(a,b) = (¬a · b) + (a · ¬b)
+
+CHIP Xor {
+    IN  a, b;
+    OUT out;
+
+    PARTS:
+    Not(in=a, out=na);       // na = Not(a)
+    Not(in=b, out=nb);       // nb = Not(b)
+    And(a=na, b=b, out=t1);  // t1 = na · b
+    And(a=a, b=nb, out=t2);  // t2 = a · nb
+    Or(a=t1, b=t2, out=out); // out = t1 + t2
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Xor.tst&amp;run=1">習題模擬</a></p>
 <p><strong>第二版：純 Nand（把 Not/And/Or 全部手寫展開）</strong></p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Xor.hdl（純 Nand 版，凡每一層皆由 Nand 構成）
+CHIP Xor {
+    IN  a, b;
+    OUT out;
+
+    PARTS:
+    // Not(a) 與 Not(b)
+    Nand(a=a, b=a, out=na);
+    Nand(a=b, b=b, out=nb);
+
+    // And(na, b)
+    Nand(a=na, b=b, out=p1);       // p1 = Nand(na,b) = ¬(na·b)
+    Nand(a=p1, b=p1, out=t1);      // t1 = And(na,b)
+
+    // And(a, nb)
+    Nand(a=a, b=nb, out=p2);       // p2 = Nand(a,nb)
+    Nand(a=p2, b=p2, out=t2);      // t2 = And(a,nb)
+
+    // Or(t1, t2) = Nand(Not(t1), Not(t2))
+    Nand(a=t1, b=t1, out=nt1);     // Not(t1)
+    Nand(a=t2, b=t2, out=nt2);     // Not(t2)
+    Nand(a=nt1, b=nt2, out=out);   // out = t1 + t2
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Xor.tst&amp;run=1">習題模擬</a></p>
 <p>兩份檔案在模擬器中的行為完全一致。<strong>建議初學者先讀組合式</strong>，理解「Xor 是什麼」；再看純 Nand 版，理解「這些積木從何而來」。最終的信念是：<strong>Xor 也完完全全建立在 Nand 上。</strong></p>
 <h2 id="1-3-5-設計思路回顧-四個閘的關係圖">1.3.5 設計思路回顧：四個閘的關係圖</h2>
 <p>把本節四顆閘與 Nand 的親子關係畫成一棵樹：</p>
-<pre><code></code></pre>
+<pre><code>                          Nand（唯一的基石）
+                            │
+           ┌────────────────┼────────────────┐
+           │                │                │
+         Not              And            (Or)
+      Nand(a,a)     Nand(Nand(a,b),⋯)  Nand(Not(a),Not(b))
+           │                │                │
+           └────────────────┼────────────────┘
+                            │
+                          Xor
+              Not a / Not b ─┬─ And ├─ Or
+</code></pre>
 <p>推動整個架構的正是 1.1.5 節的 <strong>De Morgan 定則</strong>和 <strong>雙重否定</strong>。每次你設計一個新電路時，都先問自己三個問題：</p>
 <ol>
 <li>這個函數想要的真值表長什麼樣？</li>

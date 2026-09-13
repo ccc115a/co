@@ -183,7 +183,165 @@
 </ul>
 <h3 id="cpu-hdl-實作">CPU HDL 實作</h3>
 <p>以下是完整的 <code>CPU.hdl</code> 實作：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Hack CPU：取指-解碼-執行
+// 檔案：CPU.hdl
+
+CHIP CPU {
+    IN  inM[16],         // 從記憶體讀取的資料
+        instruction[16], // 從 ROM 讀取的指令
+        reset;           // 重設信號
+
+    OUT outM[16],        // 輸出至記憶體的資料
+        writeM,          // 是否要寫入記憶體
+        addressM[15],    // 輸出至記憶體的位址
+        pc[15];          // 程式計數器
+
+    PARTS:
+
+    // ============================================================
+    // 第一步：解碼 instruction 的控制位元
+    // ============================================================
+
+    // 判斷是否為 A-指令：instruction[15] == 0
+    Not(a=instruction[15], out=isAInstruction);
+
+    // 從 C-指令中提取各控制欄位
+    // a 位元：instruction[12] — 決定 ALU 第二輸入是 A 還是 M
+    // c 欄位：instruction[6..11] — ALU 控制碼
+    // d 欄位：instruction[3..5]  — 目標暫存器
+    // j 欄位：instruction[0..2]  — 跳躍條件
+
+    // ============================================================
+    // 第二步：A 暫存器的輸入多工器（MUX）
+    // A 暫存器在不同情況下載入不同的值：
+    //   - A-指令：載入指令中的常數值
+    //   - C-指令且 d1=1：載入 ALU 的輸出
+    // ============================================================
+
+    // 取得 A 暀存器的值（也用作 addressM 的輸出）
+    // A 暫存器的輸入來源：
+    //   isAInstruction=1 → instruction[0..14]（A-指令的常數）
+    //   isAInstruction=0 → ALU out（C-指令可能需要寫入 A）
+    // 但 ALU 的輸出在後面才產生，這裡先處理 A-指令路徑
+    // 用一個暫時的選擇：先讓 A 暫存器的輸入在 A-指令時為常數值
+    // 在 C-指令時，由 d1 決定是否寫入 ALU 結果
+
+    // ============================================================
+    // 第三步：C-指令的執行路徑
+    // ============================================================
+
+    // 從 A 暫存器取得輸出
+    // ARegister 的輸出作為：
+    //   1. addressM 的來源
+    //   2. ALU 的第一輸入（x）（但要經過 d1 的處理？不，A 始終是 ALU 的 x）
+
+    // ALU 的第二輸入（y）：由 instruction[12]（a 位元）決定
+    // a=0 → 取 A 暫存器的值
+    // a=1 → 取 inM 的值
+    Mux16(a=ARegister.out, b=inM, sel=instruction[12], out=aluY);
+
+    // ALU 接收：
+    //   x = ARegister.out（始終如此）
+    //   y = aluY（由 a 位元決定）
+    //   zx, nx, zy, ny, f, no = instruction[6..11]
+    ALU(
+        x=ARegister.out,
+        y=aluY,
+        zx=instruction[11],
+        nx=instruction[10],
+        zy=instruction[9],
+        ny=instruction[8],
+        f=instruction[7],
+        no=instruction[6],
+        out=aluOut,
+        out=outZ,
+        out=outN
+    );
+
+    // ============================================================
+    // 第四步：目標暫存器的寫入控制（d 欄位）
+    // ============================================================
+    // instruction[5] = d1 → 是否寫入 A 暫存器
+    // instruction[4] = d2 → 是否寫入 D 暫存器
+    // instruction[3] = d3 → 是否寫入 M（記憶體）
+
+    // A 暫存器的載入控制：
+    // 如果是 A-指令，總是載入
+    // 如果是 C-指令，由 d1（instruction[5]）決定
+    Or(a=isAInstruction, b=instruction[5], out=loadA);
+
+    // A 暫存器的輸入多工器：
+    // isAInstruction=1 → instruction[0..14]
+    // isAInstruction=0 → aluOut
+    Mux16(a=aluOut, b=instruction[0..14], sel=isAInstruction, out=aRegIn);
+
+    // A 暫存器本體
+    Register(in=aRegIn, load=loadA, out=ARegister.out, out[0..14]=addressM);
+
+    // D 暫存器的載入控制：由 d2（instruction[4]）決定
+    // D 暫存器只在 C-指令時才可能被寫入
+    And(a=instruction[4], b=isAInstruction, out=notUsed);
+
+    // 注意：D 暫存器只在 C-指令（isAInstruction=0）且 d2=1 時載入
+    // 實際上 shouldLoadD = NOT(isAInstruction) AND instruction[4]
+    // 但 isAInstruction=0 表示 C-指令，所以：
+    Not(a=isAInstruction, out=isCInstruction);
+    And(a=isCInstruction, b=instruction[4], out=loadD);
+
+    // D 暫存器本體
+    Register(in=aluOut, load=loadD, out=DRegister.out);
+
+    // ============================================================
+    // 第五步：記憶體寫入控制
+    // ============================================================
+    // writeM = C-指令 且 d3=1
+    And(a=isCInstruction, b=instruction[3], out=writeM);
+
+    // outM = ALU 的輸出（要寫入記憶體的資料）
+    // outM 在 C-指令且 d3=1 時才有效，但線路上我們直接連接 ALU 輸出
+    And(a=aluOut, b=aluOut, out=outM); // 直接傳遞 ALU 輸出
+
+    // ============================================================
+    // 第六步：跳躍控制（j 欄位）
+    // ============================================================
+    // j 欄位（instruction[0..2]）決定跳躍條件：
+    //   j1=instruction[2], j2=instruction[1], j3=instruction[0]
+    //
+    // 跳躍條件：
+    //   outgt = outN=0 AND outZ=0    （結果 &gt; 0）
+    //   outeq = outZ=1                （結果 = 0）
+    //   outlt = outN=1                （結果 &lt; 0）
+    //
+    // shouldJump = (j1 AND outgt) OR (j2 AND outeq) OR (j3 AND outlt)
+    // 但要注意：只能在 C-指令時才跳躍
+
+    // 計算跳躍條件
+    Not(a=outN, out=notN);
+    Not(a=outZ, out=notZ);
+    And(a=notN, b=notZ, out=outGt);   // out &gt; 0
+
+    And(a=instruction[2], b=outGt, out=jmpGt);
+    And(a=instruction[1], b=outZ,  out=jmpEq);
+    And(a=instruction[0], b=outN,  out=jmpLt);
+
+    Or(a=jmpGt, b=jmpEq, out=jmpGtOrEq);
+    Or(a=jmpGtOrEq, b=jmpLt, out=shouldJumpRaw);
+
+    // 跳躍只在 C-指令時生效
+    And(a=shouldJumpRaw, b=isCInstruction, out=shouldJump);
+
+    // ============================================================
+    // 第七步：PC（程式計數器）
+    // ============================================================
+    PC(
+        in=ARegister.out[0..14],
+        load=shouldJump,
+        inc=true,
+        reset=reset,
+        out[0..14]=pc
+    );
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../05/CPU.tst&amp;run=1">習題模擬</a></p>
 <blockquote>
 <p><strong>注意</strong>：上述 HDL 為教學用途的詳細展開版本。在實際的硬體模擬器中，部分連線需要精確對齊埠口寬度。不同版本的硬體模擬器對埠口名稱可能略有差異。</p>

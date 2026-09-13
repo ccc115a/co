@@ -100,7 +100,11 @@
 <h2 id="hack-alu-的完整規格">Hack ALU 的完整規格</h2>
 <h3 id="介面定義">介面定義</h3>
 <p>Hack ALU 的輸入與輸出如下：</p>
-<pre><code></code></pre>
+<pre><code>輸入:  x[16], y[16]        兩個 16 位元運算元
+      zx, nx, zy, ny, f, no   六個 1 位元控制訊號
+輸出:  out[16]             運算結果
+      zr, ng               兩個 1 位元標誌（本節稍後與 2.4 討論）
+</code></pre>
 <h3 id="六個控制位元功能速查">六個控制位元功能速查</h3>
 <table>
 <thead>
@@ -145,7 +149,9 @@
 </table>
 <h3 id="處理管線">處理管線</h3>
 <p>ALU 內部的處理流程可以分成四個階段：</p>
-<pre><code></code></pre>
+<pre><code> x ──► [zx 歸零] ──► [nx 取反] ──► ┬─► [f 選擇: AND 或 +] ──► [no 取反] ──► out
+ y ──► [zy 歸零] ──► [ny 取反] ──► ┘
+</code></pre>
 <p>也就是說，<strong>x 與 y 各自先被「歸零／取反」加工</strong>，然後根據 <code>f</code> 決定要做「邏輯（AND）」還是「算術（+）」，最後再視 <code>no</code> 決定是否取反整體結果。</p>
 <h2 id="運算表-18-種運算">運算表（18 種運算）</h2>
 <p>以下為 Nand2Tetris 標準的 ALU 運算表。每一列代表一組控制位元的設定與對應的輸出：</p>
@@ -341,10 +347,14 @@
 <p>我們可以將 ALU 的設計拆成清晰的幾個「子動作」，每一個動作都用一個 Nand2Tetris 的既有晶片完成：</p>
 <h3 id="子動作-1-歸零-zeroing">子動作 1：歸零（zeroing）</h3>
 <p>用一個 16 位元 <strong>Mux16</strong>：當 <code>zx = 1</code> 時選擇 0；否則選擇 x 本身。</p>
-<pre><code></code></pre>
+<pre><code>Mux16(a=x, b=false, sel=zx, out=xAfterZero)     // zx=1 → x 變成 0
+Mux16(a=y, b=false, sel=zy, out=yAfterZero)     // zy=1 → y 變成 0
+</code></pre>
 <h3 id="子動作-2-取反-negating">子動作 2：取反（negating）</h3>
 <p>用一個 16 位元 <strong>Not16</strong> 與另一個 <strong>Mux16</strong>：當 <code>nx = 1</code> 時輸出去反後的結果。</p>
-<pre><code></code></pre>
+<pre><code>Not16(in=xAfterZero, out=notX)
+Mux16(a=xAfterZero, b=notX, sel=nx, out=xAfterNot)   // nx=1 → ~x
+</code></pre>
 <p>同理處理 y。</p>
 <h3 id="子動作-3-選擇-and-或加法-f">子動作 3：選擇 AND 或加法（f）</h3>
 <ul>
@@ -361,7 +371,58 @@
 </blockquote>
 <h2 id="完整-alu-hdl-程式碼">完整 ALU HDL 程式碼</h2>
 <p>以下為標準的 Hack ALU 完整實作（在此先只實現 <code>out</code>，<code>zr</code> 與 <code>ng</code> 標誌會在 2.4 節補上）：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// The ALU (Arithmetic Logic Unit):
+// Computes out = one of the following functions:
+// out = 0, 1, -1
+// out = x, y
+// out = !x, !y
+// out = -x, -y
+// out = x+1, y+1
+// out = x-1, y-1
+// out = x+y, x-y, y-x
+// out = x&amp;y, x|y
+// according to control bits zx, nx, zy, ny, f, no
+CHIP ALU {
+    IN
+        x[16],        // 16-bit 輸入 x
+        y[16],        // 16-bit 輸入 y
+        zx,           // zero the x input
+        nx,           // negate the x input
+        zy,           // zero the y input
+        ny,           // negate the y input
+        f,            // function code: 0 = And, 1 = Add
+        no;           // negate the output
+    OUT
+        out[16],      // 16-bit 輸出
+        zr,           // true if out == 0
+        ng;           // true if out &lt; 0
+
+    PARTS:
+    // 1. 歸零 x
+    Mux16(a=x, b=false, sel=zx, out=x1);      // x1 = zx ? 0 : x
+    // 2. 取反 x
+    Not16(in=x1, out=notx);
+    Mux16(a=x1, b=notx, sel=nx, out=x2);      // x2 = nx ? ~x1 : x1
+
+    // 3. 歸零 y
+    Mux16(a=y, b=false, sel=zy, out=y1);      // y1 = zy ? 0 : y
+    // 4. 取反 y
+    Not16(in=y1, out=noty);
+    Mux16(a=y1, b=noty, sel=ny, out=y2);      // y2 = ny ? ~y1 : y1
+
+    // 5. 同時計算 AND 與 加法
+    And16(a=x2, b=y2, out=xAndy);             // x2 &amp; y2
+    Add16(a=x2, b=y2, out=xPlusy);            // x2 + y2
+
+    // 6. 依 f 選擇: f=0 → AND ; f=1 → 加法
+    Mux16(a=xAndy, b=xPlusy, sel=f, out=notZer);  // 未定最終結果的候選
+
+    // 7. 依 no 決定是否取反
+    Not16(in=notZer, out=notOut);
+    Mux16(a=notZer, b=notOut, sel=no, out=out);
+    // zr 與 ng 標誌的產生，將在 2.4 節討論
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../02/ALU-nostat.tst&amp;run=1">習題模擬</a></p>
 <blockquote>
 <p>說明：上述程式碼已包含 <code>zr</code>、<code>ng</code> 兩個輸出腳位的「宣告」，但尚未實作（產生它們的電路請見 2.4 節）。若要直接通過模擬器，需在 <code>2.4</code> 補上 <code>zr</code>、<code>ng</code> 的產生邏輯，或暫時為它們接上常數。</p>
@@ -375,7 +436,12 @@
 <li>no=1 → 把結果取反成 <code>~(~x + y)</code>。</li>
 </ol>
 <p>根據二補數與德摩根定律，整理可得：</p>
-<pre><code></code></pre>
+<pre><code>out = ~(~x + y)
+    = -( (~x + y) + 1 )     // 二補數取反
+    = -~x - y - 1
+    = (x + 1) - y - 1
+    = x - y
+</code></pre>
 <p>結果正好是 <code>x - y</code>，完全符合運算表的期待。由此可見，<strong>ALU 的「巧妙」全來自於二補數的性質</strong>：取反與加一，恰好能拼出減法、取負、加減一等各種運算。</p>
 <h2 id="設計思路與實作步驟">設計思路與實作步驟</h2>
 <p>設計 Hack ALU 的整體步驟可歸納如下：</p>

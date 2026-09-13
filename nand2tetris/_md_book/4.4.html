@@ -93,7 +93,14 @@
 <p>前三節分別建立了理論（ISA）、規格（A/C-指令編碼）與硬體介面（記憶體映射 I/O），現在是成果驗收的時刻：把原本只存在紙上的指令集，真正寫成一支能動的 Hack 組合語言程式，並在 CPU 模擬器中看到它執行。本節從最基本的語法開始，依序練習「數值相加、記憶體存取、迴圈、條件判斷」四大基本功，最後組合成兩支完整的範例程式（累加與乘法），教你如何在模擬器上載入、逐步執行與觀察暫存器變化。</p>
 <h2 id="組合語言語法速覽">組合語言語法速覽</h2>
 <p>Hack 組合語言（<code>.asm</code>）的語法非常輕量，幾乎沒有多餘的規則：</p>
-<pre><code class="language-text"></code></pre>
+<pre><code class="language-text">// 這是一行註解：以 // 開頭，延伸至行末
+/* 也可以使用區塊註解（組譯器會忽略） */
+
+（標籤）      (LOOP)          —— 括號內是標籤宣告，本身不佔執行
+（A-指令）    @16384           —— 把數字/符號載入 A
+（C-指令）    D=M              —— 計算、儲存、跳躍
+（C-指令）    M=D+1;JGT        —— dest=comp;jump 三段式
+</code></pre>
 <p>語法規則總表：</p>
 <table>
 <thead>
@@ -145,7 +152,17 @@
 <p>把高階語言想成「抽象概念」，組合語言就是「指令與位址的流水帳」——玩法很瑣碎，但每一步都透明可見。</p>
 <h2 id="第一個練習-設定位址-搬移資料">第一個練習：設定位址、搬移資料</h2>
 <p>在動手寫大程式前，先釐清三種最基礎的資料搬移，因為它們是後面所有程式的原子操作。我們以「把 RAM 位址 10 設為 10」與「D=A」系列操作為例：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// 最小練習：設定位址與拷貝
+@10          // A = 10（把位址 10 餵給 A）
+D=A          // D = 10（把 A 當作資料，拷貝進 D）
+
+@10          // A = 10（再指定一次位址）
+M=D          // RAM[10] = D = 10（寫入記憶體）
+
+@10          // A = 10
+A=M          // A = RAM[10] = 10（讀記憶體，把內容放進 A）
+D=A          // D = 10
+</code></pre>
 <p>這六行雖然做著最無聊的事，卻涵蓋了 Hack 的全部「資料位置」語法。我們用一張表總結「誰會被讀、誰會被寫」：</p>
 <table>
 <thead>
@@ -192,7 +209,18 @@
 <p>記住這個口訣：<strong><code>D=A</code> 是把「位址」當資料，<code>D=M</code> 是把「內容」當資料</strong>。兩者一字之差，代表完全不同的兩件事。</p>
 <h2 id="範例一-把幾個數相加">範例一：把幾個數相加</h2>
 <p>最簡單的「有意義」程式：計算兩個常數的和，存入記憶體：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// AddConst.asm：把 7 與 9 相加，結果存到 RAM[8]
+@7
+D=A          // D = 7
+@9
+D=D+A        // D = 7 + 9 = 16
+@8
+M=D          // RAM[8] = 16
+
+(END)
+@END
+0;JMP        // 註：程式停在這裡（無窮迴圈），不再執行其他記憶體內容
+</code></pre>
 <p>觀察要點：</p>
 <ul>
 <li><code>D=A</code> → <code>D=D+A</code> 是「載入常數後累加」的標準旋律，靠 D 暫存器充當累加器。</li>
@@ -200,13 +228,62 @@
 </ul>
 <h2 id="範例二-記憶體對記憶體的加總">範例二：記憶體對記憶體的加總</h2>
 <p>常數相加不過癮，來真的：把「RAM[0] 的內容」與「RAM[1] 的內容」相加，存到 RAM[2]：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// AddMem.asm：RAM[2] = RAM[0] + RAM[1]
+@R0
+D=M          // D = RAM[0]（讀一號記憶體）
+@R1
+D=D+M        // D = RAM[0] + RAM[1]（邊讀二號記憶體邊加）
+@R2
+M=D          // RAM[2] = 總和
+
+(END)
+@END
+0;JMP
+</code></pre>
 <p>這支程式（即 4.2 節手工組譯的 Add2.asm）示範了記憶體存取的完整來回：<strong>「先 <code>@位址</code>，再用 <code>D=M</code> 讀、用 <code>M=D</code> 寫」</strong>。你在模擬器上可以把 RAM[0]=5、RAM[1]=12，執行結束後觀察 RAM[2]=17。</p>
 <h2 id="範例三-迴圈與計數-累加-1-到-100">範例三：迴圈與計數（累加 1 到 100）</h2>
 <p>迴圈是三元素中「跳躍」的實戰演練。計算 1+2+…+100，並把結果放進 RAM[0]：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// Sum1to100.asm：計算 1+2+...+100，結果存 RAM[0]
+@100
+D=A
+@n
+M=D          // n = 100（計數器）
+@sum
+M=0          // sum = 0（累加器）
+
+(LOOP)
+@n
+D=M
+@STOP
+D;JEQ        // 若 n == 0，結束迴圈
+@sum
+M=D+M        // sum = sum + n（M=D+M：讀 M、邊讀邊加、寫回）
+@n
+M=M-1        // n = n - 1
+@LOOP
+0;JMP        // 跳回 LOOP 開頭，繼續判斷
+
+(STOP)
+@sum
+D=M          // D = sum
+@R0
+M=D          // RAM[0] = sum
+
+(END)
+@END
+0;JMP
+</code></pre>
 <p>拆解這個程式的控制流：</p>
-<pre><code class="language-text"></code></pre>
+<pre><code class="language-text">           ┌───────────┐
+           ▼           │
+      (LOOP)───讀 n─────► n==0？──是──►(STOP)
+           │
+           否│
+           ▼
+      sum += n；n--
+           │
+           └───────────┘  （無條件跳回 LOOP）
+</code></pre>
 <p>技術重點：</p>
 <ol>
 <li><strong>計數模式</strong>：先判斷（<code>D=M</code> 讀計數器）再操作（<code>M=D+M</code>、<code>M=M-1</code>），這是「while 迴圈」的機械翻譯。</li>
@@ -215,13 +292,79 @@
 </ol>
 <h2 id="範例四-條件判斷-取最大值">範例四：條件判斷（取最大值）</h2>
 <p>條件判斷是「跳躍」的另一面：依結果做不同路線。取 <code>RAM[0]</code>、<code>RAM[1]</code> 的較大者放到 <code>RAM[2]</code>：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// Max.asm：RAM[2] = max(RAM[0], RAM[1])
+@R0
+D=M          // D = RAM[0]
+@R1
+D=D-M        // D = RAM[0] - RAM[1]
+@OUT_FIRST
+D;JGT        // 若結果 &gt; 0，代表 RAM[0] 較大，跳去輸出 RAM[0]
+@R1
+D=M          // 否則 RAM[1] 較大，D = RAM[1]
+@STORE
+0;JMP        // 跳過另一分支
+(OUT_FIRST)
+@R0
+D=M          // D = RAM[0]
+(STORE)
+@R2
+M=D          // RAM[2] = 較大者
+
+(END)
+@END
+0;JMP
+</code></pre>
 <p>判斷的祕訣在於「<strong>相減看正負」</strong>：因為 ALU 的跳躍條件只認「結果是負/零/正」，所以拿 <code>RAM[0]-RAM[1]</code> 的正負來決定誰大誰小。對應到流程：</p>
-<pre><code class="language-text"></code></pre>
+<pre><code class="language-text">   D = RAM[0] - RAM[1]
+        │
+  D&gt;0？─是─► 輸出 RAM[0]
+        │
+        否
+        ▼
+   輸出 RAM[1]
+</code></pre>
 <p>這就是所有 <code>if-else</code> 在 Hack 層的共同基因：<strong>先設法把「條件」變成「某個運算結果的正負零」，再用條件跳躍分岔</strong>。</p>
 <h2 id="範例五-完整註解的乘法程式-三寶大合體">範例五：完整註解的乘法程式（三寶大合體）</h2>
 <p>最後一個範例同時使用「記憶體存取、迴圈、條件判斷」，是 4.4 節的總驗收：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// Mult.asm：計算 RAM[2] = RAM[0] × RAM[1]
+//
+// 策略：把乘法化為反覆加法。
+//   RAM[0] 當「次數」，RAM[1] 當「被重複加的數」。
+//   R3 是計數器副本，避免破壞 RAM[0] 的值。
+// 陣營檢驗：RAM[0]=3、RAM[1]=4 → RAM[2]=12。
+
+// ---- 初始化 ----
+@R0
+D=M
+@END
+D;JEQ        // 若 RAM[0]==0，積為 0，直接結束
+@R0
+D=M
+@R3
+M=D          // R3 = RAM[0]（計數器複本）
+
+@R2
+M=0          // RAM[2] = 0（累積器歸零）
+
+// ---- 迴圈：把 RAM[1] 重複加 RAM[0] 次 ----
+(LOOP)
+@R2
+D=M          // D = 目前的積
+@R1
+D=D+M        // D += RAM[1]
+@R2
+M=D          // RAM[2] = 更新後的積
+@R3
+M=M-1        // 計數器減一
+@R3
+D=M
+@LOOP
+D;JGT        // 計數器仍 &gt; 0 → 繼續累加
+
+(END)
+@END
+0;JMP        // 程式結束
+</code></pre>
 <p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20int%20main()%20%7B%0A%2F%2F%20%20%20%20int%20R0%20%3D%203%3B%0A%2F%2F%20%20%20%20int%20R1%20%3D%205%3B%0A%2F%2F%20%3D%3E%20%20%20%20int%20R2%20%3D%200%3B%0A%402%0AM%3D0%0A%2F%2F%20%20%20%20while%20(R0%20%3E%200)%20%7B%0A%2F%2F%20%3D%3E%20loop%3A%0A(loop)%0A%2F%2F%20%3D%3E%20%20%20%20if%20(R0%20%3C%3D%200)%20goto%20exit1%3B%0A%400%0AD%3DM%0A%40exit1%0AD%3BJLE%0A%0A%2F%2F%20%3D%3E%20%20R2%20%3D%20R2%20%2B%20R1%3B%0A%401%0AD%3DM%0A%402%0AM%3DD%2BM%0A%0A%2F%2F%20%3D%3E%20%20R0%20%3D%20R0%20-%201%3B%0A%400%0AM%3DM-1%0A%0A%2F%2F%20%20%20%20printf(%22R0%3D%25d%20R1%3D%25d%20R2%3D%25d%5Cn%22%2C%20R0%2C%20R1%2C%20R2)%3B%0A%2F%2F%20%3D%3E%20%20goto%20loop%3B%0A%40loop%0A0%3BJMP%0A%0A%2F%2F%20%3D%3E%20exit1%3A%0A(exit1)%0A%40exit1%0A0%3BJMP%0A%2F%2F%20%7D&amp;ram=0:3,1:5">習題模擬</a></p>
 <p>試著自己追蹤一遍：RAM[2] 從 0 開始，每一圈加一次 RAM[1]，共加 RAM[0] 圈，最後恰為積。這支程式的另一個刻意設計是 <strong>指標/計數器分離</strong>（R3 保存副本），讓你體會「避免破壞來源資料」的程式設計紀律。</p>
 <h2 id="如何在-cpu-模擬器中執行">如何在 CPU 模擬器中執行</h2>

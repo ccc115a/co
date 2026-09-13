@@ -189,6 +189,7 @@ def insert_exercise_links(src, fname):
                 body.append(lines[i])
                 i += 1
             if i < len(lines):
+                out.extend(body)          # 把 fence 內容寫回
                 out.append(lines[i])      # 關閉 fence
                 first = next((b for b in body if b.strip()), "")
                 for marker, url in matchers:

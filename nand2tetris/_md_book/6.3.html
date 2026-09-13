@@ -113,7 +113,13 @@
 <h2 id="1-為什麼需要兩次掃描">1. 為什麼需要兩次掃描？</h2>
 <h3 id="1-1-一次掃描的致命錯誤示範">1.1 一次掃描的致命錯誤示範</h3>
 <p>假設只有一趟，遇到這種程式：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">@i
+M=1
+@LOOP     // ← 此刻 LOOP 還沒被宣告！
+0;JMP
+(LOOP)
+D=M
+</code></pre>
 <p>單趟掃描自左到右，走到 <code>@LOOP</code> 時：</p>
 <ul>
 <li>查符號表 → 找不到 <code>LOOP</code>；</li>
@@ -154,12 +160,31 @@
 <hr />
 <h2 id="2-第一遍掃描-收集標號位址">2. 第一遍掃描：收集標號位址</h2>
 <p>第一遍的邏輯極簡。偽代碼：</p>
-<pre><code></code></pre>
+<pre><code>pc = 0                        // 指令計數器，代替「目前行號」
+st = SymbolTable()            // 載入預定義符號
+for 每一行原始文字:
+    line = 清理(line)
+    if line 是空 → continue
+    if line 是 (標號):
+        st.add(標號, pc)       // 標號位址 = 目前指令行號
+    else:
+        pc += 1               // 這是一條真正的指令，行號 +1
+</code></pre>
 <p>注意：<strong>只有真正的指令才會讓 <code>pc + 1</code></strong>。標號行、空行、註解都不算。這正是 6.1 節尾聲強調的「清理先行、再數位址」。</p>
 <p>實作（Python）：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">def first_pass(cleaned_lines: list[str], st: SymbolTable) -&gt; None:
+    &quot;&quot;&quot;第一遍：把 (label) 與其後指令行號的對應填入符號表&quot;&quot;&quot;
+    pc = 0
+    for line in cleaned_lines:
+        if line.startswith('('):
+            label = line[1:-1]          # 剝掉左右括號
+            st.add(label, pc)           # 標號位址 = 目前 pc
+        else:
+            pc += 1                     # 真正指令才累加行號
+</code></pre>
 <p>讓我們跑一遍上一節的例子來驗證：</p>
-<pre><code></code></pre>
+<pre><code>cleaned_lines = ['@i', 'M=1', '@LOOP', '0;JMP', '(LOOP)', 'D=M']
+</code></pre>
 <p>（註：實際程式中 <code>(LOOP)</code> 之後的 <code>D=M</code> 也在清單尾部待處理。）</p>
 <p>走訪過程：</p>
 <table>
@@ -202,16 +227,47 @@
 <hr />
 <h2 id="3-第二遍掃描-翻譯完整程式">3. 第二遍掃描：翻譯完整程式</h2>
 <p>第二遍帶著<strong>已經裝滿標號的符號表</strong>，重新掃過同一份清理後的清單，這回對每一條指令動手：</p>
-<pre><code></code></pre>
+<pre><code>codes = []
+next_address = [16]                     // 變數號碼機
+for line in cleaned_lines:
+    if line 是 (標號): continue          // 標號行不產出機器碼
+    if line 以 @ 開頭:                   // A-指令
+        解析 value（數字→直接算；符號→查表/配變數）
+        codes.append('0' + 15 位元位址)
+    else:                               // C-指令
+        codes.append(111 + comp + dest + jump)
+</code></pre>
 <p>解析 <code>@value</code> 的四大分支：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">def parse_a(line: str, st: SymbolTable, next_address: list):
+    symbol = line[1:]                          # 去掉 @
+    if symbol.isdigit():                       # (a) 純數字常數
+        return int(symbol)
+    if not st.contains(symbol):                # (b) 沒見過的符號 = 新變數
+        st.add(symbol, next_address[0])
+        next_address[0] += 1
+    return st.getAddress(symbol)               # (c) 預定義符號 / 已分配變數
+</code></pre>
 <p>翻譯 C-指令的查表邏輯在 6.1 節已有 <code>encode_c</code>，這裡直接接上。其中「<code>=</code> 與 <code>;</code> 都可選」的拆解，是唯一的文字處理技巧：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">def encode_c(line: str) -&gt; str:
+    dest, comp, jump = '', line, ''
+    if ';' in line:
+        comp, jump = line.split(';')
+    if '=' in line:
+        dest, comp = comp.split('=')
+    return '111' + COMP[comp] + DEST[dest] + JUMP[jump]
+</code></pre>
 <p>注意 <code>dest</code> 與 <code>jump</code> 的預設值都是空字串 <code>&#x27;&#x27;</code>，正好對應編碼表 <code>DEST[&#x27;&#x27;] = &#x27;000&#x27;</code>、<code>JUMP[&#x27;&#x27;] = &#x27;000&#x27;</code>——<strong>空欄位就是「不寫入 / 不跳躍」的合法狀態</strong>，所以拆法再這樣「盡量拆」就對了。</p>
 <hr />
 <h2 id="4-在兩遍之間如何維護符號表">4. 在兩遍之間如何維護符號表</h2>
 <p>兩遍掃描共用<strong>同一張符號表</strong>，這是全案的關鍵脈絡：</p>
-<pre><code></code></pre>
+<pre><code>        ┌─────────────────────────┐
+        │   SymbolTable 物件       │
+        │  （開始時只含預定義符號）  │
+        └──────────▲──────────▲───┘
+                   │          │
+    第一遍：加入標號        第二遍：加入變數
+    (LOOP)→4, (END)→18    i→16, sum→17
+</code></pre>
 <p>具體的生命週期：</p>
 <ol>
 <li><strong>建立</strong>：<code>SymbolTable()</code> 載入 SP/LCL/.../KBD 全部預定義符號；</li>
@@ -228,10 +284,14 @@
 <p>組譯器很容易寫錯的地方，往往不是編碼，而是<strong>文字前的清理</strong>。以下三件事必須處理：</p>
 <h3 id="5-1-白空格-whitespace">5.1 白空格（Whitespace）</h3>
 <p><code>.asm</code> 檔案來源百百種，可能有縮排、行尾空格、甚至全形空白。正規做法是 <code>strip()</code> 剝掉頭尾空白，但要小心：<strong>Hack 語法不允許指令中間出現空白</strong>（例如 <code>D=A ; JGT</code> 是錯的），所以我們只需頭尾清理即可：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">line = raw.split('//')[0].strip()
+</code></pre>
 <h3 id="5-2-註解">5.2 註解</h3>
 <p>Hack 只認一種註解：<code>//</code> 到行尾。因此「先切掉 <code>//</code> 以後的所有字元，再做空白清理」就是完整的註解處理：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">def clean(raw: str) -&gt; str | None:
+    line = raw.split('//')[0].strip()   # 去註解 + 去頭尾空白
+    return line if line else None       # 空行 → None，上層直接略過
+</code></pre>
 <p>把「空行也回傳 <code>None</code>」很重要，這讓後續程式一律 <code>if line is not None</code> 跳過，不用重複判斷。</p>
 <h3 id="5-3-常數-這條最容易錯">5.3 常數（這條最容易錯！）</h3>
 <p><code>@42</code> 這種數字要特別注意，有兩個規格限制：</p>
@@ -240,26 +300,250 @@
 <li><strong>必須 &lt; 2^15 = 32768</strong>：再多就塞不進 15 位元位址空間。</li>
 </ol>
 <p>實作時務必檢查，讓組譯器在越界時<strong>明確報錯</strong>，而不是默默截斷產生錯誤位元：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">def parse_a(line, st, next_address):
+    symbol = line[1:]
+    if symbol.isdigit():
+        value = int(symbol)
+        if value &gt;= 2**15:
+            raise ValueError(f'位址太大：@{value}（必須 &lt; 32768）')
+        return value
+    ...
+</code></pre>
 <p>另外，<code>isdigit()</code> 的清況要放在「查表」之前——因為 Hack 規定符號不能以數字爲首，所以 <code>@7</code> 一定不會是變數名。這一步先攔住，就不會把 <code>7</code> 誤存進符號表。</p>
 <h3 id="5-4-清理後的行進到兩遍掃描">5.4 清理後的行進到兩遍掃描</h3>
 <p>整理成完整的「讀取＋清理」工具函數：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">def load_program(asm_path: str) -&gt; list[str]:
+    &quot;&quot;&quot;讀檔 → 逐行清理 → 回傳「只含真正指令與 (標號) 行」的清單&quot;&quot;&quot;
+    lines = []
+    with open(asm_path, 'r', encoding='utf-8') as f:
+        for raw in f:
+            line = clean(raw)
+            if line is not None:
+                lines.append(line)
+    return lines
+</code></pre>
 <p>這份「清理後清單」會同時餵給第一遍與第二遍——<strong>前後一致</strong>，不能第一遍用清理版、第二遍用別版，否則行號與行號對不上。</p>
 <hr />
 <h2 id="6-完整組譯器程式碼實作">6. 完整組譯器程式碼實作</h2>
 <p>把上述零件全部組裝起來，就是一支完整、可直接執行的 Python 組譯器。本書慣例，整個程式集中在單一檔案，方便您存檔執行：</p>
-<pre><code class="language-python"></code></pre>
+<pre><code class="language-python">#!/usr/bin/env python3
+&quot;&quot;&quot;
+HackAssembler.py —— 將 Hack 組合語言 (.asm) 組譯為機器碼 (.hack)
+
+用法：
+    python3 HackAssembler.py sum.asm
+    （自動產生 sum.hack，並在終端印出簡報）
+
+設計：兩階段掃描（Two-Pass）
+    第一遍：收集 (標號) 位址
+    第二遍：翻譯 A/C 指令、分配變數位址
+&quot;&quot;&quot;
+
+import sys
+
+
+# ---------- 編碼表（6.1 節） ----------
+
+COMP = {
+    '0': '0101010', '1': '0111111', '-1': '0111010',
+    'D': '0001100', 'A': '0110000', '!D': '0001101', '!A': '0110001',
+    '-D': '0001111', '-A': '0110011',
+    'D+1': '0011111', 'A+1': '0110111', 'D-1': '0001110', 'A-1': '0110010',
+    'D+A': '0000010', 'D-A': '0010011', 'A-D': '0000111',
+    'D&amp;A': '0000000', 'D|A': '0010101',
+    'M': '1110000', '!M': '1110001', '-M': '1110011',
+    'M+1': '1110111', 'M-1': '1110010',
+    'D+M': '1000010', 'D-M': '1010011', 'M-D': '1000111',
+    'D&amp;M': '1000000', 'D|M': '1010101',
+}
+
+DEST = {
+    '': '000', 'M': '001', 'D': '010', 'MD': '011',
+    'A': '100', 'AM': '101', 'AD': '110', 'AMD': '111',
+}
+
+JUMP = {
+    '': '000', 'JGT': '001', 'JEQ': '010', 'JGE': '011',
+    'JLT': '100', 'JNE': '101', 'JLE': '110', 'JMP': '111',
+}
+
+
+# ---------- 符號表（6.2 節） ----------
+
+class SymbolTable:
+    &quot;&quot;&quot;含預定義符號的符號表，作為兩遍掃描之間的共同記憶&quot;&quot;&quot;
+
+    def __init__(self):
+        self._table = {
+            'SP': 0, 'LCL': 1, 'ARG': 2, 'THIS': 3, 'THAT': 4,
+            'R0': 0, 'R1': 1, 'R2': 2, 'R3': 3, 'R4': 4, 'R5': 5,
+            'R6': 6, 'R7': 7, 'R8': 8, 'R9': 9, 'R10': 10,
+            'R11': 11, 'R12': 12, 'R13': 13, 'R14': 14, 'R15': 15,
+            'SCREEN': 16384, 'KBD': 24576,
+        }
+
+    def add(self, symbol, address):
+        self._table[symbol] = address
+
+    def contains(self, symbol):
+        return symbol in self._table
+
+    def getAddress(self, symbol):
+        if symbol in self._table:
+            return self._table[symbol]
+        raise KeyError(f'未知符號：{symbol}')
+
+
+# ---------- 讀取、清理 ----------
+
+def clean(raw_line):
+    &quot;&quot;&quot;去註解（// 至行尾）、去頭尾空白；空行回傳 None&quot;&quot;&quot;
+    line = raw_line.split('//')[0].strip()
+    return line if line else None
+
+
+def load_program(path):
+    lines = []
+    with open(path, 'r', encoding='utf-8') as f:
+        for raw in f:
+            line = clean(raw)
+            if line is not None:
+                lines.append(line)
+    return lines
+
+
+# ---------- 第一遍：收集標號 ----------
+
+def first_pass(cleaned, st):
+    pc = 0
+    for line in cleaned:
+        if line.startswith('('):
+            label = line[1:-1]
+            st.add(label, pc)      # 標號位址 = 下一條指令行號
+        else:
+            pc += 1               # 只有真正指令才累加行號
+
+
+# ---------- 第二遍：翻譯 ----------
+
+def parse_a(line, st, next_address):
+    &quot;&quot;&quot;解析 @sym / @num，回傳 0~32767 的數值位址&quot;&quot;&quot;
+    symbol = line[1:]
+    if symbol.isdigit():
+        value = int(symbol)
+        if value &gt;= 2 ** 15:
+            raise ValueError(f'A-指令位址過大：@{value}')
+        return value
+    if not st.contains(symbol):
+        st.add(symbol, next_address[0])  # 新變數：發號碼
+        next_address[0] += 1
+    return st.getAddress(symbol)
+
+
+def encode_c(line):
+    &quot;&quot;&quot;把 dest=comp;jump 譯成 111... 的 16 位元 C-指令&quot;&quot;&quot;
+    dest, comp, jump = '', line, ''
+    if ';' in line:
+        comp, jump = line.split(';')
+    if '=' in line:
+        dest, comp = comp.split('=')
+    if comp not in COMP:
+        raise ValueError(f'未知的 comp 欄位：{comp}')
+    return '111' + COMP[comp] + DEST[dest] + JUMP[jump]
+
+
+def second_pass(cleaned, st):
+    codes = []
+    next_address = [16]            # 變數從位址 16 發起
+    for line in cleaned:
+        if line.startswith('('):
+            continue               # 標號行不產生機器碼
+        if line.startswith('@'):
+            addr = parse_a(line, st, next_address)
+            codes.append('0' + format(addr, '015b'))
+        else:
+            codes.append(encode_c(line))
+    return codes
+
+
+# ---------- 主程式 ----------
+
+def assemble(asm_path):
+    st = SymbolTable()
+    cleaned = load_program(asm_path)
+
+    first_pass(cleaned, st)      # 先收集標號
+    codes = second_pass(cleaned, st)  # 再翻譯
+
+    hack_path = asm_path.replace('.asm', '.hack')
+    with open(hack_path, 'w', encoding='utf-8') as f:
+        for code in codes:
+            f.write(code + '\n')  # 每行一個 16 位元字串
+
+    print(f'{asm_path} → {hack_path}  共 {len(codes)} 條指令')
+    return hack_path
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 2:
+        print('用法：python3 HackAssembler.py &lt;xxx.asm&gt;')
+        sys.exit(1)
+    assemble(sys.argv[1])
+</code></pre>
 <p>這就是完整組譯器。全部只有約 130 行，卻完成了：讀檔、去註解、去空白、第一遍標號定位、第二遍指令翻譯＋變數分配、輸出 <code>.hack</code>。每一步你都已在前面小節見過，這是它們的最終合體。</p>
 <hr />
 <h2 id="7-運行示範-把一支程式組譯出來">7. 運行示範：把一支程式組譯出來</h2>
 <p>用本節的組譯器試試一支真實程式——計算 <code>1+2+...+n</code>（<code>n</code> 放在 <code>R0</code>，結果放在 <code>R1</code>）：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// sum1ton.asm
+// 計算 1+2+...+R0，結果存到 R1
+@R0
+D=M          // D = n
+@n
+M=D          // n = R0
+@i
+M=1          // i = 1
+@sum
+M=0          // sum = 0
+(LOOP)
+@i
+D=M
+@n
+D=D-M        // D = i - n
+@STORE
+D;JGT        // 若 i &gt; n，把結果存入 R1
+@i
+D=M
+@sum
+M=D+M        // sum += i
+@i
+M=M+1        // i++
+@LOOP
+0;JMP        // 回到迴圈
+(STORE)
+@sum
+D=M
+@R1
+M=D          // R1 = sum
+(END)
+@END
+0;JMP        // 無窮迴圈，程式結束
+</code></pre>
 <p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20RAM%5B0%5D%20%3D%2010%0A%4010%0AD%3DA%0A%400%0AM%3DD%0A%2F%2F%20Computes%20RAM%5B1%5D%20%3D%201%20%2B%20...%20%2B%20RAM%5B0%5D%0A%40i%0AM%3D1%20%2F%2F%20i%20%3D%201%0A%40sum%0AM%3D0%20%2F%2F%20sum%20%3D%200%0A(LOOP)%0A%40i%20%2F%2F%20if%20i%3ERAM%5B0%5D%20goto%20STOP%0AD%3DM%0A%40R0%0AD%3DD-M%0A%40STOP%0AD%3BJGT%0A%40i%20%2F%2F%20sum%20%2B%3D%20i%0AD%3DM%0A%40sum%0AM%3DD%2BM%0A%40i%20%2F%2F%20i%2B%2B%0AM%3DM%2B1%20%2F%2F%2016%0A%40LOOP%20%2F%2F%20goto%20LOOP%0A0%3BJMP%0A(STOP)%0A%40sum%0AD%3DM%0A%40R1%0AM%3DD%20%2F%2F%20RAM%5B1%5D%20%3D%20the%20sum">習題模擬</a></p>
 <p>執行：</p>
-<pre><code class="language-bash"></code></pre>
+<pre><code class="language-bash">$ python3 HackAssembler.py sum1ton.asm
+sum1ton.asm → sum1ton.hack  共 28 條指令
+</code></pre>
 <p>產出的 <code>sum1ton.hack</code>（前 8 行）：</p>
-<pre><code class="language-text"></code></pre>
+<pre><code class="language-text">0000000000000000
+1111110000010000
+0000000000010000
+1110001100001000
+0000000000010001
+1110111111001000
+0000000000010010
+1110101010001000
+1110001100001000
+</code></pre>
 <p><code>sum1ton.hack</code> 的內容與程式行號逐行對應——第 0 行 <code>@R0</code>（位址 0）對應 <code>0000000000000000</code>，第 1 行 <code>D=M</code> 對應 <code>1111110000010000</code>，第 2 行 <code>@n</code>（新變數配 16）對應 <code>0000000000010000</code>，以此類推。整支程式經過 6.4 節的 CPU 模擬器執行後，可以驗證：<code>R0=5</code> 時 <code>R1</code> 得到 <code>15</code>（1+2+3+4+5），<code>R0=100</code> 時 <code>R1</code> 得到 <code>5050</code>（高斯求和公式的結果）。</p>
 <blockquote>
 <p><strong>設計思路</strong>：注意 .hack 的第 3 行 <code>M=0</code> 對應 <code>1110101010001000</code>，其中 comp 欄位是 <code>0</code>（全零運算），而 A 暫存器仍是前一步 <code>@sum</code> 載入的 17——於是「把 0 寫進 <code>Memory[17]</code>」就完成了 <code>sum=0</code>。這告訴我們：<strong>A-指令與 C-指令的連續組合，才是完整的「運算」</strong>；A 暫存器是兩者之間的傳輸帶。</p>

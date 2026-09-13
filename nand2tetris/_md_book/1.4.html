@@ -181,7 +181,21 @@ $$</div>
 </ol>
 <p>「建 Mux」與「拆 Mux」是密不可分的兩件事：拆 Mux 的秘訣是<strong>記住它的布林式</strong>，因為布林式直接告訴你零件怎麼接。</p>
 <h3 id="hdl-程式碼">HDL 程式碼</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Mux.hdl
+// 邏輯式：Mux(a,b,sel) = (¬sel · a) + (sel · b)
+
+CHIP Mux {
+    IN  a, b, sel;
+    OUT out;
+
+    PARTS:
+    Not(in=sel, out=nsel);      // nsel = ¬sel
+    And(a=nsel, b=a, out=ta);   // ta = ¬sel · a
+    And(a=sel, b=b, out=tb);    // tb = sel · b
+    Or(a=ta, b=tb, out=out);    // out = ta + tb
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Mux.tst&amp;run=1">習題模擬</a></p>
 <p>可以看到：這份 HDL 沒有任何新知識，只是把四個己知零件按布林式拼接。<strong>「先寫出布林式，再照著接線」是實作任何組合電路最可靠的流程。</strong></p>
 <h2 id="1-4-2-demux-mux-的逆向工程">1.4.2 Demux：Mux 的逆向工程</h2>
@@ -233,7 +247,20 @@ $$</div>
 <h3 id="設計思路">設計思路</h3>
 <p>這個電路結構上「比 Mux 更簡單」：只需要一個 Not 與兩顆 And，不需要 Or——因為兩條路徑原本就互斥。</p>
 <h3 id="hdl-程式碼">HDL 程式碼</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// DMux.hdl
+// 邏輯式：a = in · ¬sel ;  b = in · sel
+
+CHIP DMux {
+    IN  in, sel;
+    OUT a, b;
+
+    PARTS:
+    Not(in=sel, out=nsel);
+    And(a=in, b=nsel, out=a);   // a = in · ¬sel
+    And(a=in, b=sel, out=b);    // b = in · sel
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/DMux.tst&amp;run=1">習題模擬</a></p>
 <p>思考題：能不能用一顆 Mux 建出 DMux？提示——讓 <code>a</code> 只送出 <code>in</code> 而 <code>b</code> 永遠送 0，把 <code>sel</code> 接去哪裏？答案是：<code>a</code> 是 <code>Mux(in, 0, sel)</code>、<code>b</code> 是 <code>Mux(0, in, sel)</code>。讀者可以自行比較兩種版本的零件數。</p>
 <h2 id="1-4-3-16-bit-版本-not16-and16-or16-mux16">1.4.3 16-bit 版本：Not16, And16, Or16, Mux16</h2>
@@ -247,20 +274,130 @@ And16\begin{bmatrix}a_{15} &amp; a_{14} &amp; \cdots &amp; a_0 \\ b_{15} &amp; b
 $$</div>
 <p>也就是**逐位元（bitwise）**執行：第 i 個輸出 bit 只由第 i 個輸入 bit 決定,位元之間老死不相往來。這正是「多通道閘」的意義。</p>
 <h3 id="實現方法一-複製貼上-官方推薦的練習">實現方法一：複製貼上（官方推薦的練習）</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Not16.hdl
+
+CHIP Not16 {
+    IN  in[16];
+    OUT out[16];
+
+    PARTS:
+    Not(in=in[0], out=out[0]);
+    Not(in=in[1], out=out[1]);
+    Not(in=in[2], out=out[2]);
+    Not(in=in[3], out=out[3]);
+    Not(in=in[4], out=out[4]);
+    Not(in=in[5], out=out[5]);
+    Not(in=in[6], out=out[6]);
+    Not(in=in[7], out=out[7]);
+    Not(in=in[8], out=out[8]);
+    Not(in=in[9], out=out[9]);
+    Not(in=in[10], out=out[10]);
+    Not(in=in[11], out=out[11]);
+    Not(in=in[12], out=out[12]);
+    Not(in=in[13], out=out[13]);
+    Not(in=in[14], out=out[14]);
+    Not(in=in[15], out=out[15]);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Not16.tst&amp;run=1">習題模擬</a></p>
 <p>這裡引進第一個新語法：<strong>匯流排宣告 <code>in[16]</code></strong>。<code>in[0]</code> 是最低有效位元（LSB），<code>in[15]</code> 是最高有效位元（MSB）。每一條 <code>in[i]</code> 都是一條獨立的單 bit 導線，「只是」把它們並排包裝成一個向量。</p>
 <p>And16、Or16 的做法一模一樣，只是內部換成 <code>And(a=in[i], b=in[i+16]...)</code>——等等，匯流排只有 16 條、索引到 15 為止，所以正確寫法是：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// And16.hdl
+
+CHIP And16 {
+    IN  a[16], b[16];
+    OUT out[16];
+
+    PARTS:
+    And(a=a[0], b=b[0], out=out[0]);
+    And(a=a[1], b=b[1], out=out[1]);
+    And(a=a[2], b=b[2], out=out[2]);
+    And(a=a[3], b=b[3], out=out[3]);
+    And(a=a[4], b=b[4], out=out[4]);
+    And(a=a[5], b=b[5], out=out[5]);
+    And(a=a[6], b=b[6], out=out[6]);
+    And(a=a[7], b=b[7], out=out[7]);
+    And(a=a[8], b=b[8], out=out[8]);
+    And(a=a[9], b=b[9], out=out[9]);
+    And(a=a[10], b=b[10], out=out[10]);
+    And(a=a[11], b=b[11], out=out[11]);
+    And(a=a[12], b=b[12], out=out[12]);
+    And(a=a[13], b=b[13], out=out[13]);
+    And(a=a[14], b=b[14], out=out[14]);
+    And(a=a[15], b=b[15], out=out[15]);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/And16.tst&amp;run=1">習題模擬</a></p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Or16.hdl
+
+CHIP Or16 {
+    IN  a[16], b[16];
+    OUT out[16];
+
+    PARTS:
+    Or(a=a[0], b=b[0], out=out[0]);
+    Or(a=a[1], b=b[1], out=out[1]);
+    Or(a=a[2], b=b[2], out=out[2]);
+    Or(a=a[3], b=b[3], out=out[3]);
+    Or(a=a[4], b=b[4], out=out[4]);
+    Or(a=a[5], b=b[5], out=out[5]);
+    Or(a=a[6], b=b[6], out=out[6]);
+    Or(a=a[7], b=b[7], out=out[7]);
+    Or(a=a[8], b=b[8], out=out[8]);
+    Or(a=a[9], b=b[9], out=out[9]);
+    Or(a=a[10], b=b[10], out=out[10]);
+    Or(a=a[11], b=b[11], out=out[11]);
+    Or(a=a[12], b=b[12], out=out[12]);
+    Or(a=a[13], b=b[13], out=out[13]);
+    Or(a=a[14], b=b[14], out=out[14]);
+    Or(a=a[15], b=b[15], out=out[15]);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Or16.tst&amp;run=1">習題模擬</a></p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Mux16.hdl
+
+CHIP Mux16 {
+    IN  a[16], b[16], sel;
+    OUT out[16];
+
+    PARTS:
+    Mux(a=a[0], b=b[0], sel=sel, out=out[0]);
+    Mux(a=a[1], b=b[1], sel=sel, out=out[1]);
+    Mux(a=a[2], b=b[2], sel=sel, out=out[2]);
+    Mux(a=a[3], b=b[3], sel=sel, out=out[3]);
+    Mux(a=a[4], b=b[4], sel=sel, out=out[4]);
+    Mux(a=a[5], b=b[5], sel=sel, out=out[5]);
+    Mux(a=a[6], b=b[6], sel=sel, out=out[6]);
+    Mux(a=a[7], b=b[7], sel=sel, out=out[7]);
+    Mux(a=a[8], b=b[8], sel=sel, out=out[8]);
+    Mux(a=a[9], b=b[9], sel=sel, out=out[9]);
+    Mux(a=a[10], b=b[10], sel=sel, out=out[10]);
+    Mux(a=a[11], b=b[11], sel=sel, out=out[11]);
+    Mux(a=a[12], b=b[12], sel=sel, out=out[12]);
+    Mux(a=a[13], b=b[13], sel=sel, out=out[13]);
+    Mux(a=a[14], b=b[14], sel=sel, out=out[14]);
+    Mux(a=a[15], b=b[15], sel=sel, out=out[15]);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Mux16.tst&amp;run=1">習題模擬</a></p>
 <p>注意 <strong>Mux16 只有一個 <code>sel</code></strong>，它同時控制全部 16 個位元「一起選擇 a 或 b」—— 16 條軌道共軌轉轍。</p>
 <h3 id="實現方法二-匯流排切割語法-現代簡潔寫法">實現方法二：匯流排切割語法（現代簡潔寫法）</h3>
 <p>上面的寫法重複 16 次，雖然清楚但略顯囉嗦。HDL 還允許你對匯流排「切片」，一次接一條或一組位元。例如 Mux16 可以改寫成：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Mux16.hdl（切片寫法）
+CHIP Mux16 {
+    IN  a[16], b[16], sel;
+    OUT out[16];
+
+    PARTS:
+    Mux(a=a[0..7], b=b[0..7], sel=sel, out=out[0..7]);
+    Mux(a=a[8..15], b=b[8..15], sel=sel, out=out[8..15]);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Mux16.tst&amp;run=1">習題模擬</a></p>
 <p>（對只打單一位元用 <code>a[3]</code>，對一段連續範圍用 <code>a[8..15]</code>，也可用 <code>a[0]</code> 與 <code>a[0..0]</code> 混用。模擬器版本不同支援度略有差異，read 到 <code>.hdl</code> 時以你的工具版本為準。）提供兩種寫法，是為了讓你理解 <code>a[i]</code> 語法背後「位元組向量」的本質——<strong><code>a[16]</code> 不是一個 16 位元的數，而是 16 條並行的 1-bit 導線。</strong></p>
 <h2 id="1-4-4-多路版本-mux4way16-與-mux8way16">1.4.4 多路版本：Mux4Way16 與 Mux8Way16</h2>
@@ -313,7 +450,20 @@ $$</div>
 </li>
 </ol>
 <p>這正是「選擇訊號的 bit 高高低低」的直覺：低位元先在每一對內部挑，高位元再挑最終的那一對。</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Mux4Way16.hdl
+// 兩階的二元選擇樹：先各別二選一，再二選一
+
+CHIP Mux4Way16 {
+    IN  a[16], b[16], c[16], d[16], sel[2];
+    OUT out[16];
+
+    PARTS:
+    Mux16(a=a, b=b, sel=sel[0], out=t1);
+    Mux16(a=c, b=d, sel=sel[0], out=t2);
+    Mux16(a=t1, b=t2, sel=sel[1], out=out);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Mux4Way16.tst&amp;run=1">習題模擬</a></p>
 <p>注意 <code>t1</code>、<code>t2</code> 是 <strong>16-bit 內部匯流排</strong>，它們把第一階段的結果「向上傳遞」。整個電路其實就是一棵深度 2 的選擇樹。</p>
 <h3 id="真值表驗證範例-取二例">真值表驗證範例（取二例）</h3>
@@ -323,7 +473,27 @@ $$</div>
 </ul>
 <h3 id="mux8way16">Mux8Way16</h3>
 <p>規格：<code>a..h</code> 共 8 條輸入匯流排，<code>sel[3]</code>（三位元，值 0~7）選出其一。樹高再加一層即可：第一層用 <code>sel[0]</code> 做出四組兩兩選擇 <code>t1..t4</code>，第二層用 <code>sel[1]</code> 做出兩組最終選擇 <code>m1, m2</code>，第三層用 <code>sel[2]</code> 收尾。</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Mux8Way16.hdl
+// 三階選擇樹：8 入 → 4 → 2 → 1
+
+CHIP Mux8Way16 {
+    IN  a[16], b[16], c[16], d[16],
+        e[16], f[16], g[16], h[16], sel[3];
+    OUT out[16];
+
+    PARTS:
+    Mux16(a=a, b=b, sel=sel[0], out=t1);
+    Mux16(a=c, b=d, sel=sel[0], out=t2);
+    Mux16(a=e, b=f, sel=sel[0], out=t3);
+    Mux16(a=g, b=h, sel=sel[0], out=t4);
+
+    Mux16(a=t1, b=t2, sel=sel[1], out=m1);
+    Mux16(a=t3, b=t4, sel=sel[1], out=m2);
+
+    Mux16(a=m1, b=m2, sel=sel[2], out=out);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Mux8Way16.tst&amp;run=1">習題模擬</a></p>
 <h3 id="樹狀結構的一般化">樹狀結構的一般化</h3>
 <p>你已經掌握了 Mux 家族的全部邏輯。規律是：<strong><code>2^N</code> 路選擇需要 N bits 的 sel，使用深度 N 的二元選擇樹</strong>。第 3 章設計 RAM 的位址解碼電路時，這套思路會以「位址譯碼器」的形式再次登場。</p>
@@ -397,12 +567,42 @@ $$</div>
 <li><code>L = DMux(in, sel[1])</code> ⟹ <code>L.a</code> 通往 a、b 的「上半流」，<code>L.b</code> 通往 c、d 的「下半流」。</li>
 <li><code>a, b = DMux(L.a, sel[0])</code>；<code>c, d = DMux(L.b, sel[0])</code>。</li>
 </ol>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// DMux4Way.hdl
+// 兩段式 Demux：先用高位 bit 分流，再用低位 bit 細分
+
+CHIP DMux4Way {
+    IN  in, sel[2];
+    OUT a, b, c, d;
+
+    PARTS:
+    DMux(in=in, sel=sel[1], a=lo, b=hi);   // lo/hi 兩個中繼訊號
+    DMux(in=lo, sel=sel[0], a=a, b=b);
+    DMux(in=hi, sel=sel[0], a=c, b=d);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/DMux4Way.tst&amp;run=1">習題模擬</a></p>
 <p>這裡 <code>lo, hi</code> 是 1-bit 內部導線。務必注意命名含意：<code>lo</code> 是「<code>sel[1]=0</code> 的那支流」內的訊號——當 <code>sel[1]=0</code> 時 <code>lo=in</code>、<code>hi=0</code>，第二顆 DMux 再把 <code>in</code> 送去 a 或 b。</p>
 <h3 id="dmux8way">DMux8Way</h3>
 <p>同理，用三顆 DMux 組成三段分流的樹：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// DMux8Way.hdl
+// 三段式 Demux：sel[2] → sel[1] → sel[0]
+
+CHIP DMux8Way {
+    IN  in, sel[3];
+    OUT a, b, c, d, e, f, g, h;
+
+    PARTS:
+    DMux(in=in, sel=sel[2], a=s1, b=s2);
+    DMux(in=s1, sel=sel[1], a=s3, b=s4);
+    DMux(in=s2, sel=sel[1], a=s5, b=s6);
+    DMux(in=s3, sel=sel[0], a=a,  b=b);
+    DMux(in=s4, sel=sel[0], a=c,  b=d);
+    DMux(in=s5, sel=sel[0], a=e,  b=f);
+    DMux(in=s6, sel=sel[0], a=g,  b=h);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/DMux8Way.tst&amp;run=1">習題模擬</a></p>
 <p>（讀者可自行推導中間訊號 s1~s6 的定義——這其實就是在畫一棵 3 層的分配樹；每一層的「左枝」代表該 bit 為 0 的分支。）</p>
 <h2 id="1-4-6-多輸入單輸出-or8way-與-and-家族">1.4.6 多輸入單輸出：Or8Way 與 And 家族</h2>
@@ -415,7 +615,26 @@ $$</div>
 $$</div>
 </p>
 <p>設計思路——<strong>平衡 OR 樹</strong>：把 8 個輸入兩兩 OR、合成的結果再兩兩 OR、最後一顆 OR 收尾。剛好湊成 7 顆 Or（<span class="math-inline">$8 \to 4 \to 2 \to 1$</span>）。</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Or8Way.hdl
+// out = in[0] | in[1] | ... | in[7]
+
+CHIP Or8Way {
+    IN  in[8];
+    OUT out;
+
+    PARTS:
+    Or(a=in[0], b=in[1], out=t1);
+    Or(a=in[2], b=in[3], out=t2);
+    Or(a=in[4], b=in[5], out=t3);
+    Or(a=in[6], b=in[7], out=t4);
+
+    Or(a=t1, b=t2, out=t5);
+    Or(a=t3, b=t4, out=t6);
+
+    Or(a=t5, b=t6, out=out);
+}
+
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../01/Or8Way.tst&amp;run=1">習題模擬</a></p>
 <p>連結串也正確（<code>Or(a=out1, b=in[2], ...)</code>），但樹狀版延遲更短、結構更對稱——數位設計中「平衡」是減少傳播延遲的通用美感。</p>
 <h3 id="反向思考-and8way-mux4way">反向思考：And8Way？ Mux4Way?</h3>

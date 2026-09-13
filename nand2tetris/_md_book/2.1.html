@@ -147,7 +147,11 @@
 <li><strong>carry（進位）</strong>：是否「溢出」到更高的位元。</li>
 </ol>
 <p>舉一個具體的例子，把兩個 4 位元數字 <code>0101</code>（5）與 <code>0011</code>（3）相加：</p>
-<pre><code></code></pre>
+<pre><code>   0101   （= 5）
+ + 0011   （= 3）
+ ------
+   1000   （= 8）
+</code></pre>
 <p>從最低位（最右邊）開始逐位相加：<code>1+1 = 0 進位 1</code>，這個進位 1 必須再與右邊數來的第二位（0+1）一起計算，於是最終得到 <code>1000 = 8</code>，結果完全正確。</p>
 <blockquote>
 <p>這裡便出現了根本性問題：單獨一個「半加器」只能處理「兩個輸入位元」，但多位元加法中，每一位可能還要加上「來自低位的進位」。這正是我們需要「全加器」的原因。</p>
@@ -203,11 +207,23 @@
 <li><strong>sum</strong>：當 A、B 相異時為 1（正常輸出 0），當 A、B 相同時為 0。這正是<strong>互斥或（XOR）</strong> 的行為，所以 <code>sum = A XOR B</code>。</li>
 </ul>
 <p>也就是說：</p>
-<pre><code></code></pre>
+<pre><code>sum   = A XOR B
+carry = A AND B
+</code></pre>
 <p>這兩個式子非常優雅：<strong>XOR 決定「本位的和」，AND 決定「是否進位」</strong>。</p>
 <h3 id="半加器-hdl">半加器 HDL</h3>
 <p>既然我們在第一章已經實作過 XOR 閘（Xor.hdl），現在就可以直接把它當成積木來使用。以下是半加器的完整 HDL 程式：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Half Adder: sum = A XOR B, carry = A AND B
+CHIP HalfAdder {
+    IN a, b;        // 兩個輸入位元
+    OUT sum,        // 本位的和
+        carry;      // 進位到高位
+
+    PARTS:
+    Xor(a=a, b=b, out=sum);     // sum  = a ^ b
+    And(a=a, b=b, out=carry);   // carry = a &amp; b
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../02/HalfAdder.tst&amp;run=1">習題模擬</a></p>
 <p>注意 HDL 中的命名規則：<code>Xor(a=a, b=b, ...)</code> 中，等號左邊是子晶片的輸入/輸出腳位名稱，右邊是我們接到其上的內部訊號。因為我們的輸入腳位剛好也叫 <code>a</code>、<code>b</code>，所以字面上看起來會「同名相引」。</p>
 <h3 id="設計思路">設計思路</h3>
@@ -305,10 +321,24 @@
 <li><strong>最終進位</strong> <code>carry</code>：<code>c1</code> 與 <code>c2</code> 任何一個成立都會進位，所以 <code>carry = c1 OR c2</code>。</li>
 </ul>
 <p>這正是經典的「兩個半加器 + 一個 OR 閘」的全加器結構。也可以用卡諾圖（Karnaugh map）直接推導出布林式：</p>
-<pre><code></code></pre>
+<pre><code>sum   = A XOR B XOR c
+carry = (A AND B) OR (c AND (A XOR B))
+</code></pre>
 <h3 id="全加器-hdl">全加器 HDL</h3>
 <p>根據上述「兩個半加器 + 一個 OR 閘」的設計，我們可以用兩個 HalfAdder 來組成全加器：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Full Adder: sum = a ^ b ^ c
+//            carry = a&amp;b | c&amp;(a^b)
+CHIP FullAdder {
+    IN a, b, c;         // a, b: 欲相加的兩個位元; c: 來自低位的進位
+    OUT sum,            // 本位的和
+        carry;          // 送往高位的進位
+
+    PARTS:
+    HalfAdder(a=a, b=b, out=sum1, out=carry1);   // 第一次相加: sum1 = a^b, carry1 = a&amp;b
+    HalfAdder(a=sum1, b=c, out=sum, out=carry2); // 第二次相加: sum = sum1^c, carry2 = sum1&amp;c
+    Or(a=carry1, b=carry2, out=carry);           // carry = carry1 | carry2
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../02/FullAdder.tst&amp;run=1">習題模擬</a></p>
 <h3 id="設計思路與實作步驟">設計思路與實作步驟</h3>
 <p>全加器的實作可以分成清晰的三個步驟：</p>
@@ -358,7 +388,13 @@
 <p>關鍵結論：<strong>要實現多位元加法，除最低位外，其餘每一位都需要「全加器」</strong>，因為它們都要接收來自低位的進位。</p>
 <h2 id="串接多位元加法概念">串接多位元加法概念</h2>
 <p>一個 16 位元（或其他 N 位元）加法器，就是把多個全加器「串成一排」：低位全加器的 <code>carry</code> 接到高一位全加器的 <code>c</code> 輸入，如此一來進位就能像「漣漪（ripple）」一樣從最低位一路傳到最高位。這種架構稱之為<strong>漣波進位加法器（Ripple-Carry Adder）</strong>。</p>
-<pre><code></code></pre>
+<pre><code>     a15 b15         a1 b1         a0 b0
+      |   |           |   |         |   |
+   [ FA15 ]      ... [ FA1 ]     [  c0  ]
+      |   |           |   |         |   |
+    sum15          sum1           sum0
+     carry →→→ 接到下一位的 c
+</code></pre>
 <p>其中最低位 FA0 的進位輸入 <code>c0</code> 通常固定為 0（或 <code>c0 = 0</code>），也就是說最低位可用半加器，亦可使用一個「c 固定為 0 的全加器」。</p>
 <p>這種「並排串接」的概念，將在下一節 2.2 完整實作成真正的 16 位元加法器 Add16 與增量器 Inc16。</p>
 <h2 id="本章小結">本章小結</h2>

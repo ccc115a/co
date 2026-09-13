@@ -121,7 +121,25 @@
 <li>完全不需要新增任何指令！畫面的輸出語法就是 <code>M=…</code>，鍵盤的輸入語法就是 <code>D=M</code>。</li>
 </ul>
 <p>資料流如下圖所示，硬體上所有的「裝置」都被閘在記憶體位址這道統一的介面後面：</p>
-<pre><code class="language-text"></code></pre>
+<pre><code class="language-text">        CPU（只會存取記憶體）
+              │ 位址 / 資料
+      ┌───────▼────────┐
+      │   Memory 晶片   │   ← 位址解碼在這裡發生
+      │  ┌────────────┐ │
+      │  │ RAM 0~16383 │ │（程式資料）
+      │  ├────────────┤ │
+      │  │ Screen 映射 │ │   16384~24575
+      │  │（8K 字組）  │ │
+      │  ├────────────┤ │
+      │  │ Keyboard    │ │   24576
+      │  └────────────┘ │
+      └───┬─────────┬───┘
+          │         │
+    ┌─────▼───┐ ┌──▼──────┐
+    │  螢幕    │ │  鍵盤    │
+    │ 512×256 │ │  電路    │
+    └─────────┘ └─────────┘
+</code></pre>
 <h2 id="hack-記憶體空間總覽-ram-與-i-o-映射的完整地圖">Hack 記憶體空間總覽：RAM 與 I/O 映射的完整地圖</h2>
 <p>Hack 的記憶體位址空間共 32K 個字組（15 位元定址，位址 0～32767）。組譯器與作業系統共用這張地圖，其中一部分是真 RAM，兩段是 I/O 映射：</p>
 <table>
@@ -166,7 +184,9 @@
 </tbody>
 </table>
 <p>預先定義的兩個 I/O 符號因此是：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">@SCREEN     // 等於 @16384
+@KBD        // 等於 @24576
+</code></pre>
 <p>只要記得「<strong>螢幕從 16384 起占用 8K、鍵盤單獨掛在 24576</strong>」，整張地圖就凍結在你的腦海裡了。</p>
 <h2 id="螢幕記憶體映射-8k-對應-256-512-像素">螢幕記憶體映射：8K 對應 256×512 像素</h2>
 <h3 id="規格">規格</h3>
@@ -178,16 +198,55 @@
 </ul>
 <h3 id="映射公式">映射公式</h3>
 <p>螢幕記憶體以「列為主（row-major）」排列：同一列依序占用 512/16 = 32 個字組，下一列接著從第 33 個字組開始：</p>
-<pre><code class="language-text"></code></pre>
+<pre><code class="language-text">像素 (row, col) 的位址 = 16384 + row × 32 + (col DIV 16)
+像素 (row, col) 的位元 = col MOD 16            （0 號位元 = 該組最左邊的像素）
+
+其中  0 ≤ row ≤ 255       0 ≤ col ≤ 511
+每列    32 個字組 → 連成 512 個像素
+</code></pre>
 <p>畫面上列 0 的 512 個像素被切成 32 組、每組 16 像素入一個字組。同一個字組內，<code>bit 0</code>（LSB）對應「該組最左邊那個像素」，<code>bit 15</code> 對應最右邊。想塗黑一組 16 像素，最偷懶的寫法就是把整格寫成 <code>-1</code>（16 個 1）。</p>
 <h3 id="像素操作範例">像素操作範例</h3>
 <p><strong>範例 A：把整個螢幕塗黑</strong>（把 8K 個字組全寫成 -1）：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// FillBlack.asm：整個螢幕塗黑
+@SCREEN
+D=A          // D = 16384
+@addr
+M=D          // addr = 16384，起點指標
+@8192
+D=A
+@count
+M=D          // count = 8192 個字組
+(LOOP)
+@addr
+A=M          // A = 目前要塗的字組位址
+M=-1         // RAM[addr] = -1（16 個位元全 1，全黑）
+@addr
+M=M+1        // 前進一格
+@count
+M=M-1        // 計數器 -1
+@count
+D=M
+@LOOP
+D;JGT        // 還沒塗滿就繼續
+(END)
+@END
+0;JMP        // 程式結束：停在自己身上
+</code></pre>
 <p><strong>範例 B：只點亮一個像素 (row=2, col=5)</strong>：</p>
-<pre><code class="language-text"></code></pre>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-text">位址 = 16384 + 2×32 + (5 DIV 16) = 16384 + 64 + 0 = 16448
+位元 = 5 MOD 16 = 5
+</code></pre>
+<pre><code class="language-asm">@16448       // A = 16448
+@1           // 先讓 D=1……（見下）
+</code></pre>
 <p>嚴格來說要做「把第 5 個位元設成 1」的位元寫入。但 Hack 沒有一般的 OR 指令運算元與記憶體同步的語法，所以教科書慣用的簡易做法是「整格覆寫」。只要我們知道該格原本只有這個像素在動，<code>@16448 / D=A / A=D / M=D</code> 這類操作就是可行的。更精確的位元設定通常會透過 <code>D|M</code> 的概念來完成：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// MayBeON：把 (row, col) 點黑（欄位 bit = col MOD 16）
+// 假設 bit 暫存於 D（例如由常數或移位產生），此處示範固定畫 (2,5)
+@1             // bit 值 = 1（先示範 bit0）
+D=A            // D = 1
+@16448
+M=D|M          // 讀出原本內容，OR 上新位元，再寫回（精確位元寫入）
+</code></pre>
 <p>上面的 <code>M=D|M</code> 一次讀、一次算、一次寫，正是記憶體映射螢幕最常被使用的「read-modify-write」模式——因為螢幕背後就是真實的 RAM，讀回與覆寫都不花特別功夫。</p>
 <h2 id="鍵盤記憶體映射-keyboard-在位址-24576">鍵盤記憶體映射：Keyboard 在位址 24576</h2>
 <p>鍵盤的介面比螢幕更簡單——只有「一格」記憶體：<code>RAM[24576]</code>（符號 <code>KBD</code>）。</p>
@@ -257,7 +316,20 @@
 </tbody>
 </table>
 <p>要特別強調的是：<strong>鍵盤只負責「寫入 RAM[24576]」</strong>，程式要自己不斷去輪詢（poll）這一格。以下範例展示「偵測按下的鍵並把它數值複製到 RAM[100]」：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// 等待使用者按下任意鍵，再把鍵盤掃描碼存到 RAM[100]
+(WAIT_KEY)
+@KBD
+D=M          // D = 目前按鍵（沒按就是 0）
+@WAIT_KEY
+D;JEQ        // 還是 0？繼續等
+@KBD
+D=M          // 再讀一次，取得掃描碼
+@100
+M=D          // RAM[100] = 掃描碼
+(END)
+@END
+0;JMP
+</code></pre>
 <h2 id="cpu-如何-看到-螢幕與鍵盤-位址解碼與-memory-晶片">CPU 如何「看到」螢幕與鍵盤？—— 位址解碼與 Memory 晶片</h2>
 <p>記憶體映射成功的關鍵，是第五章要組裝的 <strong>Memory 晶片</strong>。它的本質是一台位址路由器：</p>
 <ol>
@@ -269,7 +341,45 @@
 <p>因為 CPU 整個「人生」只見過「位址 + 資料」兩種訊號，它完全不需要知道：自己對 20000 寫進去的 <code>-1</code>，其實是在把一排像素塗黑；自己從 24576 讀出來的值，其實是使用者剛按下的鍵。<strong>「記憶體映射」把裝置與 CPU 的耦合徹底切開</strong>，這也是它能成為現代 CPU 主流作法的主因。</p>
 <h2 id="完整程式-依按鍵動態塗色的互動示範">完整程式：依按鍵動態塗色的互動示範</h2>
 <p>把螢幕與鍵盤的映射合起來，就能寫出第一個「互動」程式：按住任意鍵螢幕全黑，放開後螢幕全白，一直重複偵測——經典的 <strong>Fill.asm</strong>：</p>
-<pre><code class="language-asm"></code></pre>
+<pre><code class="language-asm">// Fill.asm：螢幕持續依按鍵狀態變色
+(LOOP)
+@KBD
+D=M
+@WHITE
+D;JEQ      // 沒按鍵 → 塗白
+@color
+M=-1       // 有按鍵 → 塗黑（-1 = 16 個位元全 1）
+@DRAW
+0;JMP
+(WHITE)
+@color
+M=0        // 顏色設為白
+(DRAW)
+@SCREEN
+D=A
+@addr
+M=D        // addr = 16384
+@512       // 我們先只塗一個區塊試試看
+D=A
+@n
+M=D        // n = 512 個字組
+(PAINT)
+@color
+D=M        // D = 現在要塗的顏色
+@addr
+A=M        // A = 目前字組位址
+M=D        // 塗上顏色
+@addr
+M=M+1      // 前進
+@n
+M=M-1
+@n
+D=M
+@PAINT
+D;JGT      // 未塗完繼續
+@LOOP
+0;JMP      // 塗完一輪，回到 LOOP 重新偵測鍵盤
+</code></pre>
 <p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20Runs%20an%20infinite%20loop%20that%20listens%20to%20the%20keyboard%20input.%0A%2F%2F%20When%20a%20key%20is%20pressed%20(any%20key)%2C%20the%20program%20blackens%20the%20screen.%0A%2F%2F%20When%20no%20key%20is%20pressed%2C%20the%20program%20clears%20the%20screen.%0A%0A(FOREVER)%0A%2F%2F%20arr%20%3D%20SCREEN%0A%40SCREEN%0AD%3DA%0A%40arr%0AM%3DD%0A%0A%2F%2F%20n%3D8192%0A%408192%0AD%3DA%0A%40n%0AM%3DD%0A%2F%2F%20i%20%3D%200%0A%40i%0AM%3D0%0A(LOOP)%0A%2F%2F%20if%20(i%3D%3Dn)%20goto%20ENDLOOP%0A%40i%0AD%3DM%0A%40n%0AD%3DD-M%0A%40ENDLOOP%0AD%3BJEQ%0A%0A%2F%2F%20if%20(*KBD%20!%3D%200)%0A%40KBD%0AD%3DM%0A%40ELSE%0AD%3BJEQ%0A%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%20-1%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D-1%0A%0A%40ENDIF%0A0%3BJMP%0A(ELSE)%0A%2F%2F%20RAM%5Barr%2Bi%5D%20%3D%200%0A%40arr%0AD%3DM%0A%40i%0AA%3DD%2BM%0AM%3D0%0A%0A(ENDIF)%0A%2F%2F%20i%2B%2B%0A%40i%0AM%3DM%2B1%0A%0A%40LOOP%0A0%3BJMP%0A%0A(ENDLOOP)%0A%40FOREVER%0A0%3BJMP">習題模擬</a></p>
 <p>比起整螢幕 8192 個字組，本範例只塗 512 個字組（前 16 列），好讓你在模擬器上立刻看到「按鍵 → 上方一條黑帶」的即時反應。把它改成 <code>@8192</code> 就是全螢幕塗黑/塗白。這個程式同時示範了本節所有核心技能：位址計算（<code>@SCREEN</code>）、指標走訪（<code>@addr / A=M</code>）、鍵盤輪詢（<code>@KBD / D=M</code>）與條件跳躍。</p>
 <h2 id="設計思路與實作步驟">設計思路與實作步驟</h2>

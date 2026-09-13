@@ -104,7 +104,8 @@
 <h3 id="設計思路">設計思路</h3>
 <p><code>zr</code> 的語義是「out 是否等於 0」。直覺的做法是：逐一檢查 out 的 16 個位元是否全都為 0——只要有任何一個位元是 1，zr 就該等於 0。</p>
 <p>我們可以用一個 <strong>Or8Way</strong>（8 輸入 OR，輸出 8 個輸入的 OR）與一個 <strong>Or</strong> 閘來「濃縮」這 16 個位元：</p>
-<pre><code></code></pre>
+<pre><code>zr = ~( out[15] | out[14] | ... | out[0] )
+</code></pre>
 <p>只要有一個位元為 1，OR 的結果就是 1，取反後 zr = 0。只有當 16 個位元全為 0 時，OR 結果為 0，取反後 zr = 1，才表示「結果為零」。</p>
 <h3 id="實作步驟">實作步驟</h3>
 <ol>
@@ -121,7 +122,8 @@
 <li><code>out[15] = 0</code> → 結果非負（ng = 0）。</li>
 </ul>
 <p>這是一條極簡的捷徑：<strong><code>ng</code> 就是 <code>out[15]</code> 的訊號</strong>。比起逐位元檢查，這實在太方便了。</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// ng = out[15]
+</code></pre>
 <h3 id="為何-msb-能代表符號">為何 MSB 能代表符號</h3>
 <p>回想 2.2 節的二補數：16 位元的範圍中，<code>1000 ... 0000</code>（MSB=1）到 <code>1111 ... 1111</code> 代表負數 -32768 到 -1；而 <code>0000 ... 0000</code> 到 <code>0111 ... 1111</code>（MSB=0）代表非負數 0 到 32767。因此 MSB 恰好就是「符號位」，直接取來當作 <code>ng</code> 即可。</p>
 <h2 id="在-cpu-中的用途-條件跳躍">在 CPU 中的用途：條件跳躍</h2>
@@ -238,13 +240,53 @@
 </ol>
 <h3 id="一個示意性的測試腳本">一個示意性的測試腳本</h3>
 <p>以下展示如何在硬體模擬器中測試幾種 ALU 運算（以 .tst 的語法為概念示範）：</p>
-<pre><code class="language-tst"></code></pre>
+<pre><code class="language-tst">// 概念性測試腳本：測試 ALU 的部分運算
+load ALU.hdl,
+output-file ALU.out,
+compare-to ALU.cmp,
+output-list x%B1.16.1 y%B1.16.1 zr%B1.1.1 ng%B1.1.1 out%B1.16.1;
+
+// 測試: out = 0          (zx=1,nx=0,zy=1,ny=0,f=1,no=0)
+set x 0, set y 0,
+set zx 1, set nx 0, set zy 1, set ny 0, set f 1, set no 0,
+eval, output;
+
+// 測試: out = x          (zx=0,nx=0,zy=1,ny=1,f=0,no=0)
+set x %B0000000000010101, set y 0,
+set zx 0, set nx 0, set zy 1, set ny 1, set f 0, set no 0,
+eval, output;
+
+// 測試: out = x+y        (zx=0,nx=0,zy=0,ny=0,f=1,no=0)
+set x %B0000000000000111, set y %B0000000000000101,
+set zx 0, set nx 0, set zy 0, set ny 0, set f 1, set no 0,
+eval, output;
+</code></pre>
 <blockquote>
 <p>完整且詳盡的測試檔（如 <code>ALU.tst</code>）通常會一列一列地把 18 種運算全部列出，並對照 <code>.cmp</code> 檔案中的正確答案。你可以把這些測試當成 ALU 的「規格書」，用來驗證你的實作是否達標。</p>
 </blockquote>
 <h2 id="完整-alu-電路圖與控制位元說明">完整 ALU 電路圖與控制位元說明</h2>
 <h3 id="電路資料流總圖">電路資料流總圖</h3>
-<pre><code></code></pre>
+<pre><code>        x[16]                     y[16]
+          │                         │
+   [Mux16: 歸零?] zx        [Mux16: 歸零?] zy
+          │                         │
+   [Not16]──[Mux16: 取反?] nx   [Not16]──[Mux16: 取反?] ny
+          └───────────┬─────────────┘
+                      │
+   ┌──────────────────┴──────────────────┐
+   │        [And16]          [Add16]      │
+   │        x&amp;y              x+y          │
+   └──────────┬─────────┬────────────────┘
+              │  [Mux16: 選 f] (f=0→AND, f=1→+)   │
+              └────────────┬──────────────────────┘
+                           │
+                   [Not16]──[Mux16: 取反 out?] no
+                           │
+                         out[16]
+                           │
+        ┌──────────────────┴──────────────┐
+   [Or8Way+Or8Way] → Not → zr      direct → ng (=out[15])
+</code></pre>
 <h3 id="控制位元彙整對照表">控制位元彙整對照表</h3>
 <table>
 <thead>
@@ -294,7 +336,47 @@
 </ul>
 <h2 id="完成後的-alu-hdl-含標誌位">完成後的 ALU HDL（含標誌位）</h2>
 <p>將 2.3 節的 ALU 補上 <code>zr</code> 與 <code>ng</code> 的產生邏輯，即為完整實作：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// The ALU (Arithmetic Logic Unit)
+CHIP ALU {
+    IN
+        x[16], y[16],
+        zx, nx, zy, ny, f, no;
+    OUT
+        out[16], zr, ng;
+
+    PARTS:
+    // 歸零與取反 x
+    Mux16(a=x, b=false, sel=zx, out=x1);
+    Not16(in=x1, out=notx);
+    Mux16(a=x1, b=notx, sel=nx, out=x2);
+
+    // 歸零與取反 y
+    Mux16(a=y, b=false, sel=zy, out=y1);
+    Not16(in=y1, out=noty);
+    Mux16(a=y1, b=noty, sel=ny, out=y2);
+
+    // 主運算（AND 與 加法 同時預先算出）
+    And16(a=x2, b=y2, out=xAndy);
+    Add16(a=x2, b=y2, out=xPlusy);
+    Mux16(a=xAndy, b=xPlusy, sel=f, out=preOut);
+
+    // 最終取反
+    Not16(in=preOut, out=notPreOut);
+    Mux16(a=preOut, b=notPreOut, sel=no, out=out);
+
+    // ---- 標誌位產生 ----
+    // zr: out 是否為 0（高 8 位 OR、低 8 位 OR，再 OR、取反）
+    Or8Way(in=out[0..7],  out=lowOr);
+    Or8Way(in=out[8..15], out=highOr);
+    Or(a=lowOr, b=highOr, out=anyOne);
+    Not(in=anyOne, out=zr);
+
+    // ng: 直接取最高有效位（符號位）
+    // 可直接接線: ng = out[15]
+    // （在 HDL 中可省略實體、於測試檔觀察 out[15]，或利用內部 bus 接線）
+    // 實務上可寫:  A16-bit bus 的一部分即可反映; 此處以邏輯明確呈現
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../02/ALU.tst&amp;run=1">習題模擬</a></p>
 <blockquote>
 <p>關於 <code>ng</code> 的接線：在標準 Nand2Tetris 的 ALU 實作中，<code>ng</code> 通常直接來自 <code>out[15]</code>（符號位）。某些實作者會為了在 HDL 中「明確」產生一個訊號而寫成 <code>Mux16(... , out=unused) ; ...</code> 等技巧，但本質上 <code>ng = out[15]</code>，接線也最直接。如果你的模擬器版本在 HDL 中不允許「直接把輸出腳位相連」，可改用內部訊號暫存後再指派。</p>

@@ -118,7 +118,26 @@
 <h2 id="取指-解碼-執行循環-fetch-decode-execute">取指-解碼-執行循環（Fetch-Decode-Execute）</h2>
 <p>這是所有電腦運作的基本節奏，也是理解 Computer 晶片最重要的概念：</p>
 <h3 id="循環的三個階段">循環的三個階段</h3>
-<pre><code></code></pre>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│                    取指（Fetch）                      │
+│  ROM 根據 PC 輸出的位址，提供對應位置的指令            │
+│  instruction = ROM[PC]                               │
+├─────────────────────────────────────────────────────┤
+│                    解碼（Decode）                     │
+│  CPU 分析指令位元：                                    │
+│    - 判斷是 A-指令還是 C-指令                          │
+│    - 提取 ALU 控制碼、目標暫存器、跳躍條件              │
+├─────────────────────────────────────────────────────┤
+│                    執行（Execute）                    │
+│  CPU 根據解碼結果：                                    │
+│    - 驅動 ALU 執行運算                                │
+│    - 將結果寫入目標暫存器或記憶體                       │
+│    - 根據條件更新 PC                                   │
+└─────────────────────────────────────────────────────┘
+         │
+         ▼
+    回到取指階段（PC 已更新）
+</code></pre>
 <h3 id="每個時脈週期的動作">每個時脈週期的動作</h3>
 <p>在 Hack 電腦中，每個時脈週期（tick）會完成一次完整的循環：</p>
 <ol>
@@ -140,7 +159,60 @@
 <hr />
 <h2 id="computer-hdl-實作">Computer HDL 實作</h2>
 <p>以下是完整的 <code>Computer.hdl</code> 實作：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Hack 電腦：完整的電腦系統
+// 檔案：Computer.hdl
+
+CHIP Computer {
+    IN  reset;
+
+    PARTS:
+
+    // ============================================================
+    // ROM32K：儲存程式
+    // ============================================================
+    // ROM 的輸出即為當前指令
+    // 位址由 CPU 的 pc 輸出決定
+    ROM32K(in=cpu_pc, out=instruction);
+
+    // ============================================================
+    // CPU：中央處理器
+    // ============================================================
+    // CPU 接收：
+    //   instruction — 來自 ROM 的當前指令
+    //   inM         — 來自 Memory 的資料
+    //   reset       — 重設信號
+    // CPU 輸出：
+    //   outM        — 要寫入 Memory 的資料
+    //   writeM      — Memory 寫入使能
+    //   addressM    — Memory 位址
+    //   pc          — 程式計數器（連回 ROM）
+    CPU(
+        instruction=instruction,
+        inM=memory_out,
+        reset=reset,
+        outM=cpu_outM,
+        writeM=cpu_writeM,
+        addressM=cpu_addressM,
+        pc=cpu_pc
+    );
+
+    // ============================================================
+    // Memory：記憶體系統
+    // ============================================================
+    // Memory 接收：
+    //   in      — 來自 CPU 的資料
+    //   load    — 寫入使能
+    //   address — 存取位址
+    // Memory 輸出：
+    //   out     — 讀取的資料（連回 CPU 的 inM）
+    Memory(
+        in=cpu_outM,
+        load=cpu_writeM,
+        address=cpu_addressM,
+        out=memory_out
+    );
+}
+</code></pre>
 <p><a href="../_web_eda/dist/index.html?asm=%2F%2F%20projects%2F04%2Fmult%2FMult.asm%EF%BC%88%E5%8A%A0%E8%A8%BB%E8%A7%A3%E7%89%88%EF%BC%8C%E8%88%87%E8%AA%B2%E6%9C%AC%E8%A1%8C%E7%82%BA%E4%B8%80%E8%87%B4%EF%BC%89%0A%0A%2F%2F%20int%20main()%20%7B%0A%2F%2F%20%20%20%20int%20R0%20%3D%203%3B%0A%2F%2F%20%20%20%20int%20R1%20%3D%205%3B%0A%2F%2F%20%3D%3E%20%20%20%20int%20R2%20%3D%200%3B%0A%402%0AM%3D0%0A%2F%2F%20%20%20%20while%20(R0%20%3E%200)%20%7B%20%20%3D%3E%20loop%3A%0A(loop)%0A%2F%2F%20%3D%3E%20%20%20%20if%20(R0%20%3C%3D%200)%20goto%20exit1%3B%0A%400%0AD%3DM%0A%40exit1%0AD%3BJLE%0A%0A%2F%2F%20%3D%3E%20%20R2%20%3D%20R2%20%2B%20R1%3B%0A%401%0AD%3DM%0A%402%0AM%3DD%2BM%0A%0A%2F%2F%20%3D%3E%20%20R0%20%3D%20R0%20-%201%3B%0A%400%0AM%3DM-1%0A%0A%2F%2F%20%3D%3E%20%20goto%20loop%3B%0A%40loop%0A0%3BJMP%0A%0A%2F%2F%20%3D%3E%20exit1%3A%0A(exit1)%0A%40exit1%0A0%3BJMP%0A%2F%2F%20%7D&amp;ram=2:6,3:7">習題模擬</a></p>
 <h3 id="設計思路與實作步驟">設計思路與實作步驟</h3>
 <ol>
@@ -150,7 +222,24 @@
 <li><strong>加入重設</strong>：<code>reset</code> 訊號連接到 CPU，讓程式可以從位址 0 重新開始</li>
 </ol>
 <h3 id="時序與執行流程">時序與執行流程</h3>
-<pre><code></code></pre>
+<pre><code>時間軸：
+────────────────────────────────────────────────────────
+
+T=0（reset=1）：
+  CPU 接收到 reset 信號
+  PC 被重設為 0
+  ROM 輸出 ROM[0] 的指令
+  開始執行程式
+
+T=1（reset=0）：
+  CPU 完成第一條指令的解碼執行
+  PC 递增（或跳轉）
+  ROM 輸出下一個位址的指令
+
+T=2, 3, 4, ...：
+  不斷重複 取指→解碼→執行 循環
+  直到程式結束或再次 reset
+</code></pre>
 <h3 id="為什麼這代表-一台電腦">為什麼這代表「一台電腦」</h3>
 <p>Computer 晶片之所以代表一台完整的電腦，是因為它具備了計算機的所有本質特徵：</p>
 <ol>

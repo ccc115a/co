@@ -98,9 +98,26 @@
 <h2 id="3-4-1-pc-的用途-追蹤下一條指令位址">3.4.1 PC 的用途：追蹤下一條指令位址</h2>
 <h3 id="程式執行的基本模型">程式執行的基本模型</h3>
 <p>電腦執行程式的過程可以概括為一個無限循環：</p>
-<pre><code></code></pre>
+<pre><code>1. 從 RAM[PC] 讀取指令
+2. 解碼並執行該指令
+3. PC ← PC + 1（準備下一條指令）
+4. 回到步驟 1
+</code></pre>
 <p>在這個循環中，PC 充當了<strong>程式執行進度的追蹤器</strong>：</p>
-<pre><code></code></pre>
+<pre><code>RAM 中的程式：
+
+位址    |  指令
+--------|------------------
+  0     |  LOAD R1, 5
+  1     |  LOAD R2, 3
+  2     |  ADD R3, R1, R2
+  3     |  STORE R3, RAM[100]
+  4     |  HALT
+
+PC 的變化：
+  執行前：  PC = 0
+  執行後：  PC = 1 → 2 → 3 → 4 → 4（停在 HALT）
+</code></pre>
 <h3 id="pc-的特性">PC 的特性</h3>
 <p>PC 本質上是一個<strong>特殊的 16-bit 暫存器</strong>，但具備一般暫存器沒有的能力：</p>
 <table>
@@ -189,13 +206,32 @@
 <li><strong>load</strong>：當指令是跳轉指令且條件滿足時為 1</li>
 </ul>
 <h3 id="邏輯表-真值表">邏輯表（真值表）</h3>
-<pre><code></code></pre>
+<pre><code>reset | load | inc | PC_next
+------+------+-----+---------
+  1   |  X   |  X  |  0000...0（重置）
+  0   |  1   |  X  |  in（載入跳轉位址）
+  0   |  0   |  1  |  PC + 1（遞增）
+  0   |  0   |  0  |  PC（保持）
+</code></pre>
 <p>更精確地說，優先級為：<strong>reset &gt; load &gt; inc &gt; hold</strong></p>
 <hr />
 <h2 id="3-4-3-pc-的-hdl-實作">3.4.3 PC 的 HDL 實作</h2>
 <h3 id="設計思路">設計思路</h3>
 <p>PC 的建構使用我們已經學過的元件：</p>
-<pre><code></code></pre>
+<pre><code>                    ┌──────┐
+          in[15:0]─→│      │
+                    │ Mux  │──→ ┌──────────┐
+          PC+1 ────→│ 4:1  │    │          │──→ out[15:0]
+                    │      │    │ Register │
+     ┌──────┐      └──────┘    │          │
+     │ Inc16│───→ PC+1          │  in      │
+     │      │      ↑           │  load    │
+     │  out │──────┘           │  clk     │
+     └──────┘                  └──────────┘
+                                      ↑
+                                      │
+                                 由控制信號決定 load
+</code></pre>
 <p>具體來說：</p>
 <ol>
 <li><strong>Inc16</strong> 模組計算 <code>PC + 1</code>（內建加法器）</li>
@@ -210,39 +246,267 @@
 <li><strong>Register</strong> 在時脈邊緣鎖存 Mux 選擇的值</li>
 </ol>
 <h3 id="hdl-實作">HDL 實作</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// PC：程式計數器
+// 具備 load、inc、reset 三種控制功能
+
+CHIP PC {
+    IN  in[16], load, inc, reset;
+    OUT out[16];
+
+    PARTS:
+    // === 第一部分：計算 PC+1 ===
+    Inc16(in=regOut, out=pcPlusOne);
+
+    // === 第二部分：4 選 1 Mux 決定下一個值 ===
+    // Mux4Way 的四個輸入：
+    //   a（sel[1:0]=00）→ in    （載入）
+    //   b（sel[1:0]=01）→ incout（遞增）
+    //   c（sel[1:0]=10）→ zero  （重置）
+    //   d（sel[1:0]=11）→ regOut（保持）
+
+    // 將三個控制信號合併為 2-bit 的 Mux 選擇器
+    // 需要先處理優先級：reset &gt; load &gt; inc
+
+    // 重置歸零信號
+    Not(a=reset, out=nreset);
+
+    // 當 reset=0 且 load=1 時，選擇 in（載入）
+    // 當 reset=0 且 load=0 且 inc=1 時，選擇 +1（遞增）
+    // 當 reset=0 且 load=0 且 inc=0 時，選擇保持
+
+    // 方法：使用分層 Mux
+    // 第一層：在 load 路徑和 inc/hold 路徑之間選擇
+    Mux16(a=incOrHold, b=in, sel=load, out=toReg);
+
+    // 在遞增和保持之間選擇
+    Mux16(a=regOut, b=pcPlusOne, sel=inc, out=incOrHold);
+
+    // 第二層：在以上結果和 0（重置）之間選擇
+    Mux16(a=toReg, b=false, out=regIn, sel=reset);
+
+    // === 第三部分：暫存器鎖存 ===
+    Register(in=regIn, load=true, out=regOut, out=out);
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1">習題模擬</a></p>
 <blockquote>
 <p><strong>注意</strong>：上述寫法使用了兩層 Mux 來實現優先級。另一種更直觀的方式是使用 Mux4Way，但需要自行編碼控制信號的組合。以下是使用 Mux4Way 的替代實現：</p>
 </blockquote>
 <h3 id="替代實現-使用-mux4way">替代實現：使用 Mux4Way</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// PC：程式計數器（Mux4Way 版本）
+
+CHIP PC {
+    IN  in[16], load, inc, reset;
+    OUT out[16];
+
+    PARTS:
+    // 計算 PC+1
+    Inc16(in=regOut, out=pcPlusOne);
+
+    // 準備四個候選值
+    // a = in（載入）     → sel=00
+    // b = pcPlusOne（遞增）→ sel=01
+    // c = 0（重置）      → sel=10
+    // d = regOut（保持）  → sel=11
+
+    // 將控制信號編碼為 2-bit 選擇器
+    // 編碼邏輯：
+    //   reset=1         → sel=10（重置）
+    //   reset=0,load=1  → sel=00（載入）
+    //   reset=0,load=0,inc=1 → sel=01（遞增）
+    //   reset=0,load=0,inc=0 → sel=11（保持）
+
+    // 製作零值
+    Or(a=false, b=false, out=zeroBit);  // 永遠為 0
+
+    // 選擇器輸入
+    Mux4Way16(a=in, b=pcPlusOne, c=false, d=regOut,
+              sel=controlBits, out=regIn);
+
+    // 暫存器
+    Register(in=regIn, load=true, out=regOut, out=out);
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1">習題模擬</a></p>
 <h3 id="實用的分層-mux-方案-推薦">實用的分層 Mux 方案（推薦）</h3>
 <p>最清晰且最常用的實現方式是使用<strong>三層 Mux 並實現明確的優先級</strong>：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// PC：程式計數器（推薦實現）
+// 優先級：reset &gt; load &gt; inc &gt; hold
+
+CHIP PC {
+    IN  in[16], load, inc, reset;
+    OUT out[16];
+
+    PARTS:
+    // 步驟 1：計算 PC + 1
+    Inc16(in=regOut, out=pcPlus1);
+
+    // 步驟 2：Mux 層級選擇（從低優先級到高優先級）
+    // 層 1：保持 vs 遞增（inc 控制）
+    Mux16(a=regOut, b=pcPlus1, sel=inc, out=afterInc);
+
+    // 層 2：上一步結果 vs 載入（load 控制）
+    Mux16(a=afterInc, b=in, sel=load, out=afterLoad);
+
+    // 層 3：上一步結果 vs 重置（reset 控制）
+    Mux16(a=afterLoad, b=false, sel=reset, out=regIn);
+
+    // 步驟 3：鎖存到暫存器
+    Register(in=regIn, load=true, out=regOut, out=out);
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1">習題模擬</a></p>
 <h3 id="設計解析">設計解析</h3>
 <p>這個實現的精妙之處在於 <strong>Mux 的堆疊順序反映了優先級</strong>：</p>
-<pre><code></code></pre>
+<pre><code>reset=0, load=0, inc=0：
+  Mux1(regOut, regOut, 0) → regOut  （保持）
+  Mux2(regOut, in, 0)     → regOut  （不載入）
+  Mux3(regOut, 0, 0)      → regOut  （不重置）
+  結果：PC 不變 ✓
+
+reset=0, load=0, inc=1：
+  Mux1(regOut, pcPlus1, 1) → pcPlus1  （遞增）
+  Mux2(pcPlus1, in, 0)     → pcPlus1  （不載入）
+  Mux3(pcPlus1, 0, 0)      → pcPlus1  （不重置）
+  結果：PC + 1 ✓
+
+reset=0, load=1, inc=X：
+  Mux1(regOut, pcPlus1, X) → X  （不管結果是什麼）
+  Mux2(X, in, 1)           → in  （載入）
+  Mux3(in, 0, 0)           → in  （不重置）
+  結果：PC ← in ✓
+
+reset=1, load=X, inc=X：
+  Mux1(regOut, pcPlus1, X) → X
+  Mux2(X, in, X)           → X
+  Mux3(X, 0, 1)            → 0  （重置）
+  結果：PC ← 0 ✓
+</code></pre>
 <hr />
 <h2 id="3-4-4-程式執行的時序">3.4.4 程式執行的時序</h2>
 <h3 id="指令週期-instruction-cycle">指令週期（Instruction Cycle）</h3>
 <p>每個時脈週期，CPU 完成一個完整的<strong>指令週期</strong>：</p>
-<pre><code></code></pre>
+<pre><code>┌─────────────────────────────────────────────────────┐
+│                  一個指令週期                          │
+│                                                      │
+│  ① 取指（Fetch）                                     │
+│     - PC 輸出位址 → RAM → 取回指令                    │
+│                                                      │
+│  ② 解碼（Decode）                                    │
+│     - 指令解碼器分析指令類型和操作數                    │
+│                                                      │
+│  ③ 執行（Execute）                                   │
+│     - ALU 執行算術/邏輯運算                            │
+│                                                      │
+│  ④ 寫回（Write-back）                                │
+│     - 結果寫回暫存器或記憶體                            │
+│                                                      │
+│  ⑤ 更新 PC                                           │
+│     - PC ← PC + 1（或跳轉到位址）                     │
+│                                                      │
+└─────────────────────────────────────────────────────┘
+              ↓ 下一個時脈週期
+┌─────────────────────────────────────────────────────┐
+│              下一個指令週期開始                          │
+└─────────────────────────────────────────────────────┘
+</code></pre>
 <h3 id="pc-在指令週期中的時序圖">PC 在指令週期中的時序圖</h3>
-<pre><code></code></pre>
+<pre><code>時脈 clk  : ──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐
+             │  │  │  │  │  │  │  │  │  │  │
+         ────┘  └──┘  └──┘  └──┘  └──┘  └──┘
+
+PC 值    : ──0───0───1───2───3───4───4──────
+               ↑   ↑   ↑   ↑   ↑
+              T0  T1  T2  T3  T4
+              取指  取指  取指  取指  取指
+              指令0 指令1 指令2 指令3 指令4
+
+指令     : ──→LOAD→LOAD→ADD →STORE→HALT
+           R1,5  R2,3 R3,R1  R3,100
+                 ,R2
+
+RAM[addr]: RAM[0] RAM[1] RAM[2] RAM[3] RAM[4]
+
+時序說明：
+T0：PC=0，從 RAM[0] 取指令 &quot;LOAD R1,5&quot;
+    執行後 PC ← 0+1 = 1
+T1：PC=1，從 RAM[1] 取指令 &quot;LOAD R2,3&quot;
+    執行後 PC ← 1+1 = 2
+T2：PC=2，從 RAM[2] 取指令 &quot;ADD R3,R1,R2&quot;
+    執行後 PC ← 2+1 = 3
+T3：PC=3，從 RAM[3] 取指令 &quot;STORE R3,RAM[100]&quot;
+    執行後 PC ← 3+1 = 4
+T4：PC=4，從 RAM[4] 取指令 &quot;HALT&quot;
+    執行後 PC 保持 4
+</code></pre>
 <h3 id="跳轉指令的時序">跳轉指令的時序</h3>
 <p>當遇到跳轉指令（如 <code>JMP</code> 或條件跳轉 <code>JNE</code>）時，PC 不是遞增而是載入目標位址：</p>
-<pre><code></code></pre>
+<pre><code>時脈 clk  : ──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐  ┌──┐
+         ────┘  └──┘  └──┘  └──┘  └──┘  └──┘
+
+PC 值    : ──0───0───1───2───0─────────────────
+               ↑   ↑   ↑   ↑
+              T0  T1  T2  T3
+              取指  取指  取指  跳轉！
+              指令0 指令1 指令2 指令3
+
+指令     : ──→LOAD→LOAD→ADD →JMP 0
+           R1,5  R2,3 R3,R1
+                 ,R2
+
+控制信號：
+T0：inc=1, load=0, reset=0 → PC ← PC+1 = 1
+T1：inc=1, load=0, reset=0 → PC ← PC+1 = 2
+T2：inc=1, load=0, reset=0 → PC ← PC+1 = 3
+T3：inc=X, load=1, reset=0 → PC ← in=0  ← 跳轉！
+</code></pre>
 <hr />
 <h2 id="3-4-5-pc-與指令週期的關係">3.4.5 PC 與指令週期的關係</h2>
 <h3 id="cpu-中的-pc">CPU 中的 PC</h3>
 <p>在完整的 CPU 架構中，PC 連接如下：</p>
-<pre><code></code></pre>
+<pre><code>┌─────────────────────────────────────────────┐
+│                    CPU                       │
+│                                              │
+│  ┌─────┐    ┌──────────┐    ┌─────┐        │
+│  │  PC │───→│   RAM    │───→│指令  │        │
+│  │     │←───│ address  │    │解碼器│        │
+│  └──┬──┘    └──────────┘    └──┬──┘        │
+│     │                          │             │
+│     │ inc/load/reset           │ 控制信號    │
+│     │                          ↓             │
+│     │                     ┌──────────┐       │
+│     │                     │  Control │       │
+│     │                     └──────────┘       │
+│     │                          │             │
+│     │    ┌────────┐           │             │
+│     ├───→│ Register│←──────────┘             │
+│     │    │ (A 寄存器)│                        │
+│     │    └────────┘                          │
+│     │         │                               │
+│     │    ┌────────┐                          │
+│     │    │  ALU   │                          │
+│     │    └────────┘                          │
+│     │         │                               │
+│     │    ┌────────┐                          │
+│     └───→│Register│                          │
+│          │ (D 寄存器)│                        │
+│          └────────┘                          │
+└─────────────────────────────────────────────┘
+</code></pre>
 <h3 id="指令週期的微觀時序">指令週期的微觀時序</h3>
 <p>每個時脈週期內的微觀操作序列：</p>
-<pre><code></code></pre>
+<pre><code>時脈上升沿觸發：
+
+  ┌─────────────────────────────────────────────┐
+  │  1. PC 輸出位址 → RAM 的 address 輸入         │
+  │  2. RAM 根據位址輸出指令 → 指令解碼器           │
+  │  3. 解碼器產生控制信號                         │
+  │  4. ALU 根據控制信號執行運算                    │
+  │  5. 運算結果寫回暫存器/記憶體                   │
+  │  6. PC 的控制信號決定 PC 的下一個值             │
+  │  7. 【下一個時脈上升沿】PC 更新為新值            │
+  └─────────────────────────────────────────────┘
+</code></pre>
 <p>注意第 6 步和第 7 步之間的微妙之處：PC 的新值在<strong>當前週期</strong>就已經被計算好了（透過 Mux 電路），但要等到<strong>下一個時脈上升沿</strong>才會被鎖存到 Register 中。這確保了：</p>
 <ul>
 <li>在整個當前週期內，PC 輸出的位址是穩定不變的</li>
@@ -251,7 +515,13 @@
 </ul>
 <h3 id="pc-的位址範圍">PC 的位址範圍</h3>
 <p>在 nand2tetris 中：</p>
-<pre><code></code></pre>
+<pre><code>PC 的位址範圍：0 ～ 16383（14 位元可定址）
+
+RAM16K 的空間分配：
+  0 ～ 16383：程式記憶體（存放指令）
+
+PC 始終指向 RAM 中的指令位址
+</code></pre>
 <hr />
 <h2 id="本章小結">本章小結</h2>
 <p>本章完成了 CPU 中最關鍵的控制元件——程式計數器的設計：</p>

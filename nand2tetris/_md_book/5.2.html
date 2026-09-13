@@ -138,7 +138,11 @@
 </ol>
 <h3 id="記憶體與-cpu-之間的資料傳輸">記憶體與 CPU 之間的資料傳輸</h3>
 <p>CPU 與 Memory 之間的連接形成了一個緊密的迴路：</p>
-<pre><code></code></pre>
+<pre><code>CPU ──addressM[14:0]──→ Memory
+CPU ──outM[15:0]──────→ Memory
+CPU ──writeM──────────→ Memory
+Memory ──inM[15:0]───→ CPU
+</code></pre>
 <ul>
 <li><code>addressM</code>：CPU 輸出 15-bit 位址到 Memory（A 暫存器的值）</li>
 <li><code>outM</code>：CPU 輸出要寫入 Memory 的 16-bit 資料</li>
@@ -148,7 +152,87 @@
 <hr />
 <h2 id="memory-hdl-實作">Memory HDL 實作</h2>
 <p>以下是完整的 <code>Memory.hdl</code> 實作：</p>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// Hack 記憶體系統：統一的位址空間
+// 檔案：Memory.hdl
+
+CHIP Memory {
+    IN  in[16],      // 要寫入的資料
+        load,        // 寫入使能
+        address[15]; // 位址
+
+    OUT out[16];     // 讀取的資料
+
+    PARTS:
+
+    // ============================================================
+    // 位址範圍解碼
+    // ============================================================
+    // 判斷位址屬於哪個區域：
+    //   RAM：  address[14] = 0（即位址 &lt; 16384）
+    //   Screen：address[14]=1 AND address[13]=0（16384-24575）
+    //   Keyboard：address = 24576（address[13]=1）
+
+    // 判斷是否為 RAM 區域（address &lt; 16384）
+    // 16384 = 100000000000000（二進位）
+    // address[14]=0 表示位址在 0-16383 之間
+    Not(a=address[14], out=isRAM);
+
+    // 判斷是否為 Screen 區域（16384 &lt;= address &lt;= 24575）
+    // Screen 區域：address[14]=1 且 address[13]=0
+    And(a=address[14], b=address[13], out=isScreenOrKeyboard);
+    Not(a=address[13], out=notAddr13);
+    And(a=address[14], b=notAddr13, out=isScreen);
+
+    // 判斷是否為 Keyboard 位置（address = 24576）
+    // 24576 = 110000000000000（二進位）
+    // 即 address[14]=1, address[13]=1, 其餘位元為 0
+    // 簡化處理：address[13]=1 時我們視為 Keyboard 區域
+    // 實際上 Keyboard 只有一個位置，但為簡化設計
+    // 我們用 address[13]=1 來選擇 Keyboard
+    And(a=address[14], b=address[13], out=isKeyboard);
+
+    // ============================================================
+    // RAM16K 實例
+    // ============================================================
+    // RAM16K 只在 isRAM=1 時被選中
+    // load 訊號需要 AND isRAM（只有在 RAM 區域時才允許寫入）
+    And(a=load, b=isRAM, out=ramLoad);
+
+    RAM16K(in=in, load=ramLoad, address=address[0..13], out=ramOut);
+
+    // ============================================================
+    // Screen 記憶體
+    // ============================================================
+    // Screen 是 8K 的 RAM，映射到螢幕像素
+    // Screen 的位址從 16384 開始，需要減去基底位址
+    // Screen 基底 = 16384，相對位址 = address - 16384
+    // 但 16384 = 1 &lt;&lt; 14，所以 Screen 的相對位址就是
+    // address[0..12]（去掉最高位元 14 和 13）
+    And(a=load, b=isScreen, out=screenLoad);
+
+    // Screen 使用 address[0..12] 作為內部位址
+    // Screen 記憶體的大小為 8K = 8192，需要 13-bit 位址
+    Screen(in=in, load=screenLoad, address=address[0..12], out=screenOut);
+
+    // ============================================================
+    // Keyboard 暫存器
+    // ============================================================
+    // Keyboard 只有一個位置（24576），不需要位址解碼
+    // Keyboard 的值由硬體自動更新，不能被程式寫入
+    Keyboard(out=keyboardOut);
+
+    // ============================================================
+    // 輸出多工器
+    // ============================================================
+    // 根據位址範圍選擇正確的資料來源作為 out
+    //   isRAM=1     → ramOut
+    //   isScreen=1  → screenOut
+    //   isKeyboard=1 → keyboardOut
+
+    Mux16(a=ramOut, b=screenOut, sel=isScreen, out=memOut);
+    Mux16(a=memOut, b=keyboardOut, sel=isKeyboard, out=out);
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../05/Memory.tst&amp;run=1">習題模擬</a></p>
 <h3 id="設計思路與實作步驟">設計思路與實作步驟</h3>
 <ol>

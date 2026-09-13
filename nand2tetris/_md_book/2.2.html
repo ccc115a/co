@@ -100,7 +100,13 @@
 <h2 id="多位元加法-從-1-bit-到-16-bit">多位元加法：從 1-bit 到 16-bit</h2>
 <p>一個 16 位元數字 <code>a[16]</code>，我們可將它視為 16 條平行的輸入線 <code>a[0]</code> 到 <code>a[15]</code>，其中 <code>a[0]</code> 是最低有效位（LSB，最右邊），<code>a[15]</code> 是最高有效位（MSB，最左邊）。</p>
 <p>把兩個 16 位元數字相加的做法是：<strong>從最低位開始，逐位使用「全加器」，並把低位的 carry 串到高位的 carry-in</strong>。具體接線方式如下：</p>
-<pre><code></code></pre>
+<pre><code>           a15      a14  ...  a1      a0
+           b15      b14  ...  b1      b0
+            |        |         |       |
+        [ FA15 ]  [ FA14 ]  [ FA1 ] [ FA0 ]
+            |        |         |       |      ← carry 往高位傳
+          sum15    sum14     sum1    sum0
+</code></pre>
 <ul>
 <li>最低位 FA0 的 carry-in 接 0。</li>
 <li>每顆全加器 FA_k 的 carry-out 接到 FA_{k+1} 的 carry-in。</li>
@@ -116,17 +122,47 @@
 </ul>
 <p>實作方式：串接 16 個全加器。最低位的 carry-in 直接給 0；其餘每個全加器的 carry-in 接上一個的 carry-out。</p>
 <h3 id="add16-hdl">Add16 HDL</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// 16-bit Adder: out = a + b
+CHIP Add16 {
+    IN a[16], b[16];
+    OUT out[16];
+
+    PARTS:
+    // 最低位（a[0], b[0]）: 直接使用一個 carry 輸入為 0 的全加器
+    FullAdder(a=a[0], b=b[0], c=false, sum=out[0], carry=carry0);
+
+    FullAdder(a=a[1],  b=b[1],  c=carry0, sum=out[1],  carry=carry1);
+    FullAdder(a=a[2],  b=b[2],  c=carry1, sum=out[2],  carry=carry2);
+    FullAdder(a=a[3],  b=b[3],  c=carry2, sum=out[3],  carry=carry3);
+    FullAdder(a=a[4],  b=b[4],  c=carry3, sum=out[4],  carry=carry4);
+    FullAdder(a=a[5],  b=b[5],  c=carry4, sum=out[5],  carry=carry5);
+    FullAdder(a=a[6],  b=b[6],  c=carry5, sum=out[6],  carry=carry6);
+    FullAdder(a=a[7],  b=b[7],  c=carry6, sum=out[7],  carry=carry7);
+    FullAdder(a=a[8],  b=b[8],  c=carry7, sum=out[8],  carry=carry8);
+    FullAdder(a=a[9],  b=b[9],  c=carry8, sum=out[9],  carry=carry9);
+    FullAdder(a=a[10], b=b[10], c=carry9, sum=out[10], carry=carry10);
+    FullAdder(a=a[11], b=b[11], c=carry10, sum=out[11], carry=carry11);
+    FullAdder(a=a[12], b=b[12], c=carry11, sum=out[12], carry=carry12);
+    FullAdder(a=a[13], b=b[13], c=carry12, sum=out[13], carry=carry13);
+    FullAdder(a=a[14], b=b[14], c=carry13, sum=out[14], carry=carry14);
+    FullAdder(a=a[15], b=b[15], c=carry14, sum=out[15], carry=carry15);
+    // 注意: carry15（最後的溢出進位）此處不使用
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../02/Add16.tst&amp;run=1">習題模擬</a></p>
 <blockquote>
 <p>補充：HDL 中 <code>false</code> 表示常數 0，可直接接在輸入腳位；也可使用 <code>a=a[?]</code> 的 bus slicing 語法簡化。上面的寫法把每個全加器的 carry 用變數 <code>carry0...carry15</code> 明確串接，邏輯清楚、易於除錯。</p>
 </blockquote>
 <h3 id="一個範例驗證">一個範例驗證</h3>
-<pre><code></code></pre>
+<pre><code>   a  = 0011 0011 0011 0011   (13107)
+   b  = 0000 0000 0000 0101   (     5)
+ out  = 0011 0011 0011 1000   (13112)
+</code></pre>
 <p>從最低位一路相加，得到完全正確的 <code>13112</code>。你可以用硬體模擬器（Hardware Simulator）載入 Add16.hdl 逐一測試不同的輸入組合。</p>
 <h2 id="進位的傳播-carry-propagation">進位的傳播（Carry Propagation）</h2>
 <p>「進位的傳播」指的是 carry 從最低位依序傳到最高位的過程。在漣波進位加法器裡，這是<strong>串列</strong>的行為：第 k 位要能正確相加，必須先等到低位的 carry 傳進來。因此最壞情況下的延遲為：</p>
-<pre><code></code></pre>
+<pre><code>延遲 ≈ 位元數 × 單顆全加器的延遲
+</code></pre>
 <p>也就是說，16 位元加法器最壞要等 16 倍的單顆全加器延遲。雖然真實 CPU 會用更快的「前瞻進位加法器（Carry-Lookahead Adder）」來改善，但以教學與正確性而言，漣波架構已是絕佳的起點。</p>
 <p>實作上，你可以觀察到一件重要的事：<strong><code>out[15]</code>（最高位的和）與「最後的 carry15」是分開的</strong>。<code>out[15]</code> 是加法的最高有效位結果，而 carry15 是「溢位」旗標（overflow）——當兩正數相加結果為負（超出 16 位元範圍）時，這個進位就會「丟失」。這正是二補數溢位的來源。</p>
 <h2 id="二補數表示法與負數">二補數表示法與負數</h2>
@@ -136,11 +172,20 @@
 <blockquote>
 <p>一個負數 <code>-x</code> 的二補數表示，等於 <code>x</code> 的每一位取反後再加 1。</p>
 </blockquote>
-<pre><code></code></pre>
+<pre><code>-x = (~x) + 1
+</code></pre>
 <h3 id="二補數的直覺理解">二補數的直覺理解</h3>
 <p>我們想像 16 位元是一個「鐘面」，從 <code>0000 0000 0000 0000</code>（0）開始往上數，加一後就依序變成 1、2、3……直到 <code>0111 1111 1111 1111</code>（32767，最大的正數）。再往上加一，就「繞回」成 <code>1000 0000 0000 0000</code>，也就是 <strong>-32768</strong>（最小的負數）。繼續加，會依序變成 -32767、-32766……直到 <code>1111 1111 1111 1111</code>（-1），再加一又繞回 0。</p>
 <p>這個「鐘面」式的循環結構，正是二補數的精髓：</p>
-<pre><code></code></pre>
+<pre><code> 0000 ... 0000      =  0
+ 0000 ... 0001      =  1
+ ...
+ 0111 ... 1111      =  32767      (最大正數)
+ 1000 ... 0000      = -32768      (最小負數)
+ ...
+ 1111 ... 1110      = -2
+ 1111 ... 1111      = -1
+</code></pre>
 <h3 id="驗證-為甚麼二補數能讓-加減合一">驗證：為甚麼二補數能讓「加減合一」</h3>
 <p>我們來驗證 <code>5 + (-3) = 2</code> 是否真的能用同一個加法器完成：</p>
 <ul>
@@ -148,7 +193,12 @@
 <li>-3 的二補數：<code>~3 + 1 = 1111 1111 1111 1100 + 1 = 1111 1111 1111 1101</code></li>
 </ul>
 <p>把兩者用 Add16 相加：</p>
-<pre><code></code></pre>
+<pre><code>   0000 0000 0000 0101   ( 5)
+ + 1111 1111 1111 1101   (-3)
+ ----------------------
+ 1 0000 0000 0000 0010   去掉溢位 carry
+   0000 0000 0000 0010   ( 2)  ✓ 正確!
+</code></pre>
 <p>溢位出來的「1」被丟棄，剩下的 <code>...0010 = 2</code> 完全正確。這證明了：<strong>只要以二補數表示，減法 <code>x - y</code> 就等價於加法 <code>x + (~y + 1)</code>，不需要額外的減法電路</strong>。這也為我們在本章稍後設計 ALU 的 <code>x-y</code> 運算埋下伏筆。</p>
 <h2 id="增量器-inc16">增量器：Inc16</h2>
 <h3 id="設計思路">設計思路</h3>
@@ -163,9 +213,38 @@
 <li><strong>優化做法</strong>：既然只要加 1，最低位用半加器（加 1 對最低位），其餘位用全加器串接 carry。這樣更省電路。</li>
 </ol>
 <h3 id="使用-add16-的直覺版-僅供理解">使用 Add16 的直覺版（僅供理解）</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// 概念示意: out = in + 1 （利用 Add16 加上常數 1）
+// 注意: Nand2Tetris 的標準作法並非直接呼叫 Add16，而是自行串接全加器。
+// 以下僅為概念展示，方便理解「加一就是加法特例」。
+</code></pre>
 <h3 id="inc16-標準-hdl-自行串接全加器">Inc16 標準 HDL（自行串接全加器）</h3>
-<pre><code class="language-hdl"></code></pre>
+<pre><code class="language-hdl">// 16-bit Incrementer: out = in + 1
+CHIP Inc16 {
+    IN in[16];
+    OUT out[16];
+
+    PARTS:
+    // 最低位: in+1, 用半加器處理（carry-in 為 0，只需處理 in[0] 與常數 1）
+    HalfAdder(a=in[0], b=true, sum=out[0], carry=carry0);
+
+    FullAdder(a=in[1],  b=false, c=carry0, sum=out[1],  carry=carry1);
+    FullAdder(a=in[2],  b=false, c=carry1, sum=out[2],  carry=carry2);
+    FullAdder(a=in[3],  b=false, c=carry2, sum=out[3],  carry=carry3);
+    FullAdder(a=in[4],  b=false, c=carry3, sum=out[4],  carry=carry4);
+    FullAdder(a=in[5],  b=false, c=carry4, sum=out[5],  carry=carry5);
+    FullAdder(a=in[6],  b=false, c=carry5, sum=out[6],  carry=carry6);
+    FullAdder(a=in[7],  b=false, c=carry6, sum=out[7],  carry=carry7);
+    FullAdder(a=in[8],  b=false, c=carry7, sum=out[8],  carry=carry8);
+    FullAdder(a=in[9],  b=false, c=carry8, sum=out[9],  carry=carry9);
+    FullAdder(a=in[10], b=false, c=carry9, sum=out[10], carry=carry10);
+    FullAdder(a=in[11], b=false, c=carry10, sum=out[11], carry=carry11);
+    FullAdder(a=in[12], b=false, c=carry11, sum=out[12], carry=carry12);
+    FullAdder(a=in[13], b=false, c=carry12, sum=out[13], carry=carry13);
+    FullAdder(a=in[14], b=false, c=carry13, sum=out[14], carry=carry14);
+    FullAdder(a=in[15], b=false, c=carry14, sum=out[15], carry=carry15);
+    // carry15（溢出進位）此處不使用
+}
+</code></pre>
 <p><a href="../_web_eda/dist/hdl.html?case=../02/Inc16.tst&amp;run=1">習題模擬</a></p>
 <p>說明：因為除了最低位外，其餘每一位都只是「把 <code>in[k]</code> 加上來自低位的進位」，所以 <code>b</code> 恆為 0（<code>false</code>），僅最低位 <code>in[0]</code> 要加常數 1（<code>true</code>）。這樣極省電路資源。</p>
 <h3 id="inc16-的應用">Inc16 的應用</h3>
