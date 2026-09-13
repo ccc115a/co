@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>計算機結構 — Nand2Tetris 互動式教材（目錄）</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body class="cover-page">
+<div class="cover">
+  <h1 class="big">計算機結構：從 Nand 到 Tetris</h1>
+  <div class="meta">
+    金門大學資訊工程系 · 115 學年度 · 授課教師 陳鍾誠<br>
+    互動式習題教材：每一章都有「可執行的」習題——邏輯閘就在瀏覽器裡模擬、
+    組語當場組譯與執行、Jack 程式整條編譯到底。全部純瀏覽器運作（file:// 即可直接開啟）。
+  </div>
+  <div class="meta" style="margin-top:-14px">
+    👉 左側邊欄可隨時跳轉章節；每個習題卡右上角勾「我會了」即可追蹤進度（存於本機瀏覽器）。
+    各章順著做，後面的元件都建立在前面設計好的元件之上。
+  </div>
+
+  <h2>章節目錄</h2>
+  <div class="grid">
+    <a class="card" href="ch00.html" data-f="ch00">
+      <div class="k">第 0 章</div><h3>導論：Nand2Tetris 與 HackHDL</h3>
+      <p>課程地圖、Hack 硬體描述語言入門、一切從 Nand 開始。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch01.html" data-f="ch01">
+      <div class="k">第 1 章</div><h3>布林邏輯</h3>
+      <p>十分鐘做出 Not、And、Or、Xor、Mux…15 個邏輯閘，全部可當場模擬驗證。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch02.html" data-f="ch02">
+      <div class="k">第 2 章</div><h3>算術單元</h3>
+      <p>半加器 → 全加器 → 16 位元加法器 → 遞增器 → ALU，逐步組出算術邏輯單元。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch03.html" data-f="ch03">
+      <div class="k">第 3 章</div><h3>記憶單元</h3>
+      <p>DFF 給定，做出 Bit、Register、RAM8→RAM16K，以及程式計數器 PC。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch04.html" data-f="ch04">
+      <div class="k">第 4 章</div><h3>機器語言</h3>
+      <p>Hack 組語 A/C 指令，親手組譯、逐步執行乘法 Mult 與螢幕反白 Fill。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch05.html" data-f="ch05">
+      <div class="k">第 5 章</div><h3>計算機結構</h3>
+      <p>Memory 模組、HackCPU，以及把整台電腦串起來——本章是補齊整條硬體線的關鍵。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch06.html" data-f="ch06">
+      <div class="k">第 6 章</div><h3>組譯器</h3>
+      <p>組語 → 機器碼：兩遍式組譯（符號表＋編碼表），看看 add.asm / sum.asm 怎麼變成 0 與 1。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch07.html" data-f="ch07">
+      <div class="k">第 7 章</div><h3>VM：堆疊與算術</h3>
+      <p>虛擬機中間碼 push/pop 與算術指令怎麼底層對映到記憶體分段與堆疊。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch08.html" data-f="ch08">
+      <div class="k">第 8 章</div><h3>VM：函式與控制流</h3>
+      <p>function / call / return 的組語翻譯，看 return-address、ARG、LCL 如何被安排。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch09.html" data-f="ch09">
+      <div class="k">第 9 章</div><h3>高階語言</h3>
+      <p>當我們擁有 Stack Machine 之後，為什麼還需要高階語言？從 Square 專案看起。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch10.html" data-f="ch10">
+      <div class="k">第 10 章</div><h3>編譯器</h3>
+      <p>詞法、語法、符號表、程式產生：Jack 編譯器的五階段管線如何把程式吃得乾乾淨淨。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch11.html" data-f="ch11">
+      <div class="k">第 11 章</div><h3>Jack 語言與編譯器</h3>
+      <p>選一個現成 Jack 程式，一條龍編譯到 VM、組語、機器碼，然後在你的瀏覽器裡「跑」起來。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+    <a class="card" href="ch12.html" data-f="ch12">
+      <div class="k">第 12 章</div><h3>作業系統</h3>
+      <p>最後一塊拼圖：用 Jack 實作記憶體動態配置、字串、輸出螢幕與數學函式等標準程式庫。</p>
+      <div class="pct"><div></div></div><div class="pct-label"></div>
+    </a>
+  </div>
+
+  <h2>使用工具</h2>
+  <p>本教材的互動引擎直接沿用課程既有、由 JS 實作的 Nand2Tetris 工具鏈（<code>_web_eda</code>），
+  故<a href="../_web_eda/dist/index.html">下開啟</a>你還有三套獨立的網頁工具可用：</p>
+  <ul>
+    <li><a href="../_web_eda/dist/index.html">組語 Emulator</a> — 貼 .asm 立即組譯、逐步執行、看螢幕。</li>
+    <li><a href="../_web_eda/dist/hdl.html">HDL 批次模擬器</a> — 內建全部章節語料，一次跑完一整支 .tst。</li>
+    <li><a href="../_web_eda/dist/jack.html">Jack 全鏈路</a> — 編譯 Jack 程式到可玩的網頁遊戲。</li>
+  </ul>
+  <div class="tip">小提醒：若瀏覽器開啟 <code>file://</code> 頁面沒出現模擬面板，多半是檔案相對路徑
+  （<code>../_web_eda/dist/…</code>）被改動；請確認 <code>_web_eda/dist/corpus.js</code> 等檔案存在。</div>
+
+  <footer class="bookfoot">
+    互動式教材 · Nand2Tetris 習題講解與驗證 · 全部在瀏覽器內執行，資料不會送出本機。
+  </footer>
+</div>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

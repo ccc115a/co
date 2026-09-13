@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 6 章 組譯器 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 6 章</span>組譯器：把組語翻成機器碼</h1>
+  <p class="lead">組語是人看的，機器碼是機器看的。這一章你要寫一支「翻譯官」：
+  讀進 <code>.asm</code>，逐行吐出 <code>.bin</code>（16 位元 0/1）。下面每個互動面板，
+  就是先把你寫好的翻譯官「理論」用內建組譯器現場示範組譯＋執行。</p>
+
+  <h2>編碼規則：就兩條</h2>
+  <table class="tbl">
+    <tr><th>指令</th><th>位元編排</th></tr>
+    <tr><td>A 指令</td><td><code>0</code> + 15 位元位址 → <code>@5</code> = <code>0000000000000101</code></td></tr>
+    <tr><td>C 指令</td><td><code>1 1 1 a c1c2c3c4c5c6 d1d2d3 j1j2j3</code>（a＝選 M；c 表 ALU 運算；d 表 dest 三暫存器；j 表跳轉條件）</td></tr>
+  </table>
+  <div class="note">符號處理是組譯器的「體力活」：虛擬符號 <code>R0..R15</code> → 0..15、
+  <code>SCREEN</code> → 16384、<code>KBD</code> → 24576；自訂標籤（<code>(LOOP)</code>）記下一行的位址；
+  自訂變數（<code>@i</code>）從 16 開始依序分配。</div>
+
+  <h2>本 repo 的組譯器實作</h2>
+  <ul>
+    <li><b>C/C++</b>：<code>06/asm.cpp</code>。建構：<code>make</code>（產生 <code>asm</code>），
+      執行：<code>./asm add</code>（讀 <code>add.asm</code>、寫 <code>add.bin</code>）。一緒有 <code>vm</code>（HACK 模擬器）與 <code>dasm</code>（反組譯器）。</li>
+    <li><b>Python</b>：<code>06/py/asm.py</code>：<code>python py/asm.py add.asm add.hack</code>。</li>
+    <li><b>JS（本教材互動）</b>：<code>_web_eda</code> 的 <code>HackAsm</code>，就是下面面板在用的那顆。</li>
+  </ul>
+
+  <h2>示範一：add.asm — 每行都有註解的入門</h2>
+  <p>計算 <code>RAM[0] = 2 + 3</code>。用 <b>Step</b> 一格一格走，觀察 A 暫存器怎麼先裝位址、D 暫存器怎麼運算：</p>
+  <div data-widget="emu" data-asm="@2
+D=A
+@3
+D=D+A
+@0
+M=D"
+       data-hint="組譯後每行左邊是位址、右邊是 16-bit 機器碼；Run 完 RAM[0] 應為 5"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/index.html?asm=%402%0AD%3DA%0A%403%0AD%3DD%2BA%0A%400%0AM%3DD" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+
+  <h2>示範二：sum.asm — 跑一支迴圈</h2>
+  <p>計算 <code>RAM[1] = 1 + 2 + … + RAM[0]</code>（預設 RAM[0]=10 → 結果 55）。揚起一支迴圈，
+  注意 <b>@sum / (SUM) 怎麼被當成「變數」與「標籤」兩種符號分開處理</b>：</p>
+  <div data-widget="emu" data-asm="// RAM[0] = 10
+@10
+D=A
+@0
+M=D
+// Computes RAM[1] = 1 + ... + RAM[0]
+@i
+M=1 // i = 1
+@sum
+M=0 // sum = 0
+(LOOP)
+@i // if i>RAM[0] goto STOP
+D=M
+@R0
+D=D-M
+@STOP
+D;JGT
+@i // sum += i
+D=M
+@sum
+M=D+M
+@i // i++
+M=M+1 // 16
+@LOOP // goto LOOP
+0;JMP
+(STOP)
+@sum
+D=M
+@R1
+M=D // RAM[1] = the sum"
+       data-hint="Run 後 RAM[1] 應為 55（=1+2+…+10），RAM[0] 保持 10"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/index.html?asm=%2F%2F%20RAM%5B0%5D%20%3D%2010%0A%4010%0AD%3DA%0A%400%0AM%3DD%0A%2F%2F%20Computes%20RAM%5B1%5D%20%3D%201%20%2B%20...%20%2B%20RAM%5B0%5D%0A%40i%0AM%3D1%20%2F%2F%20i%20%3D%201%0A%40sum%0AM%3D0%20%2F%2F%20sum%20%3D%200%0A(LOOP)%0A%40i%20%2F%2F%20if%20i%3ERAM%5B0%5D%20goto%20STOP%0AD%3DM%0A%40R0%0AD%3DD-M%0A%40STOP%0AD%3BJGT%0A%40i%20%2F%2F%20sum%20%2B%3D%20i%0AD%3DM%0A%40sum%0AM%3DD%2BM%0A%40i%20%2F%2F%20i%2B%2B%0AM%3DM%2B1%20%2F%2F%2016%0A%40LOOP%20%2F%2F%20goto%20LOOP%0A0%3BJMP%0A(STOP)%0A%40sum%0AD%3DM%0A%40R1%0AM%3DD%20%2F%2F%20RAM%5B1%5D%20%3D%20the%20sum" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+
+  <div class="tip">寫完組譯器後做個小實驗：拿 Ch04 的 <code>Mult.asm</code> 組出來，跟課本的 <code>Mult.hack</code> 對比——一樣就成功了。</div>
+  <footer class="bookfoot">Ch06 組譯器 · 下一章：<a href="ch07.html">Ch07 VM 一部曲：堆疊與算術</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

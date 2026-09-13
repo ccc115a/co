@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 0 章 導論 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 0 章</span>導論：Nand2Tetris 與 HackHDL</h1>
+  <p class="lead">這一章沒有硬性習題，但請先弄清「我們在蓋什麼」：從一顆 Nand 閘出發，
+  一路建出台式電腦——最後再用你自己寫的編譯器把高階語言跑在上面。</p>
+
+  <h2>課程地圖：從 Nand 到 Tetris</h2>
+  <p>整門課分兩條主線，硬體與軟體在中間某處交會：</p>
+  <table class="tbl">
+    <tr><th>階段</th><th>章節</th><th>我們做出什麼</th><th>工具</th></tr>
+    <tr><td>硬體</td><td>Ch01 布林邏輯</td><td>15 個邏輯閘（本書第一個互動區）</td><td>HackHDL</td></tr>
+    <tr><td>硬體</td><td>Ch02 算術單元</td><td>加法器與 ALU</td><td>HackHDL</td></tr>
+    <tr><td>硬體</td><td>Ch03 記憶單元</td><td>暫存器與記憶體</td><td>HackHDL</td></tr>
+    <tr><td>硬體</td><td>Ch04 5 組合語言</td><td>表達乘法、螢幕控制的機器語言</td><td>組語 Emulator</td></tr>
+    <tr><td>硬體</td><td>Ch05 計算機結構</td><td>HackCPU 與整台電腦</td><td>HackHDL</td></tr>
+    <tr><td>軟體</td><td>Ch06 組譯器</td><td>組語 → 機器碼</td><td>C / JS</td></tr>
+    <tr><td>軟體</td><td>Ch07–08 VM</td><td>虛擬機 → 組語</td><td>C / JS</td></tr>
+    <tr><td>軟體</td><td>Ch09–11 高階語言＋編譯器</td><td>Jack → VM → 組語</td><td>py / C / JS</td></tr>
+    <tr><td>軟體</td><td>Ch12 作業系統</td><td>用 Jack 寫標準程式庫</td><td>Jack</td></tr>
+  </table>
+  <blockquote>本書的互動面板全部使用課程的 <b>hackjs 工具鏈</b>（位於 <code>_web_eda/</code>）：
+  它用 JavaScript 重新實作了整組 Nand2Tetris 工具，能在瀏覽器直接開檔案執行——也就是你現在看到的每一張「可執行習題卡」。</blockquote>
+
+  <h2>HackHDL 一句話入門</h2>
+  <p>Hack 硬體描述語言描述「晶片」之間怎麼接線。一個晶片由三段組成：</p>
+  <pre class="plain">CHIP 晶片名 {
+    IN  a, b;          // 輸入腳位
+    OUT out;           // 輸出腳位
+    PARTS:
+      子晶片1(腳位=訊號, …);
+      子晶片2(腳位=訊號, …);   // 依序定義，可向前「留線路」然後往後接
+}</pre>
+  <div class="rules">
+    <b>連線語意</b>
+    <ul>
+      <li><code>Nand(a=a, b=b, out=n)</code> → 把 a、b 接到 Nand 的輸入，Nand 的輸出取名為 <code>n</code>。</li>
+      <li><code>Not(in=n, out=out)</code> → 把剛才的 <code>n</code> 接進 Not、再輸出成晶片的 <code>out</code>。</li>
+      <li>「取名」就是用一條導線 <i>wire</i> 串起來；同一條導線可以被多次作為輸入（扇出 fan-out）。</li>
+    </ul>
+  </div>
+
+  <h3>原生閘：一切故事的起點是 Nand</h3>
+  <p>第一章只給你<b>無限多顆 Nand</b>，其真值表是一切邏輯閘的基礎。下面這顆「Nand2」直接就是一顆 Nand，跑一下 `.tst` 看看它的四種輸入組合：</p>
+  <div id="nand-demo"></div>
+  <div class="tip">Nand 是由 CMOS 電晶體直接實作的「原生閘」——所有其他布林函數（AND、OR、XOR…）都可以只用 Nand 拼出來，這就是第一章 ch01 的全部工作。</div>
+
+  <h2>為什麼這樣設計？（Nand2Tetris 精神）</h2>
+  <ul>
+    <li><b>漸進抽象</b>：閘 → 晶片 → 機器語言 → VM → 高階語言 → 作業系統，每一層只需要上一層。</li>
+    <li><b>全部動手</b>：不用死背，把理論做出來、再拿標準測試驗證。</li>
+    <li><b>閘極簡</b>：課程刻意只用 Nand 與 DFF 兩個原始元件，其餘全部自己搭。</li>
+  </ul>
+
+  <h2>本互動教材怎麼用</h2>
+  <ol>
+    <li>沿著左側邊欄一頁頁翻過去（Ch00 → Ch12）。</li>
+    <li>每一張習題卡右上角都有「執行」按鈕：按下去就是真的在瀏覽器裡跑標準測試。</li>
+    <li>覺得看懂了，就勾「我會了」，進度會自動存起來（存在這台瀏覽器的 localStorage）。</li>
+  </ol>
+  <div class="note">想跟「標準答案」保持距離？把晶片程式碼清空自己寫、寫好再按執行，模擬器會陪你直到 PASS 為止——本書載入的 .hdl/.asm 其實就是教師版答案，供你對照與驗證。</div>
+
+  <footer class="bookfoot">Ch00 導論 · 下一章：<a href="ch01.html">Ch01 布林邏輯</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+<script>
+  N2T.hdl(document.getElementById('nand-demo'), {
+    dir: 'ch00-demo', top: 'Nand2', dirLabel: '原生閘（不必自己寫）',
+    hdl: 'CHIP Nand2 {\n    IN a, b;\n    OUT out;\n    PARTS:\n        Nand(a=a, b=b, out=out);\n}',
+    tst: 'output-list a%B3.1.3 b%B3.1.3 out%B3.1.3;\nset a 0, set b 0, eval, output;\nset a 0, set b 1, eval, output;\nset a 1, set b 0, eval, output;\nset a 1, set b 1, eval, output;',
+    cmp: '|  a  |  b  |out|\n|  0  |  0  | 1 |\n|  0  |  1  | 1 |\n|  1  |  0  | 1 |\n|  1  |  1  | 0 |',
+  });
+</script>
+</body>
+</html>

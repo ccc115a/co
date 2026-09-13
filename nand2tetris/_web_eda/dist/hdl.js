@@ -7,6 +7,7 @@
     chapter: document.getElementById('chapter'),
     case: document.getElementById('case'),
     run: document.getElementById('run'),
+    kbd: document.getElementById('kbd'),
     status: document.getElementById('status'),
     hdl: document.getElementById('hdl'),
     tst: document.getElementById('tst'),
@@ -183,7 +184,7 @@
       const out = [];
       let error = null;
       try {
-        run(model, script, baseDir, out, false);
+        run(model, script, baseDir, out, false, Number(el.kbd.value) | 0);
       } catch (err) {
         error = err;
       }
@@ -208,12 +209,64 @@
   }
 
   el.mode.onchange = applyMode;
-  el.chapter.onchange = () => { fillCase(); loadSource(); };
-  el.case.onchange = loadSource;
+  el.chapter.onchange = () => { fillCase(); loadSource(); mirrorHash(); };
+  el.case.onchange = () => { loadSource(); mirrorHash(); };
   el.run.onclick = runCase;
 
   fillChapter();
   fillCase();
   el.status.textContent = `語料 ${Object.keys(window.HACKJS_CORPUS).length} 檔`;
-  loadSource();
+
+  // ---- v1.2 書籤/深連結：#case=../05/Memory（&run=1）或 #../05/Memory（!run）----
+  function mirrorHash() {
+    if (el.mode.value !== 'chapter') {
+      if (location.hash) history.replaceState(null, '', location.pathname + location.search);
+      return;
+    }
+    const bare = el.case.value.replace(/\.tst$/, '');
+    history.replaceState(null, '', location.pathname + location.search + '#case=' + bare);
+  }
+
+  function hashWant() {
+    const raw = location.hash.replace(/^#/, '');
+    if (!raw) return null;
+    let h;
+    try { h = decodeURIComponent(raw); } catch (_) { h = raw; }
+    if (/^(case|run)=/.test(h)) {
+      const hp = new URLSearchParams(h);
+      return { case: hp.get('case'), run: hp.get('run') === '1' };
+    }
+    const m = /^(.*)!run$/.exec(h);
+    return m ? { case: m[1], run: true } : { case: h, run: false };
+  }
+
+  function applyWant() {
+    const q = new URLSearchParams(location.search);
+    const wantCustom = q.get('mode') === 'custom' && q.get('hdl') != null;
+    const wh = hashWant();
+    const wantProg = (wh && wh.case) ?? q.get('case');
+    const autoRun = (wh ? wh.run : false) || q.get('run') === '1';
+    if (wantCustom) {
+      if (el.mode.value !== 'custom') { el.mode.value = 'custom'; applyMode(); }
+      el.hdl.value = q.get('hdl');
+      el.tst.value = q.get('tst') ?? DEFAULT_CUSTOM.tst;
+      el.cmp.value = q.get('cmp') != null ? q.get('cmp') : DEFAULT_CUSTOM.cmp;
+      if (autoRun) setTimeout(runCase, 50);
+      return;
+    }
+    if (!wantProg) { loadSource(); return; }
+    const key = wantProg.endsWith('.tst') ? wantProg : wantProg + '.tst';
+    const idx = CHAPTERS.findIndex((c) => (c.dir && key.startsWith(c.dir + '/')) ||
+                                           (c.dir2 && key.startsWith(c.dir2 + '/')));
+    if (idx < 0) { loadSource(); return; }
+    el.chapter.value = String(idx);
+    fillCase();
+    const ok = [...el.case.options].some((o) => o.value === key);
+    if (ok) el.case.value = key;
+    loadSource();
+    if (ok && autoRun) setTimeout(runCase, 50);
+  }
+
+  applyWant();
+  window.addEventListener('hashchange', applyWant);
 })();

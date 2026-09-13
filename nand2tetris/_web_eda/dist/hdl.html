@@ -47,6 +47,8 @@
   </select>
   <select id="chapter"></select>
   <select id="case"></select>
+  <label title="鍵盤鍵值（KBD 24576）：Memory.tst 的鍵盤段（`while out <> 75/89`）會自動按腳本期待的鍵，預設給 0 即可整支跑過；想持續按住某鍵再改成該鍵值">KBD 鍵值
+    <input type="number" id="kbd" value="0" min="0" max="65535" style="width:64px"></label>
   <button id="run" title="跑完整支 .tst（codegen＋編譯，數秒）">執行</button>
   <span class="spacer"></span>
   <span id="status"></span>
@@ -71,9 +73,9 @@
     </div>
   </section>
 </main>
-<script src="corpus.js?v=2"></script>
-<script src="hdl-rt.js?v=2"></script>
-<script src="embed.js?v=2"></script>
-<script src="hdl.js?v=2"></script>
+<script src="corpus.js?v=6"></script>
+<script src="hdl-rt.js?v=6"></script>
+<script src="embed.js?v=6"></script>
+<script src="hdl.js?v=6"></script>
 </body>
 </html>

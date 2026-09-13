@@ -308,7 +308,7 @@ export class RunErr extends Error {
  * 執行測試：`.out` 內容寫進 out，並依 output-file/compare-to 產檔與比對。
  * baseDir：腳本中所有相對路徑的基準。
  */
-export function run(model, script, baseDir, out, verbose) {
+export function run(model, script, baseDir, out, verbose, keyboard) {
   if (script.outputList.length > 0) {
     const fields = script.outputList.map((f) => f.field);
     out.push(headerLine(fields) + '\n');
@@ -316,6 +316,9 @@ export function run(model, script, baseDir, out, verbose) {
   if (verbose) console.error(`load ${script.load ?? '(none)'}`);
   if (script.romLoad) {
     model.loadRom(path.join(baseDir, script.romLoad));
+  }
+  if (keyboard !== undefined) {
+    model.setInput('KBD', keyboard);
   }
   const st = { cycle: 0, half: false };
   runSteps(model, script, script.steps, baseDir, out, st, verbose);
@@ -369,6 +372,8 @@ function runSteps(model, script, steps, baseDir, out, st, verbose) {
         }
         break;
       case 'While': {
+        // 鍵盤 wait-while（`while out <> <key>`）：批次模式下直接送出腳本期待的按鍵
+        if (step.name === 'out' && typeof step.val === 'number') model.setInput('KBD', step.val);
         let iters = 0;
         for (;;) {
           const cur = model.getOutput(step.name) ?? 0;

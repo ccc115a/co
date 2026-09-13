@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 3 章 記憶單元 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 3 章</span>記憶單元：暫存器與記憶體</h1>
+  <p class="lead">這一章開始「會記住東西」。課程預設給定了 <b>DFF</b>（D 型正反器），
+  你要做的是：記憶體最小單位 Bit → 16 位元暫存器 → 遞迴放大成 RAM → 最後是程式計數器 PC。</p>
+
+  <div class="rules">
+    <b>本練習的重點概念</b>
+    <ul>
+      <li><b>DFF</b>（原生、時序元件）：<code>out(t) = in(t-1)</code>——每個 clock 週期把暫存的值往後傳一格。</li>
+      <li><b>Bit</b>：DFF ＋ 一個多工器；當 <code>load=1</code> 把輸入寫入，否則把自己舊值送回（保持）。</li>
+      <li><b>RAM</b>：一群 Bit，用 <code>DMux8Way</code> 選「這筆資料要寫進第幾個 word」、
+        用 <code>Mux8Way16</code> 選「要讀哪個 word 出來」——16 words 之後就遞迴長大。</li>
+    </ul>
+  </div>
+
+  <!-- ============ 1. Bit ============ -->
+  <section class="ex">
+    <header><span class="no">習題 01</span><span class="name">Bit — 1 位元暫存器</span>
+      <span class="desc">load=1 時記下 in，load=0 時保持</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-01"> 我會了</label></header>
+    <div class="body">
+      <p>Mux 選路：<code>load</code> 決定「從 in 進來」還是「從自己 out 回來」，再喂給 DFF。</p>
+      <div data-widget="hdl" data-dir="../03/a"  data-top="Bit"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/a/Bit.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 2. Register ============ -->
+  <section class="ex">
+    <header><span class="no">習題 02</span><span class="name">Register — 16 位元暫存器</span>
+      <span class="desc">16 顆 Bit，同一個 load</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-02"> 我會了</label></header>
+    <div class="body">
+      <p>把 <code>Bit</code> 平行放 16 份。Hack CPU 的 <b>A、D 暫存器</b>就是它。</p>
+      <div data-widget="hdl" data-dir="../03/a"  data-top="Register"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/a/Register.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 3. RAM8 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 03</span><span class="name">RAM8 — 8 words 記憶體</span>
+      <span class="desc">address[0..2] 選 word</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-03"> 我會了</label></header>
+    <div class="body">
+      <p>DMux8Way 決定 load 進哪一顆 Register；Mux8Way16 把選中的那顆輸出撈出來。</p>
+      <div data-widget="hdl" data-dir="../03/a"  data-top="RAM8"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/a/RAM8.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 4. RAM64 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 04</span><span class="name">RAM64 — 64 words 記憶體</span>
+      <span class="desc">address[0..5]</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-04"> 我會了</label></header>
+    <div class="body">
+      <p>8 顆 RAM8 ＋ 外層選擇：address[3..5] 選 RAM 組、address[0..2] 進 RAM8——「遞迴放大」的第一步。</p>
+      <div data-widget="hdl" data-dir="../03/a"  data-top="RAM64"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/a/RAM64.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 5. RAM512 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 05</span><span class="name">RAM512 — 512 words</span>
+      <span class="desc">address[0..8]</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-05"> 我會了</label></header>
+    <div class="body">
+      <p>8 顆 RAM64 組成的。</p>
+      <div data-widget="hdl" data-dir="../03/b"  data-top="RAM512"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/b/RAM512.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 6. RAM4K ============ -->
+  <section class="ex">
+    <header><span class="no">習題 06</span><span class="name">RAM4K — 4K words</span>
+      <span class="desc">address[0..11]</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-06"> 我會了</label></header>
+    <div class="body">
+      <p>8 顆 RAM512 組成。規律：每 ×8 一次，位址多 3 個 bit。</p>
+      <div data-widget="hdl" data-dir="../03/b"  data-top="RAM4K"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/b/RAM4K.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 7. RAM16K ============ -->
+  <section class="ex">
+    <header><span class="no">習題 07</span><span class="name">RAM16K — 16K words</span>
+      <span class="desc">address[0..13]</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-07"> 我會了</label></header>
+    <div class="body">
+      <p>4 顆 RAM4K 組成。這就是第 5 章 Hack 電腦主記憶體（0x0000–0x3FFF）的實際規格。</p>
+      <div data-widget="hdl" data-dir="../03/b"  data-top="RAM16K"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/b/RAM16K.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 8. PC ============ -->
+  <section class="ex">
+    <header><span class="no">習題 08</span><span class="name">PC — 程式計數器</span>
+      <span class="desc">依照 inc/load/reset 決定下一步跳到哪</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch03-08"> 我會了</label></header>
+    <div class="body">
+      <p>PC 每天在做的事：<code>inc=1</code> 就 +1（順序執行）；<code>load=1</code> 載入跳轉位址；
+      <code>reset=1</code> 歸零（重新開機/程式中斷）。三個來源相加選一——用 Mux 樹挑，就是你今天的作業。</p>
+      <div data-widget="hdl" data-dir="../03/a"  data-top="PC"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <div class="tip">記憶體組好後，加上第 2 章的 ALU 與第 5 章的 CPU 接線，你的 Hack 就會「邊讀邊算」了。</div>
+  <footer class="bookfoot">Ch03 記憶單元 · 下一章：<a href="ch04.html">Ch04 機器語言</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

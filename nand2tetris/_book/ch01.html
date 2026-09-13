@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 1 章 布林邏輯 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 1 章</span>布林邏輯</h1>
+  <p class="lead">給你<b>無限多顆 Nand 閘</b>，請設計出 15 個邏輯晶片。請按照順序做——
+  後面的元件正是「用前面的元件組合」出來的，這樣也最省思考。</p>
+
+  <div class="rules">
+    <b>本練習的規矩</b>
+    <ul>
+      <li>只能使用 <code>Nand</code> 以及自己已完成的晶片，不得偷用其他原生閘。</li>
+      <li>每一題都內建標準「.tst 測試檔」：按 <code>▶ 執行 .tst</code> 模擬器會把輸入設好、
+        一、一比對輸出。PASS 才算完成。</li>
+      <li>卡上的程式碼是〈教師版答案〉，你可以：直接跑（驗證）、清掉重寫、改壞了再按「↺ 重設解答」。</li>
+    </ul>
+  </div>
+
+  <!-- ============ 1. NOT ============ -->
+  <section class="ex">
+    <header><span class="no">習題 01</span><span class="name">Not — 反閘</span>
+      <span class="desc">not(x) = nand(x, x)</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-01"> 我會了</label></header>
+    <div class="body">
+      <p>把一個輸入接到 <code>Nand</code> 的兩個輸入各一次。Nand(a,b) 在 a=b 時行為正好是「反相」。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Not"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Not.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 2. AND ============ -->
+  <section class="ex">
+    <header><span class="no">習題 02</span><span class="name">And — 及閘</span>
+      <span class="desc">and(x,y) = not( nand(x,y) )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-02"> 我會了</label></header>
+    <div class="body">
+      <p>先把 <code>Nand(a,b)</code> 算出來，再用剛剛的 <code>Not</code> 反一次，就是 And。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="And"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/And.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 3. OR ============ -->
+  <section class="ex">
+    <header><span class="no">習題 03</span><span class="name">Or — 或閘</span>
+      <span class="desc">or(x,y) = not( not(x) and not(y) )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-03"> 我會了</label></header>
+    <div class="body">
+      <p>迪摩根定律：OR 就是把兩個「都不成立」再否掉。用兩顆 <code>Not</code> 加一顆 <code>And</code>。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Or"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Or.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 4. XOR ============ -->
+  <section class="ex">
+    <header><span class="no">習題 04</span><span class="name">Xor — 互斥或閘</span>
+      <span class="desc">xor(x,y) = and(x, not y) or and(not x, y)</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-04"> 我會了</label></header>
+    <div class="body">
+      <p>「兩邊不同才為 1」。有一個經典接法：<code>nand(a,b)</code> 與 <code>or(a,b)</code> 再 and。
+      你能看懂為什麼嗎？（提示：Nand 只在「全 1」錯；Or 只在「全 0」錯。）</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Xor"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Xor.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 5. MUX ============ -->
+  <section class="ex">
+    <header><span class="no">習題 05</span><span class="name">Mux — 二選一多工器</span>
+      <span class="desc">out = (sel=0: a) 或 (sel=1: b)</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-05"> 我會了</label></header>
+    <div class="body">
+      <table class="tbl"><tr><th>sel</th><th>out</th></tr><tr><td>0</td><td>a</td></tr><tr><td>1</td><td>b</td></tr></table>
+      <p>多工器是「開關」：某一路永遠可以算出來，只是你要挑其中一邊。標準解：<code>And(not sel, a)</code> 與 <code>And(sel, b)</code> 再 Or。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Mux"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Mux.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 6. DMUX ============ -->
+  <section class="ex">
+    <header><span class="no">習題 06</span><span class="name">DMux — 一對二解多工器</span>
+      <span class="desc">(a,b) = (sel=0: (in,0)) 或 (sel=1: (0,in))</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-06"> 我會了</label></header>
+    <div class="body">
+      <table class="tbl"><tr><th>sel</th><th>a</th><th>b</th></tr><tr><td>0</td><td>in</td><td>0</td></tr><tr><td>1</td><td>0</td><td>in</td></tr></table>
+      <p>Mux 是把資料「選進」，DMux 是把資料「送向」。把輸入只送到被選中的那一路。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="DMux"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/DMux.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 7. NOT16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 07</span><span class="name">Not16 — 16 位元反閘</span>
+      <span class="desc">out[i] = not( in[i] )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-07"> 我會了</label></header>
+    <div class="body">
+      <p>16 顆 <code>Not</code> 各管一個 bit。這樣整條匯流排一次反過來。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Not16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Not16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 8. AND16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 08</span><span class="name">And16 — 16 位元及閘</span>
+      <span class="desc">out[i] = and( x[i], y[i] )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-08"> 我會了</label></header>
+    <div class="body">
+      <p>位元對位元的 And，16 顆 <code>And</code>。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="And16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/And16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 9. OR16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 09</span><span class="name">Or16 — 16 位元或閘</span>
+      <span class="desc">out[i] = or( x[i], y[i] )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-09"> 我會了</label></header>
+    <div class="body">
+      <p>同上，16 顆 <code>Or</code>。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Or16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Or16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 10. MUX16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 10</span><span class="name">Mux16 — 16 位元二選一</span>
+      <span class="desc">out[i] = mux( x[i], y[i], sel )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-10"> 我會了</label></header>
+    <div class="body">
+      <p>一個共用 <code>sel</code> 控制 16 個位元——這是 CPU 裡「資料路徑切換」的常客。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Mux16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Mux16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 11. OR8WAY ============ -->
+  <section class="ex">
+    <header><span class="no">習題 11</span><span class="name">Or8Way — 八輸入或閘</span>
+      <span class="desc">out = or( in[0..7] )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-11"> 我會了</label></header>
+    <div class="body">
+      <p>「任一 bit 為 1 就輸出 1」：這在判斷「這個數是否為零／非零」時非常有用（第 2 章 ALU 會用到）。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Or8Way"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Or8Way.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 12. MUX4WAY16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 12</span><span class="name">Mux4Way16 — 四選一多工器</span>
+      <span class="desc">用兩階 Mux16：mux16( mux16(a,b), mux16(c,d) )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-12"> 我會了</label></header>
+    <div class="body">
+      <p><code>sel[0]</code> 選左右成對，<code>sel[1]</code> 再從兩個中間挑一個。練習「把一維選擇拆成多維」。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Mux4Way16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Mux4Way16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 13. MUX8WAY16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 13</span><span class="name">Mux8Way16 — 八選一多工器</span>
+      <span class="desc">mux16( mux4way16(a..d), mux4way16(e..h) )</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-13"> 我會了</label></header>
+    <div class="body">
+      <p>把 8 個輸入切成兩個四選一，再用 sel 的最高位選邊。多層 Mux 樹是組合電路的常見模式。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="Mux8Way16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/Mux8Way16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 14. DMUX4WAY ============ -->
+  <section class="ex">
+    <header><span class="no">習題 14</span><span class="name">DMux4Way — 一對四解多工器</span>
+      <span class="desc">dmux(in, sel) → a b c d</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-14"> 我會了</label></header>
+    <div class="body">
+      <p>兩顆 DMux 級聯：先依 sel[1] 分成兩組，再各依 sel[0] 決定送哪個輸出。空下的輸出要送 0。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="DMux4Way"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/DMux4Way.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 15. DMUX8WAY ============ -->
+  <section class="ex">
+    <header><span class="no">習題 15</span><span class="name">DMux8Way — 一對八解多工器</span>
+      <span class="desc">dmux(in, sel) → a ～ h</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch01-15"> 我會了</label></header>
+    <div class="body">
+      <p>承接習題 14，再多一層即可。記憶體選址（第 3 章 RAM 系列）的「路徑選擇」就是這個動作。</p>
+      <div data-widget="hdl" data-dir="../01" data-top="DMux8Way"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../01/DMux8Way.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <div class="tip">全部 15 題都 PASS 了嗎？恭喜——你現在擁有可在第 2 章直接使用的全部「基本積木」。</div>
+  <footer class="bookfoot">Ch01 布林邏輯 · 下一章：<a href="ch02.html">Ch02 算術單元</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

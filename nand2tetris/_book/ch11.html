@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 11 章 Jack 語言與編譯器 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 11 章</span>Jack 語言與編譯器（全鏈路實作）</h1>
+  <p class="lead">本章是軟體線的總決戰：完成 ch10 的語法分析之後，再做符號表與 VM 生成，
+  讓「Jack 高階語言」真的能一路跑到 Hack 機器上。本頁互動面板 = 你完成的編譯器（reference 版）一次跑完整條鏈：<br>
+  <code>Jack 原始碼 → .vm（編譯器）→ .asm（VM 翻譯器）→ .hack（組譯器）→ 模擬執行</code></p>
+
+  <h2>本 repo 的兩套實作（易混淆，先看清楚）</h2>
+  <table class="tbl">
+    <tr><th>實作</th><th>位置</th><th>怎麼跑</th></tr>
+    <tr><td>C 版</td><td><code>11/c/jack2vm.c</code></td><td><code>bash build.sh</code> 建構；<code>bash all2vm.sh</code> 全部（吃<b>目錄</b>不是檔案）</td></tr>
+    <tr><td>Python 版</td><td><code>11/py/Compiler.py</code></td><td><code>bash pyrun.sh</code> 或 <code>python py/Compiler.py jack/Seven</code></td></tr>
+    <tr><td>教材語料</td><td><code>11/jack</code>（需 OS）與 <code>11/jackNoOs</code>（自帶 Sys.jack）</td><td>兩者都是網頁版 v1.0 的 Jack 語料</td></tr>
+  </table>
+  <div class="note">不同專案的混淆罪魁禍首：<code>_rust_eda/jack2vm</code>（hackeda 重做版）與 <code>11/{c,py}</code> 是<b>兩套不同的東西</b>。
+  本頁互動用的是網頁端 <code>_web_eda</code> 的 JS 版，與 C 版 byte 相容。</div>
+
+  <h2>互動：挑一支 Jack 程式，編譯並執行</h2>
+  <p>下拉選單列出教材全部語料：左邊是有 OS 的（Seven、Average、ComplexArrays、ConvertToBin、Square、Pong），
+  右邊是「無 OS 自帶 Sys」的純編譯範例（Sum、Factorial、Fib、GCD、PrimeUnder100）。
+  選好 → <code>▶ 編譯並執行</code>，再用 Step / Run 觀察全鏈路成果：</p>
+  <div data-widget="jack"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/jack.html?prog=Seven&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <div class="rules">
+    <b>怎麼玩</b>
+    <ul>
+      <li>先試 <b>Seven</b>：最簡入門，確認 bootstrap（SP=256）與 <code>Sys.init</code> 呼叫正常。</li>
+      <li>試 <b>Square</b> 或 <b>Pong</b>：有繪圖的程式，執行後下方畫布會真的顯示圖形——
+        這代表的意義是你自己的電腦有 Graphics 了（OS 的 Screen 提供）。</li>
+      <li>試無 OS 的五支：例如 <b>GCD</b>（歐幾里得）——不需要作業系統也能運算完畢。</li>
+      <li>你也可以直接改左欄 <code>Main.jack</code> 原始碼再重新編譯——觀察編譯器對改動的反應。</li>
+    </ul>
+  </div>
+  <div class="tip">執行完畢後，SP(RAM[0]) 會停在正確的地方、區域 303~315 記錄各區段基底——
+  這正是 ch08「五件套」的全部機器碼在你眼前被執行。</div>
+  <footer class="bookfoot">Ch11 Jack 語言與編譯器 · 下一章：<a href="ch12.html">Ch12 作業系統</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

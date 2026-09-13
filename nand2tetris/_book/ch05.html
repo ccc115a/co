@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 5 章 計算機結構 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 5 章</span>計算機結構：把一切組合起來</h1>
+  <p class="lead">把第 2 章的 ALU、第 3 章的暫存器與記憶體，用一個控制單元「指揮」起來——
+  成為一台能真的執行程式碼的電腦。本章要交付 <b>Memory.hdl</b>、<b>CPU.hdl</b>，
+  而 <code>Computer.hdl</code> 只是把它們包起來。</p>
+
+  <h2>Hack 電腦架構速覽</h2>
+  <table class="tbl">
+    <tr><th>晶片</th><th>內容</th></tr>
+    <tr><td>Memory</td><td>RAM16K（主記憶體 0x0000–0x3FFF）＋ SCREEN（0x4000–0x5FFF）＋ Keyboard（0x6000）</td></tr>
+    <tr><td>CPU</td><td>兩個暫存器 A/D、程式計數器 PC、ALU＋指令解碼（特殊 M 輸入＝RAM[A]）</td></tr>
+    <tr><td>Computer</td><td>CPU＋Memory＋ROM32K＋時脈，一條 <code>reset</code> 開機、一條 <code>load</code> 載程式</td></tr>
+  </table>
+  <p>CPU 每一條 clock 循環做的事就是：<i>取指（用 PC 讀 ROM）→ 解碼（把指令拆成 zd、ALU 控制位、dest、jump）→ 執行 → 更新 PC</i>。</p>
+
+  <h2>習題一：Memory.hdl</h2>
+  <p>官方 Memory.tst 超長，本教材改用一份<b>精心縮短的同義測驗</b>，驗證三件關鍵行為——
+  寫入/讀回 RAM、螢幕對映區（SCREEN，bit14 定址）、鍵盤區（KBD）：</p>
+  <div data-widget="hdl" data-dir="../05" data-top="Memory"
+       data-tst="#memTstPre" data-cmp="#memCmpPre" data-custom-compare="MemoryDemo.cmp"
+       data-dir-label="自訂短測（等價於官方 Memory.tst 的核心行為）"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../05/Memory.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+  <pre id="memTstPre" class="srccode">load Memory.hdl,
+output-file MemoryDemo.out,
+compare-to MemoryDemo.cmp,
+output-list in%B1.16.1 load%B1.1.1 address%B1.15.1 out%B1.16.1;
+
+set in 1234, set load 1, set address 5, tick, tock, output;
+set load 0, set address 5, tick, tock, output;
+set address 300, tick, tock, output;
+set in 999, set load 1, set address 16384, tick, tock, output;
+set load 0, set address 16384, tick, tock, output;
+set address 24576, tick, tock, output;</pre>
+  <pre id="memCmpPre" class="srccode">|        in        |loa|     address     |       out        |
+| 0000010011010010 | 1 | 000000000000101 | 0000010011010010 |
+| 0000010011010010 | 0 | 000000000000101 | 0000010011010010 |
+| 0000010011010010 | 0 | 000000100101100 | 0000000000000000 |
+| 0000001111100111 | 1 | 100000000000000 | 0000001111100111 |
+| 0000001111100111 | 0 | 100000000000000 | 0000001111100111 |
+| 0000001111100111 | 0 | 110000000000000 | 0000000000000000 |</pre>
+  <div class="tip">實作要訣：把 15 位址線拆成 <b>RAM16K 佔 bit 0..13</b>、<b>bit14 選螢幕</b>、<b>bit15 順便管鍵盤與“別再寫”（mo）</b>——
+  三顆 And 加一顆 Or8Way 就能把「load 只送到該去的地方」。</div>
+
+  <h2>習題二：CPU.hdl</h2>
+  <p>官方 <code>CPU.tst</code> 會在模擬器上直接通過（本互動面板就是真的在跑它）。
+  它直接餵 16-bit 機器碼、逐週期驗證 outM / writeM / addressM / pc 四個輸出：</p>
+  <div data-widget="hdl" data-dir="../05" data-top="CPU"
+       data-dir-label="官方 CPU.tst · 已在引擎驗證 PASS"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../05/CPU.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+
+  <h3>另一組同樣權威的測驗：CPU-external</h3>
+  <p>標配的 <code>CPU-external.tst</code> 對 CPU 加裝「外部 ROM」情境再做一輪（行為與 CPU.tst 相同、僅觀測點不同）：</p>
+  <div data-widget="hdl" data-dir="../05" data-top="CPU" data-tst-file="CPU-external.tst" data-cmp-file="CPU-external.cmp"
+       data-dir-label="官方 CPU-external.tst · 已在引擎驗證 PASS"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../05/CPU-external.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+
+  <h2>整台電腦：Computer.hdl 與一路走回來的成就感</h2>
+  <p>Computer.hdl 不難——你要做的只是把 CPU、Memory、ROM32K 用匯流排接起來。
+  官方 Computer*.tst 需要完整測試台（含一步步 tick/tock 逐行比對整顆電腦的內部暫存器），
+  在本教材的模擬器裡先改用<b>第 4 章的程式</b>驗證同一條「組語跑在你自己設計的機器上」的路：</p>
+  <div data-widget="emu" data-asm="#ch05multAsm" data-setup="2=6 3=7"
+       data-screen="false" data-keys="false" data-hint="同一支 Mult.asm，在「整顆電腦」觀點下再跑一次：這段程式就是會被燒進 ROM，由你設計的 CPU 一條條執行"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/index.html?asm=%2F%2F%20projects%2F04%2Fmult%2FMult.asm%EF%BC%88%E5%8A%A0%E8%A8%BB%E8%A7%A3%E7%89%88%EF%BC%8C%E8%88%87%E8%AA%B2%E6%9C%AC%E8%A1%8C%E7%82%BA%E4%B8%80%E8%87%B4%EF%BC%89%0A%0A%2F%2F%20int%20main()%20%7B%0A%2F%2F%20%20%20%20int%20R0%20%3D%203%3B%0A%2F%2F%20%20%20%20int%20R1%20%3D%205%3B%0A%2F%2F%20%3D%3E%20%20%20%20int%20R2%20%3D%200%3B%0A%402%0AM%3D0%0A%2F%2F%20%20%20%20while%20(R0%20%3E%200)%20%7B%20%20%3D%3E%20loop%3A%0A(loop)%0A%2F%2F%20%3D%3E%20%20%20%20if%20(R0%20%3C%3D%200)%20goto%20exit1%3B%0A%400%0AD%3DM%0A%40exit1%0AD%3BJLE%0A%0A%2F%2F%20%3D%3E%20%20R2%20%3D%20R2%20%2B%20R1%3B%0A%401%0AD%3DM%0A%402%0AM%3DD%2BM%0A%0A%2F%2F%20%3D%3E%20%20R0%20%3D%20R0%20-%201%3B%0A%400%0AM%3DM-1%0A%0A%2F%2F%20%3D%3E%20%20goto%20loop%3B%0A%40loop%0A0%3BJMP%0A%0A%2F%2F%20%3D%3E%20exit1%3A%0A(exit1)%0A%40exit1%0A0%3BJMP%0A%2F%2F%20%7D&amp;ram=2:6,3:7" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+
+  <div class="note">附註：<code>Memory.hdl</code> 之外，官方還有一份 <code>Keyboard.tst</code> 模擬按鍵——
+  本教材的鍵盤互動放在 Ch04 的 Fill 範例（把 KBD 填進 97 再清 0）。</div>
+  <footer class="bookfoot">Ch05 計算機結構 · 下一章：<a href="ch06.html">Ch06 組譯器</a></footer>
+</main>
+
+<pre id="ch05multAsm" class="srccode">// projects/04/mult/Mult.asm（加註解版，與課本行為一致）
+
+// int main() {
+//    int R0 = 3;
+//    int R1 = 5;
+// =>    int R2 = 0;
+@2
+M=0
+//    while (R0 > 0) {  => loop:
+(loop)
+// =>    if (R0 <= 0) goto exit1;
+@0
+D=M
+@exit1
+D;JLE
+
+// =>  R2 = R2 + R1;
+@1
+D=M
+@2
+M=D+M
+
+// =>  R0 = R0 - 1;
+@0
+M=M-1
+
+// =>  goto loop;
+@loop
+0;JMP
+
+// => exit1:
+(exit1)
+@exit1
+0;JMP
+// }</pre>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

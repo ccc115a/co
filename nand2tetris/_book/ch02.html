@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 2 章 算術單元 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 2 章</span>算術單元：加法器與 ALU</h1>
+  <p class="lead">把第 1 章的閘拿來做「算數」：從半加器一路蓋到 Hack 的中央運算核心——ALU。
+  這章做完，你的電腦已經「會算」了。</p>
+
+  <h2>加法是怎麼一回事</h2>
+  <ul>
+    <li><b>半加器 HalfAdder</b>：兩個 1-bit 相加。和（sum）= a XOR b，進位（carry）= a AND b。</li>
+    <li><b>全加器 FullAdder</b>：連上一個低位的進位 c，三個輸入相加。用兩顆半加器＋一顆 Or。</li>
+    <li><b>Add16</b>：16 顆全加器串接，低位進位往高位傳——這就是「進位鏈（carry chain）」。</li>
+  </ul>
+
+  <!-- ============ 1. HalfAdder ============ -->
+  <section class="ex">
+    <header><span class="no">習題 01</span><span class="name">HalfAdder — 半加器</span>
+      <span class="desc">sum=a⊕b, carry=a·b</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch02-01"> 我會了</label></header>
+    <div class="body">
+      <div data-widget="hdl" data-dir="../02" data-top="HalfAdder"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/HalfAdder.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 2. FullAdder ============ -->
+  <section class="ex">
+    <header><span class="no">習題 02</span><span class="name">FullAdder — 全加器</span>
+      <span class="desc">sum = parity(a,b,c)</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch02-02"> 我會了</label></header>
+    <div class="body">
+      <p>新出現的 <code>c</code> 是低位送來的進位。標準接法：先 Sum(a,b)→s1、Carry(a,b)→c1；
+      再把 s1 與 c 送入第二顆半加器，兩顆的進位用 Or 合併。</p>
+      <div data-widget="hdl" data-dir="../02" data-top="FullAdder"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/FullAdder.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 3. Add16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 03</span><span class="name">Add16 — 16 位元加法器</span>
+      <span class="desc">out = x + y</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch02-03"> 我會了</label></header>
+    <div class="body">
+      <p>最高位的進位直接丟棄（本書採 16 位元環狀算術，溢位會自己消失）。</p>
+      <div data-widget="hdl" data-dir="../02" data-top="Add16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/Add16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 4. Inc16 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 04</span><span class="name">Inc16 — 遞增器</span>
+      <span class="desc">out = in + 1</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch02-04"> 我會了</label></header>
+    <div class="body">
+      <p>其實就是 Add16 的另一個輸入固定接 <code>1</code>。程式計數器 PC 就靠它「往前走一格」。</p>
+      <div data-widget="hdl" data-dir="../02" data-top="Inc16"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/Inc16.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <h2>ALU：Hack 的運算核心</h2>
+  <p>ALU 用 6 個控制位元決定「對 x, y 做什麼」；再從結果推出兩個「旗標」：
+  <code>zr</code>（結果為零）與 <code>ng</code>（結果為負），供程式做條件跳轉。</p>
+  <table class="tbl">
+    <tr><th>控制位</th><th>功能</th></tr>
+    <tr><td>zx, nx</td><td>先把 x 變 0 或補數</td></tr>
+    <tr><td>zy, ny</td><td>先把 y 變 0 或補數</td></tr>
+    <tr><td>f</td><td>0＝AND，1＝加法</td></tr>
+    <tr><td>no</td><td>輸出取非</td></tr>
+  </table>
+  <div class="note">實作要訣：先「調教 x、y」→ 再「AND 或 ADD」→ 最後「取非」。INI（=1）與 MUI（≠）兩種變體我們都有做：<code>ALU-nostat</code> 不輸出旗標，<code>ALU</code> 輸出 zr/ng。</div>
+
+  <!-- ============ 5. ALU 無旗標 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 05</span><span class="name">ALU-nostat — 無旗標版</span>
+      <span class="desc">只算 out，不輸出 zr/ng</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch02-05"> 我會了</label></header>
+    <div class="body">
+      <p>先跳過比較旗標，專心把運算樹蓋出來（調教→選運算→取非）。</p>
+      <div data-widget="hdl" data-dir="../02" data-top="ALU-nostat"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/ALU-nostat.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <!-- ============ 6. ALU 有旗標 ============ -->
+  <section class="ex">
+    <header><span class="no">習題 06</span><span class="name">ALU — 含 zr / ng 旗標</span>
+      <span class="desc">zr=(out==0)，ng=(out&lt;0)</span>
+      <label class="done"><input type="checkbox" data-ex-id="ch02-06"> 我會了</label></header>
+    <div class="body">
+      <p>由「結果」倒退：<code>ng</code> 就是結果的最高位元；<code>zr</code> 在所有位元都為 0 時為 1
+      （可用 <code>Or8Way</code> 們，最後再 Not 一下）。</p>
+      <div data-widget="hdl" data-dir="../02" data-top="ALU"></div>
+  <a class="weda" target="_blank" rel="noopener" href="../_web_eda/dist/hdl.html?case=../02/ALU.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">在 _web_eda 開新視窗執行 ↗</a>
+    </div>
+  </section>
+
+  <div class="tip">ALU 過關後，你已擁有「運算」能力；下一章 Ch03 補上「記憶」，Ch05 再把它們合成一台電腦。</div>
+  <footer class="bookfoot">Ch02 算術單元 · 下一章：<a href="ch03.html">Ch03 記憶單元</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

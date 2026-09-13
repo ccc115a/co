@@ -49,6 +49,8 @@ for (const d of CHAPTERS) {
       const TopClass = compileTop(e);
       const model = new TopModel(TopClass, e.chips[e.top]);
       const out = [];
+      // 鍵盤 wait-while（Memory.tst 等 `while out <> <key>`）由 run() 自動餵鍵，
+      // 開場不預設按鍵（避免污染鍵盤區早期的讀值）
       run(model, script, path.dirname(tstPath).replace(/\\/g, '/'), out, false);
       pass += 1;
     } catch (err) {

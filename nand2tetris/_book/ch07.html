@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 7 章 VM 第一部：堆疊與算術 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 7 章</span>VM 第一部：堆疊與算術</h1>
+  <p class="lead">現在把高度拉起來一層：寫一支「虛擬機」語言 vm2asm，把抽象的 VM 指令翻譯成真正能跑的 Hack 組語。
+  本章只做 <code>push</code> / <code>pop</code>（八個記憶體區段）與堆疊算術。</p>
+
+  <h2>神聖的八個區段</h2>
+  <table class="tbl">
+    <tr><th>區段</th><th>位址算法</th><th>例</th></tr>
+    <tr><td>constant</td><td>直接就是常數</td><td><code>push constant 17</code> 推 17</td></tr>
+    <tr><td>local / argument / this / that</td><td><code>base + i</code>，base 存 RAM[1..4]</td><td><code>pop local 0</code></td></tr>
+    <tr><td>temp</td><td><code>5 + i</code></td><td><code>pop temp 6</code> → RAM[11]</td></tr>
+    <tr><td>pointer</td><td><code>3 / 4</code>（就是 THIS/THAT）</td><td><code>pop pointer 1</code></td></tr>
+    <tr><td>static</td><td><code>16 + i</code>（每個 .vm 檔配 16 格）</td><td><code>pop static 3</code> → RAM[19]</td></tr>
+  </table>
+  <p>堆疊：資料一律從 <b>RAM[256]</b> 往上堆。<code>SP</code>（RAM[0]）永遠指著「下一個空位」。</p>
+
+  <h2>本 repo 的實現與工具</h2>
+  <ul>
+    <li><b>C/C++</b>：<code>07/vm2asm.c</code>（與 08 共用）。建構：<code>bash build.sh</code> → <code>./vm2asm</code>。
+      注意參數順序：<code>vm2asm &lt;輸出&gt;.asm &lt;輸入&gt;.vm</code>。</li>
+    <li>一次跑全部：<code>bash all2asm.sh</code>；單一檔案：<code>./vm2asm.sh &lt;BaseName&gt;</code>。</li>
+    <li><b>JS（本教材互動）</b>：<code>_web_eda</code> 的 <code>HackVm2Asm</code>，就是下方面板。</li>
+  </ul>
+
+  <h2>示範一：SimpleAdd（課程第一個 VM 程式）</h2>
+  <p>「把 7 和 8 推上堆疊再相加」。用 Step 一格一格走，盯緊 <b>SP(R0)</b> 與 <b>RAM[256..]</b> 區段：
+  每次 push SP＋1、add 把最上面兩格彈出再推回結果。</p>
+  <div data-widget="vm" data-src="#simpleAddVm" data-setup="0=256" data-auto="true"
+       data-hint="翻譯成 .asm 後自動送進虛擬機：RAM[256] 最終應為 15"></div>
+
+  <h2>示範二：BasicTest（八區段練習）</h2>
+  <p>課程標準 <code>MemoryAccess/BasicTest/BasicTest.vm</code>。它有各種 push/pop：注意
+  <code>pop this 6</code> 會寫 RAM[THIS+6]、<code>pop temp 6</code> 寫 RAM[5+6]=RAM[11]。
+  面板上可逐一對照 R0…R15 與 RAM 區段（這段程式不需要 bootstrap，直接跑）：</p>
+  <div data-widget="vm" data-src="#basicTestVm" data-setup="0=256 1=256 2=256 3=0 4=0" data-auto="true"
+       data-hint="local 落 RAM[256+]、argument 落 RAM[258+]、temp 落 R5…R12，一一可驗"></div>
+
+  <div class="tip">實作心法：每一種區段位址計算都寫成一條小「組語樣板」，
+  推廣到 push/pop → 你其實是在寫「編譯的編譯器」。別忘了 <code>add</code> 還要把 SP 減回去。</div>
+  <footer class="bookfoot">Ch07 VM 第一部 · 下一章：<a href="ch08.html">Ch08 VM 第二部：函式與控制流</a></footer>
+</main>
+
+<pre id="simpleAddVm" class="srccode">push constant 7
+push constant 8
+add</pre>
+<pre id="basicTestVm" class="srccode">// Executes pop and push commands.
+push constant 10
+pop local 0
+push constant 21
+push constant 22
+pop argument 2
+pop argument 1
+push constant 36
+pop this 6
+push constant 42
+push constant 45
+pop that 5
+pop that 2
+push constant 510
+pop temp 6
+push local 0
+push that 5
+add
+push argument 1
+sub
+push this 6
+push this 6
+add
+sub
+push temp 6
+add</pre>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

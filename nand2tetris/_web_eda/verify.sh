@@ -80,7 +80,8 @@ node -e '
 const fs = require("fs");
 const h = fs.readFileSync("dist/hdl.html", "utf8");
 for (const s of ["corpus.js", "hdl-rt.js", "embed.js", "hdl.js"]) {
-  if (!h.includes(`src="${s}"`)) { console.error("hdl.html 缺 " + s); process.exit(1); }
+  const re = new RegExp(`src="${s.replace(/[.]/g, "\\.")}(\\?v=[0-9a-z]+)?"`);
+  if (!re.test(h)) { console.error("hdl.html 缺 " + s); process.exit(1); }
 }
 console.log("hdl.html script 引用完整");
 '
@@ -92,7 +93,8 @@ node -e '
 const fs = require("fs");
 const h = fs.readFileSync("dist/jack.html", "utf8");
 for (const s of ["corpus.js", "hdl-rt.js", "embed.js", "jack.js"]) {
-  if (!h.includes(`src="${s}"`)) { console.error("jack.html 缺 " + s); process.exit(1); }
+  const re = new RegExp(`src="${s.replace(/[.]/g, "\\.")}(\\?v=[0-9a-z]+)?"`);
+  if (!re.test(h)) { console.error("jack.html 缺 " + s); process.exit(1); }
 }
 for (const [from, to] of [["index.html", "jack.html"], ["hdl.html", "jack.html"]]) {
   const f = fs.readFileSync("dist/" + from, "utf8");

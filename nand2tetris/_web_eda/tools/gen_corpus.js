@@ -11,7 +11,7 @@ const root = path.resolve(here, '..');
 
 const DIRS = ['../01', '../02', '../03/a', '../03/b', '../05', '../04/mult', '../04/fill', 'gen/chain'];
 const EXTS = ['.hdl', '.tst', '.cmp', '.hack'];
-const SKIP = new Set(['Memory.tst', 'Keyboard.tst', 'Mult.tst', 'Fill.tst']); // 互動式（需人工按鍵/螢幕），batch 不可跑
+const SKIP = new Set(['Keyboard.tst', 'Mult.tst', 'Fill.tst']); // 互動式（需人工按鍵/螢幕），batch 不可跑
 
 const corpus = {};
 const add = (dir) => {

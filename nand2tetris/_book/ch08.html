@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 8 章 VM 第二部：函式與控制流 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 8 章</span>VM 第二部：函式與控制流</h1>
+  <p class="lead">在 ch07 的堆疊上再加三招：<code>label / goto / if-goto</code>（程式流程），
+  以及 <code>function / call / return</code>（函式呼叫）。做完這章，Hack 就有了「子程式」能力。</p>
+
+  <h2>控制流的四條指令</h2>
+  <table class="tbl">
+    <tr><th>VM 指令</th><th>翻譯成</th></tr>
+    <tr><td><code>label X</code></td><td><code>(X)</code> 標記目前位址</td></tr>
+    <tr><td><code>goto X</code></td><td><code>@X ; 0;JMP</code></td></tr>
+    <tr><td><code>if-goto X</code></td><td>彈掉堆疊頂端，非零才跳：<code>=0 就 skip</code></td></tr>
+    <tr><td><code>function f n</code></td><td>推 n 個 0 的 local + 建 frame</td></tr>
+    <tr><td><code>call f k</code></td><td>推回傳位址＋各指標 → 轉到 f（k 個引數）</td></tr>
+    <tr><td><code>return</code></td><td>回復 caller 的 SP/LCL/ARG/THIS/THAT，跳到回傳位址</td></tr>
+  </table>
+  <blockquote>關鍵畫面請記住「五件套」：<b>RET、LCL、ARG、THIS、THAT</b>——
+  call 時依序推上堆疊、return 時再依序倒回來。本章的冒煙測試 NestedCall / FibonacciElement 就是驗證它們正確。</blockquote>
+
+  <h2>本 repo 的實現與工具</h2>
+  <ul>
+    <li><b>C/C++</b>：<code>08/vm2asm.c</code>（與 07 共用）。建構：<code>bash build.sh</code>；全部：<code>bash all2asm.sh</code>。</li>
+    <li>教材程式在 <code>08/{StackArithmetic,MemoryAccess,ProgramFlow,FunctionCalls}/…</code>，每組都配 .tst/.cmp。</li>
+    <li><b>JS</b>：<code>_web_eda</code> 的 <code>HackVm2Asm</code>（多檔時自動加 bootstrap：先建 SP=256 再呼叫 Sys.init）。</li>
+  </ul>
+
+  <h2>示範：BasicLoop（label / goto / if-goto）</h2>
+  <p>課程標準 <code>ProgramFlow/BasicLoop/BasicLoop.vm</code>：計算 <code>1+…+n</code>。
+  製造出一組初始環境（SP=256、LCL=2000 以免與堆疊相撞、argument[0]=4）後直接跑完，</p>
+  <div data-widget="vm" data-src="#basicLoopVm" data-setup="0=256 1=2000 2=3 3=4" data-auto="true"
+       data-hint="n=4：sum 累到 RAM[2000](local 0)=10；最後 push 到堆疊頂端 RAM[256]=10，SP(R0)=257"></div>
+
+  <h2>示範：SimpleFunction（function / return）</h2>
+  <p>課程標準 <code>FunctionCalls/SimpleFunction/SimpleFunction.vm</code>——一支「純函式」：
+  沒人呼叫它，但 <code>function</code> 仍會把 local 清成 0、<code>return</code> 仍會把結果放回 ARG[0]。</p>
+  <div data-widget="vm" data-src="#simpleFnVm" data-setup="0=256 1=256 2=256 256=5 257=6" data-auto="true"
+       data-hint="local0=local1=0 → (0+0) NOT＋argument0(5)－argument1(6)＝ -2，落在 RAM[256]"></div>
+
+  <div class="tip">想驗證「真的做了 function call 的來龍去脈」？在 repo 裡跑 <code>bash all2asm.sh</code>，
+  其中 <code>FunctionCalls/FunctionCall</code> 系列的 .tst/.cmp 就是用官方程式逐格檢查「五件套」的正確性。</div>
+  <footer class="bookfoot">Ch08 VM 第二部 · 下一章：<a href="ch09.html">Ch09 高階語言</a></footer>
+</main>
+
+<pre id="basicLoopVm" class="srccode">// Computes the sum 1 + 2 + ... + n (n in argument[0]).
+push constant 0
+pop local 0         // sum = 0
+label LOOP
+push argument 0
+push local 0
+add
+pop local 0         // sum = sum + n
+push argument 0
+push constant 1
+sub
+pop argument 0      // n--
+push argument 0
+if-goto LOOP        // if n > 0, goto LOOP
+push local 0        // else, pushes sum to the stack's top</pre>
+<pre id="simpleFnVm" class="srccode">// Performs a simple calculation and returns the result.
+// argument[0] and argument[1] must be set by the caller.
+function SimpleFunction.test 2
+push local 0
+push local 1
+add
+not
+push argument 0
+add
+push argument 1
+sub
+return</pre>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

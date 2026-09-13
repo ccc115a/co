@@ -88,6 +88,17 @@
 
   function load(asmSrc) {
     try {
+      const text = String(asmSrc).replace(/\r/g, '');
+      const body = text.split('\n').map((l) => l.trim()).filter((l) => l);
+      const allBin = body.length > 0 && body.every((l) => /^[01]{16}$/.test(l));
+      if (allBin) {
+        lines = []; lineMap = []; wordLine = [];
+        vm.loadHack(text);
+        repaint();
+        if (el.listing) el.listing.textContent = '（直接載入 Hack 機器碼，無組語對照）';
+        setStatus(`直接載入 Hack 機器碼：${body.length} 條指令`);
+        return;
+      }
       const r = ASM.assemble(asmSrc);
       [lines, lineMap, wordLine] = buildLineMap(asmSrc);
       vm.loadHack(r.hack);
@@ -216,6 +227,45 @@ D;JGT
 (END)
 @END
 0;JMP`;
-  el.ta.value = sample;
-  load(sample);
+  // ---- v1.2 書籤/深連結（hash 優先於 query）：#asm=<組語> / #file=<語料 key> ----
+  function hashWant() {
+    const raw = location.hash.replace(/^#/, '');
+    if (!raw) return null;
+    let h;
+    try { h = decodeURIComponent(raw); } catch (_) { h = raw; }
+    if (/^(asm|file|ram)=/.test(h)) return new URLSearchParams(h);
+    return null;
+  }
+
+  let first = true;
+  function applyWant() {
+    const wh = hashWant();
+    const qd = new URLSearchParams(location.search);
+    const asm = (wh && wh.get('asm')) ?? qd.get('asm');
+    const file = wh && wh.get('file');
+    const ram = (wh && wh.get('ram')) ?? qd.get('ram');
+    if (file) {
+      const text = window.HACKJS_FS ? window.HACKJS_FS.read(file) : null;
+      if (text == null) { setStatus(`語料中沒有 ${file}`, 'error'); return; }
+      el.ta.value = text;
+      load(text);
+    } else if (asm != null) {
+      el.ta.value = asm;
+      load(asm);
+    } else if (first) {
+      el.ta.value = sample;
+      load(sample);
+    }
+    if (ram) {
+      for (const g of ram.split(',')) {
+        const m = /^(\d+):(-?\d+)$/.exec(g.trim());
+        if (m) vm.ram[Number(m[1]) | 0] = Number(m[2]) & 0xffff;
+      }
+      repaint();
+    }
+    first = false;
+  }
+
+  applyWant();
+  window.addEventListener('hashchange', applyWant);
 })();

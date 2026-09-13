@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 12 章 作業系統 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 12 章</span>作業系統：用 Jack 寫標準程式庫</h1>
+  <p class="lead">最後一章：寫一個真的能在你自己 Hack 電腦上跑的 OS——而且是用你上章寫的 Jack 編譯器寫的。
+  做完這章，整條 Nand2Tetris 鏈正式封頂。</p>
+
+  <h2>八個 OS 類別</h2>
+  <table class="tbl">
+    <tr><th>類別</th><th>職責</th><th>關鍵常式</th></tr>
+    <tr><td>Memory</td><td>堆積記憶體分配</td><td>alloc / deAlloc / peek / poke</td></tr>
+    <tr><td>Array</td><td>陣列配置</td><td>new / dispose</td></tr>
+    <tr><td>Math</td><td>數學運算</td><td>mult / div / sqrt / max / min</td></tr>
+    <tr><td>String</td><td>字串、字元轉換</td><td>new / length / charAt / intValue / appendChar</td></tr>
+    <tr><td>Output</td><td>文字輸出（65536 個半 byte）</td><td>printChar / printInt / printString</td></tr>
+    <tr><td>Screen</td><td>圖形畫面控制</td><td>drawPixel / drawLine / drawRectangle / clearScreen</td></tr>
+    <tr><td>Keyboard</td><td>鍵盤輸入</td><td>readChar / readLine / readInt</td></tr>
+    <tr><td>Sys</td><td>系統服務</td><td>init / wait / halt</td></tr>
+  </table>
+
+  <h2>本 repo 的語料</h2>
+  <ul>
+    <li><b><code>12/*.jack</code></b>：八個 OS 類別完整原始碼（每支都附 <code>.md</code> 講解）。</li>
+    <li><b><code>12/*Test</code></b>：針對各類別的測試程式（如 <code>MathTest</code>、<code>MemoryTest</code>）。</li>
+    <li><b><code>_web_eda/gen/os_src/*.jack</code></b>：網頁版編譯器內建的 OS 語料，就是上面 Ch11 各程式的「含 OS」來源。</li>
+  </ul>
+
+  <h3>範例：Memory.alloc（堆積分配的心臟）</h3>
+  <pre class="plain">// Free block structure:
+//   word 0: size (含 2 個 header word)
+//   word 1: 下一個 free block 位址
+static int FL_LENGTH;   // freeList.length index
+static int FL_NEXT;     // freeList.next index
+
+function int alloc(int size) {
+    // 掃 free list 找第一個夠大的 block
+    // 大小不夠再切 → 回傳給呼叫者
+    ...
+}</pre>
+  <p>OS 的道德新聞：「可塞下就切」這種分配策略與「deAlloc 後合併相鄰區塊」的處理，正是 OS 與高階語言交界最感人的一手。</p>
+
+  <div class="rules">
+    <b>驗收心法</b>
+    <ul>
+      <li>MemoryTest、MathTest 等測試檔就是你的驗收單：全數 PASS 代表 OS 完成。</li>
+      <li>「螢幕全黑但不動」通常是 Screen 或 Keyboard 的問題；「數值錯」大多是 Math/Integer 轉換。</li>
+      <li>把 Ch11 的 Square / Pong 丟給「你自己的 OS + 編譯器」跑，就是整個 Nand2Tetris 的最終 demo。</li>
+    </ul>
+  </div>
+  <blockquote>恭喜收完全套！從 Ch00 的一顆 Nand，到 Ch12 一行行寫出作業系統，
+  這就是計算機結構這門課排 Nand2Tetris 的用意——<b>沒有黑盒子</b>。</blockquote>
+  <footer class="bookfoot">Ch12 作業系統 · <a href="index.html">回總覽</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

@@ -210,7 +210,12 @@
   }
 
   el.mode.onchange = applyMode;
-  el.program.onchange = () => { applyMode(); };
+  el.program.onchange = () => {
+    applyMode();
+    if (el.mode.value === 'builtin') {
+      history.replaceState(null, '', location.pathname + location.search + '#prog=' + el.program.value);
+    }
+  };
   el.run.onclick = doRun;
 
   const emuState = { win: null, ready: false, pending: null, pingT: null, tries: 0 };
@@ -285,4 +290,33 @@
   applyMode();
   showStage(0);
   el.status.textContent = `語料 ${Object.keys(corpus).length} 檔`;
+
+  // ---- v1.2 書籤/深連結：#prog=Pong（&run=1）或 #Pong（!run）----
+  function hashWant() {
+    const raw = location.hash.replace(/^#/, '');
+    if (!raw) return null;
+    let h;
+    try { h = decodeURIComponent(raw); } catch (_) { h = raw; }
+    if (/^(prog|run)=/.test(h)) {
+      const hp = new URLSearchParams(h);
+      return { prog: hp.get('prog'), run: hp.get('run') === '1' };
+    }
+    const m = /^(.*)!run$/.exec(h);
+    return m ? { prog: m[1], run: true } : { prog: h, run: false };
+  }
+
+  function applyWant() {
+    const q = new URLSearchParams(location.search);
+    const wh = hashWant();
+    const wantProg = (wh && wh.prog) ?? q.get('prog');
+    const autoRun = (wh ? wh.run : false) || q.get('run') === '1';
+    if (wantProg && PROGRAMS.some((p) => p.name === wantProg)) {
+      el.program.value = wantProg;
+      applyMode();
+    }
+    if (wantProg && autoRun) setTimeout(doRun, 50);
+  }
+
+  applyWant();
+  window.addEventListener('hashchange', applyWant);
 })();

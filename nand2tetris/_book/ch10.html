@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第 10 章 編譯器 — Nand2Tetris 互動教材</title>
+<link rel="stylesheet" href="assets/book.css">
+</head>
+<body>
+<main class="book">
+  <h1 class="chapter-title"><span class="kicker">第 10 章</span>編譯器：語法分析</h1>
+  <p class="lead">編譯器分四個互相隔離的階段——本單位的設計走得越乾淨，後續越好做。
+  本章先做「前半段」：把 Jack 原始碼切成符號、再證實語法正確。</p>
+
+  <h2>四階段兵棋圖</h2>
+  <table class="tbl">
+    <tr><th>階段</th><th>做的事</th><th>本章/下一章</th></tr>
+    <tr><td>1. Lexical（詞法）</td><td>token 化：<code>class</code>、<code>;</code>、<code>42</code>…</td><td>Ch10→11</td></tr>
+    <tr><td>2. Parsing（語法）</td><td>依文法組成語法樹</td><td>Ch10</td></tr>
+    <tr><td>3. Symbol（符號表）</td><td>處理變數、static/field/局部</td><td>Ch11</td></tr>
+    <tr><td>4. Codegen（程式生成）</td><td>吐出 VM 程式碼</td><td>Ch11</td></tr>
+  </table>
+  <div class="rules">
+    <b>中心概念：語法樹（XML）</b>
+    <ul>
+      <li>Jack 用「令牌標籤」描述程式：<code>&lt;keyword&gt; class &lt;/keyword&gt;</code>、<code>&lt;identifier&gt; Main &lt;/identifier&gt;</code>。</li>
+      <li>「文法規則」→ 一張遞迴下降的 parser，如變數宣告：<code>type varName (, varName)* ;</code>。</li>
+      <li>寫出 JackAnalyzer（或 JackTokenizer＋CompilationEngine），跑你的語料，輸出 .xml，再用書附的 XML 比較器對答案。</li>
+    </ul>
+  </div>
+
+  <h2>本 repo 的 Jacobs 語法分析器實驗</h2>
+  <ul>
+    <li><b>10/_PyJackAnalyzer</b>：Python 寫的 JackAnalyzer（tokenizer＋compilation engine）。</li>
+    <li><b>10/{ArrayTest, Square, ExpressionlessSquare}</b>：教材程式，供 parser 吃（比對 hint .xml）。</li>
+    <li>課程 SS17 的心法：這是「解析出結構」，先不管「計算結果」——後半段（語意＋生成）在 Ch11 一起做。</li>
+  </ul>
+  <div class="tip">提示：若你的 tokenizer 輸出的 .xml 一直對不上，多半是「註解、字串、底線字元、巢狀 `()`」邊界的處理；
+  建議先做出獨立的 tokenizer 測驗，再疊 parser。</div>
+  <footer class="bookfoot">Ch10 編譯器 · 下一章：<a href="ch11.html">Ch11 Jack 語言與編譯器</a></footer>
+</main>
+
+<script src="../_web_eda/dist/corpus.js"></script>
+<script src="../_web_eda/dist/hdl-rt.js"></script>
+<script src="../_web_eda/dist/embed.js"></script>
+<script src="assets/book.js"></script>
+</body>
+</html>

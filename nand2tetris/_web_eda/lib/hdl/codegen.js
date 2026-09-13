@@ -77,14 +77,15 @@ function hasFeedback(e, chip) {
 
 /** part 直接比對的 name 條件；Screen/Keyboard 附上常見別名（SCREEN、KBD） */
 function partNameCond(part) {
-  let base = `name === "${part.label}"`;
+  const pats = [part.label];
   if (part.clip.kind === 'Builtin' && part.clip.b === Builtin.Screen) {
-    base += ` || name === "SCREEN"`;
+    pats.push('SCREEN', 'Screen');
   }
   if (part.clip.kind === 'Builtin' && part.clip.b === Builtin.Keyboard) {
-    base += ` || name === "KBD"`;
+    pats.push('KBD', 'Keyboard');
   }
-  return base;
+  const uniq = [...new Set(pats)];
+  return uniq.map((p) => `name === ${JSON.stringify(p)}`).join(' || ');
 }
 
 /** part 輸入引數的綁定程式碼（支援多連線 setBits 組合） */
