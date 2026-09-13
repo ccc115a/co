@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 11 章</span>Jack 語言與編譯器（全鏈路實作）</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/11.1.md" title="電子書：第 11.1 節 符號表設計：類別級別與方法級別作用域">§11.1</a>、<a class="pill" target="mdbook" href="../_md_book/11.2.md" title="電子書：第 11.2 節 物件導向特性的底層翻譯：Constructors, Methods, Fields">§11.2</a>、<a class="pill" target="mdbook" href="../_md_book/11.3.md" title="電子書：第 11.3 節 陣列與指標運算的 VM 指令生成">§11.3</a>、<a class="pill" target="mdbook" href="../_md_book/11.4.md" title="電子書：第 11.4 節 完工：將 Jack 源碼直接編譯為 VM 代碼">§11.4</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.1.md" title="電子書：第 11.1 節 符號表設計：類別級別與方法級別作用域">§11.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.2.md" title="電子書：第 11.2 節 物件導向特性的底層翻譯：Constructors, Methods, Fields">§11.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.3.md" title="電子書：第 11.3 節 陣列與指標運算的 VM 指令生成">§11.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.4.md" title="電子書：第 11.4 節 完工：將 Jack 源碼直接編譯為 VM 代碼">§11.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">本章是軟體線的總決戰：完成 ch10 的語法分析之後，再做符號表與 VM 生成，
   讓「Jack 高階語言」真的能一路跑到 Hack 機器上。本頁互動面板 = 你完成的編譯器（reference 版）一次跑完整條鏈：<br>
@@ -26,7 +26,7 @@
   本頁互動用的是網頁端 <code>_web_eda</code> 的 JS 版，與 C 版 byte 相容。</div>
 
   <h2>互動：挑一支 Jack 程式，編譯並執行</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/11.1.md" title="電子書：第 11.1 節 符號表設計：類別級別與方法級別作用域">§11.1</a>、<a class="pill" target="mdbook" href="../_md_book/11.2.md" title="電子書：第 11.2 節 物件導向特性的底層翻譯：Constructors, Methods, Fields">§11.2</a>、<a class="pill" target="mdbook" href="../_md_book/11.3.md" title="電子書：第 11.3 節 陣列與指標運算的 VM 指令生成">§11.3</a>、<a class="pill" target="mdbook" href="../_md_book/11.4.md" title="電子書：第 11.4 節 完工：將 Jack 源碼直接編譯為 VM 代碼">§11.4</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.1.md" title="電子書：第 11.1 節 符號表設計：類別級別與方法級別作用域">§11.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.2.md" title="電子書：第 11.2 節 物件導向特性的底層翻譯：Constructors, Methods, Fields">§11.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.3.md" title="電子書：第 11.3 節 陣列與指標運算的 VM 指令生成">§11.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/11.4.md" title="電子書：第 11.4 節 完工：將 Jack 源碼直接編譯為 VM 代碼">§11.4</a></p>
   <p>下拉選單列出教材全部語料：左邊是有 OS 的（Seven、Average、ComplexArrays、ConvertToBin、Square、Pong），
   右邊是「無 OS 自帶 Sys」的純編譯範例（Sum、Factorial、Fib、GCD、PrimeUnder100）。
   選好 → <code>▶ 編譯並執行</code>，再用 Step / Run 觀察全鏈路成果：</p>

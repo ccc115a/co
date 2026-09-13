@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 5 章</span>計算機結構：把一切組合起來</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/5.1.md" title="電子書：第 5.1 節 從晶片到電腦：Hack 中央處理器（CPU）結構設計">§5.1</a>、<a class="pill" target="mdbook" href="../_md_book/5.2.md" title="電子書：第 5.2 節 記憶體晶片與匯流排整合（Memory Module）">§5.2</a>、<a class="pill" target="mdbook" href="../_md_book/5.3.md" title="電子書：第 5.3 節 構建完整電腦：Computer 晶片與執行循環">§5.3</a>、<a class="pill" target="mdbook" href="../_md_book/5.4.md" title="電子書：第 5.4 節 硬體模擬器上的系統調試">§5.4</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.1.md" title="電子書：第 5.1 節 從晶片到電腦：Hack 中央處理器（CPU）結構設計">§5.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.2.md" title="電子書：第 5.2 節 記憶體晶片與匯流排整合（Memory Module）">§5.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.3.md" title="電子書：第 5.3 節 構建完整電腦：Computer 晶片與執行循環">§5.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.4.md" title="電子書：第 5.4 節 硬體模擬器上的系統調試">§5.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">把第 2 章的 ALU、第 3 章的暫存器與記憶體，用一個控制單元「指揮」起來——
   成為一台能真的執行程式碼的電腦。本章要交付 <b>Memory.hdl</b>、<b>CPU.hdl</b>，
@@ -25,7 +25,7 @@
   <p>CPU 每一條 clock 循環做的事就是：<i>取指（用 PC 讀 ROM）→ 解碼（把指令拆成 zd、ALU 控制位、dest、jump）→ 執行 → 更新 PC</i>。</p>
 
   <h2>習題一：Memory.hdl</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/5.2.md" title="電子書：第 5.2 節 記憶體晶片與匯流排整合（Memory Module）">§5.2</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.2.md" title="電子書：第 5.2 節 記憶體晶片與匯流排整合（Memory Module）">§5.2</a></p>
   <p>官方 Memory.tst 超長，本教材改用一份<b>精心縮短的同義測驗</b>，驗證三件關鍵行為——
   寫入/讀回 RAM、螢幕對映區（SCREEN，bit14 定址）、鍵盤區（KBD）：</p>
   <div data-widget="hdl" data-dir="../05" data-top="Memory"
@@ -54,7 +54,7 @@ set address 24576, tick, tock, output;</pre>
   三顆 And 加一顆 Or8Way 就能把「load 只送到該去的地方」。</div>
 
   <h2>習題二：CPU.hdl</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/5.1.md" title="電子書：第 5.1 節 從晶片到電腦：Hack 中央處理器（CPU）結構設計">§5.1</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.1.md" title="電子書：第 5.1 節 從晶片到電腦：Hack 中央處理器（CPU）結構設計">§5.1</a></p>
   <p>官方 <code>CPU.tst</code> 會在模擬器上直接通過（本互動面板就是真的在跑它）。
   它直接餵 16-bit 機器碼、逐週期驗證 outM / writeM / addressM / pc 四個輸出：</p>
   <div data-widget="hdl" data-dir="../05" data-top="CPU"
@@ -62,14 +62,14 @@ set address 24576, tick, tock, output;</pre>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../05/CPU.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
 
   <h3>另一組同樣權威的測驗：CPU-external</h3>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/5.1.md" title="電子書：第 5.1 節 從晶片到電腦：Hack 中央處理器（CPU）結構設計">§5.1</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.1.md" title="電子書：第 5.1 節 從晶片到電腦：Hack 中央處理器（CPU）結構設計">§5.1</a></p>
   <p>標配的 <code>CPU-external.tst</code> 對 CPU 加裝「外部 ROM」情境再做一輪（行為與 CPU.tst 相同、僅觀測點不同）：</p>
   <div data-widget="hdl" data-dir="../05" data-top="CPU" data-tst-file="CPU-external.tst" data-cmp-file="CPU-external.cmp"
        data-dir-label="官方 CPU-external.tst · 已在引擎驗證 PASS"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../05/CPU-external.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
 
   <h2>整台電腦：Computer.hdl 與一路走回來的成就感</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/5.3.md" title="電子書：第 5.3 節 構建完整電腦：Computer 晶片與執行循環">§5.3</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/5.3.md" title="電子書：第 5.3 節 構建完整電腦：Computer 晶片與執行循環">§5.3</a></p>
   <p>Computer.hdl 不難——你要做的只是把 CPU、Memory、ROM32K 用匯流排接起來。
   官方 Computer*.tst 需要完整測試台（含一步步 tick/tock 逐行比對整顆電腦的內部暫存器），
   在本教材的模擬器裡先改用<b>第 4 章的程式</b>驗證同一條「組語跑在你自己設計的機器上」的路：</p>

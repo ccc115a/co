@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 7 章</span>VM 第一部：堆疊與算術</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/7.1.md" title="電子書：第 7.1 節 為何需要虛擬機？跨平台與中間語言構想">§7.1</a>、<a class="pill" target="mdbook" href="../_md_book/7.2.md" title="電子書：第 7.2 節 堆疊（Stack）資料結構與運算機制">§7.2</a>、<a class="pill" target="mdbook" href="../_md_book/7.3.md" title="電子書：第 7.3 節 VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt...）">§7.3</a>、<a class="pill" target="mdbook" href="../_md_book/7.4.md" title="電子書：第 7.4 節 記憶體段（Memory Segments）的映射與存取">§7.4</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/7.1.md" title="電子書：第 7.1 節 為何需要虛擬機？跨平台與中間語言構想">§7.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/7.2.md" title="電子書：第 7.2 節 堆疊（Stack）資料結構與運算機制">§7.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/7.3.md" title="電子書：第 7.3 節 VM 指令翻譯：算術與邏輯指令（add, sub, eq, gt...）">§7.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/7.4.md" title="電子書：第 7.4 節 記憶體段（Memory Segments）的映射與存取">§7.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">現在把高度拉起來一層：寫一支「虛擬機」語言 vm2asm，把抽象的 VM 指令翻譯成真正能跑的 Hack 組語。
   本章只做 <code>push</code> / <code>pop</code>（八個記憶體區段）與堆疊算術。</p>
@@ -34,14 +34,14 @@
   </ul>
 
   <h2>示範一：SimpleAdd（課程第一個 VM 程式）</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/7.2.md" title="電子書：第 7.2 節 堆疊（Stack）資料結構與運算機制">§7.2</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/7.2.md" title="電子書：第 7.2 節 堆疊（Stack）資料結構與運算機制">§7.2</a></p>
   <p>「把 7 和 8 推上堆疊再相加」。用 Step 一格一格走，盯緊 <b>SP(R0)</b> 與 <b>RAM[256..]</b> 區段：
   每次 push SP＋1、add 把最上面兩格彈出再推回結果。</p>
   <div data-widget="vm" data-src="#simpleAddVm" data-setup="0=256" data-auto="true"
        data-hint="翻譯成 .asm 後自動送進虛擬機：RAM[256] 最終應為 15"></div>
 
   <h2>示範二：BasicTest（八區段練習）</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/7.4.md" title="電子書：第 7.4 節 記憶體段（Memory Segments）的映射與存取">§7.4</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/7.4.md" title="電子書：第 7.4 節 記憶體段（Memory Segments）的映射與存取">§7.4</a></p>
   <p>課程標準 <code>MemoryAccess/BasicTest/BasicTest.vm</code>。它有各種 push/pop：注意
   <code>pop this 6</code> 會寫 RAM[THIS+6]、<code>pop temp 6</code> 寫 RAM[5+6]=RAM[11]。
   面板上可逐一對照 R0…R15 與 RAM 區段（這段程式不需要 bootstrap，直接跑）：</p>

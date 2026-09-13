@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 3 章</span>記憶單元：暫存器與記憶體</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/3.1.md" title="電子書：第 3.1 節 觸發器（D Flip-Flop）—— 引入時間與狀態">§3.1</a>、<a class="pill" target="mdbook" href="../_md_book/3.2.md" title="電子書：第 3.2 節 1-bit 與 16-bit 暫存器（Register）設計">§3.2</a>、<a class="pill" target="mdbook" href="../_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">§3.3</a>、<a class="pill" target="mdbook" href="../_md_book/3.4.md" title="電子書：第 3.4 節 程式計數器（Program Counter, PC）設計">§3.4</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.1.md" title="電子書：第 3.1 節 觸發器（D Flip-Flop）—— 引入時間與狀態">§3.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.2.md" title="電子書：第 3.2 節 1-bit 與 16-bit 暫存器（Register）設計">§3.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">§3.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.4.md" title="電子書：第 3.4 節 程式計數器（Program Counter, PC）設計">§3.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">這一章開始「會記住東西」。課程預設給定了 <b>DFF</b>（D 型正反器），
   你要做的是：記憶體最小單位 Bit → 16 位元暫存器 → 遞迴放大成 RAM → 最後是程式計數器 PC。</p>
@@ -33,7 +33,7 @@
       <p>Mux 選路：<code>load</code> 決定「從 in 進來」還是「從自己 out 回來」，再喂給 DFF。</p>
       <div data-widget="hdl" data-dir="../03/a"  data-top="Bit"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/a/Bit.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.2.md" title="電子書：第 3.2 節 1-bit 與 16-bit 暫存器（Register）設計">電子書 §3.2 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.2.md" title="電子書：第 3.2 節 1-bit 與 16-bit 暫存器（Register）設計">電子書 §3.2 ↗</a>
     </div>
   </section>
 
@@ -46,7 +46,7 @@
       <p>把 <code>Bit</code> 平行放 16 份。Hack CPU 的 <b>A、D 暫存器</b>就是它。</p>
       <div data-widget="hdl" data-dir="../03/a"  data-top="Register"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/a/Register.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.2.md" title="電子書：第 3.2 節 1-bit 與 16-bit 暫存器（Register）設計">電子書 §3.2 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.2.md" title="電子書：第 3.2 節 1-bit 與 16-bit 暫存器（Register）設計">電子書 §3.2 ↗</a>
     </div>
   </section>
 
@@ -59,7 +59,7 @@
       <p>DMux8Way 決定 load 進哪一顆 Register；Mux8Way16 把選中的那顆輸出撈出來。</p>
       <div data-widget="hdl" data-dir="../03/a"  data-top="RAM8"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/a/RAM8.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
     </div>
   </section>
 
@@ -72,7 +72,7 @@
       <p>8 顆 RAM8 ＋ 外層選擇：address[3..5] 選 RAM 組、address[0..2] 進 RAM8——「遞迴放大」的第一步。</p>
       <div data-widget="hdl" data-dir="../03/a"  data-top="RAM64"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/a/RAM64.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
     </div>
   </section>
 
@@ -85,7 +85,7 @@
       <p>8 顆 RAM64 組成的。</p>
       <div data-widget="hdl" data-dir="../03/b"  data-top="RAM512"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/b/RAM512.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
     </div>
   </section>
 
@@ -98,7 +98,7 @@
       <p>8 顆 RAM512 組成。規律：每 ×8 一次，位址多 3 個 bit。</p>
       <div data-widget="hdl" data-dir="../03/b"  data-top="RAM4K"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/b/RAM4K.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
     </div>
   </section>
 
@@ -111,7 +111,7 @@
       <p>4 顆 RAM4K 組成。這就是第 5 章 Hack 電腦主記憶體（0x0000–0x3FFF）的實際規格。</p>
       <div data-widget="hdl" data-dir="../03/b"  data-top="RAM16K"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/b/RAM16K.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.3.md" title="電子書：第 3.3 節 記憶體層級架構——RAM8 到 RAM16K">電子書 §3.3 ↗</a>
     </div>
   </section>
 
@@ -125,7 +125,7 @@
       <code>reset=1</code> 歸零（重新開機/程式中斷）。三個來源相加選一——用 Mux 樹挑，就是你今天的作業。</p>
       <div data-widget="hdl" data-dir="../03/a"  data-top="PC"></div>
   <a class="weda" target="weda" href="../_web_eda/dist/hdl.html?case=../03/a/PC.tst&amp;run=1" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
-  <a class="mdbook" target="mdbook" href="../_md_book/3.4.md" title="電子書：第 3.4 節 程式計數器（Program Counter, PC）設計">電子書 §3.4 ↗</a>
+  <a class="mdbook" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/3.4.md" title="電子書：第 3.4 節 程式計數器（Program Counter, PC）設計">電子書 §3.4 ↗</a>
     </div>
   </section>
 

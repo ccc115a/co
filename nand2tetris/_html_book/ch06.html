@@ -9,7 +9,7 @@
 <body>
 <main class="book">
   <h1 class="chapter-title"><span class="kicker">第 6 章</span>組譯器：把組語翻成機器碼</h1>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/6.1.md" title="電子書：第 6.1 節 組譯器的工作原理：文字解析與二進位轉譯">§6.1</a>、<a class="pill" target="mdbook" href="../_md_book/6.2.md" title="電子書：第 6.2 節 符號表（Symbol Table）與標號解析（Labels & Variables）">§6.2</a>、<a class="pill" target="mdbook" href="../_md_book/6.3.md" title="電子書：第 6.3 節 兩階段掃描（Two-Pass）組譯器實作">§6.3</a>、<a class="pill" target="mdbook" href="../_md_book/6.4.md" title="電子書：第 6.4 節 測試你的組譯器：將 .asm 編譯為 .hack">§6.4</a>　(<a target="mdbook" href="../_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/6.1.md" title="電子書：第 6.1 節 組譯器的工作原理：文字解析與二進位轉譯">§6.1</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/6.2.md" title="電子書：第 6.2 節 符號表（Symbol Table）與標號解析（Labels & Variables）">§6.2</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/6.3.md" title="電子書：第 6.3 節 兩階段掃描（Two-Pass）組譯器實作">§6.3</a>、<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/6.4.md" title="電子書：第 6.4 節 測試你的組譯器：將 .asm 編譯為 .hack">§6.4</a>　(<a target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/README.md" title="《從0到1：手寫電腦的奇幻之旅》（_md_book）目錄">電子書目錄</a>)</p>
 
   <p class="lead">組語是人看的，機器碼是機器看的。這一章你要寫一支「翻譯官」：
   讀進 <code>.asm</code>，逐行吐出 <code>.bin</code>（16 位元 0/1）。下面每個互動面板，
@@ -34,7 +34,7 @@
   </ul>
 
   <h2>示範一：add.asm — 每行都有註解的入門</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/6.1.md" title="電子書：第 6.1 節 組譯器的工作原理：文字解析與二進位轉譯">§6.1</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/6.1.md" title="電子書：第 6.1 節 組譯器的工作原理：文字解析與二進位轉譯">§6.1</a></p>
   <p>計算 <code>RAM[0] = 2 + 3</code>。用 <b>Step</b> 一格一格走，觀察 A 暫存器怎麼先裝位址、D 暫存器怎麼運算：</p>
   <div data-widget="emu" data-asm="@2
 D=A
@@ -46,7 +46,7 @@ M=D"
   <a class="weda" target="weda" href="../_web_eda/dist/index.html?asm=%402%0AD%3DA%0A%403%0AD%3DD%2BA%0A%400%0AM%3DD" title="在 _web_eda 開新視窗直接執行本題（自動載入、自動執行）">模擬執行 ↗</a>
 
   <h2>示範二：sum.asm — 跑一支迴圈</h2>
-  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="../_md_book/6.2.md" title="電子書：第 6.2 節 符號表（Symbol Table）與標號解析（Labels & Variables）">§6.2</a></p>
+  <p class="mdline">📖 電子書對照：<a class="pill" target="mdbook" href="https://github.com/ccc115a/co/blob/main/nand2tetris/_md_book/6.2.md" title="電子書：第 6.2 節 符號表（Symbol Table）與標號解析（Labels & Variables）">§6.2</a></p>
   <p>計算 <code>RAM[1] = 1 + 2 + … + RAM[0]</code>（預設 RAM[0]=10 → 結果 55）。揚起一支迴圈，
   注意 <b>@sum / (SUM) 怎麼被當成「變數」與「標籤」兩種符號分開處理</b>：</p>
   <div data-widget="emu" data-asm="// RAM[0] = 10
