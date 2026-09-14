@@ -37,10 +37,26 @@ CHIP ALU {
         no; // negate the out output?
 
     OUT 
-        out[16], // 16-bit output
-        zr, // 1 if (out == 0), 0 otherwise
-        ng; // 1 if (out < 0),  0 otherwise
+        out[16], zr, ng;
 
     PARTS:
-   // Put you code here:
+    Mux16(a=x,  b=false,  sel=zx, out=x1);    // if (zx == 1) set x = 0  
+    Not16(in=x1,out=notx1);
+    Mux16(a=x1, b=notx1, sel=nx, out=x2);     // if (nx == 1) set x = !x
+    
+    Mux16(a=y,  b=false,  sel=zy, out=y1);    // if (zy == 1) set y = 0
+    Not16(in=y1,out=noty1);
+    Mux16(a=y1, b=noty1, sel=ny, out=y2);     // if (ny == 1) set y = !y
+    
+    Add16(a=x2, b=y2, out=addxy);             // addxy = x + y
+    And16(a=x2, b=y2, out=andxy);             // andxy = x & y
+    
+    Mux16(a=andxy, b=addxy, sel=f, out=o1);   // if (f == 1)  set out = x + y else set out = x & y
+    Not16(in=o1, out=noto1);
+    
+    Mux16(a=o1, b=noto1, sel=no, out=o2, out=out, out[0..7]=outLow, out[8..15]=outHigh, out[15]=ng);  // if (no == 1) set out = !out
+    Or8Way(in=outLow, out=orLow);      // orLow = Or(out[0..7]);
+    Or8Way(in=outHigh, out=orHigh);    // orHigh = Or(out[8..15]);
+    Or(a=orLow, b=orHigh, out=notzr);  // nzr = Or(out[0..15]);
+    Not(in=notzr, out=zr);             // zr = !nzr
 }

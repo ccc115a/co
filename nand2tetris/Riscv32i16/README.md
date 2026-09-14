@@ -76,9 +76,9 @@ _lib/          教材缺件的自製晶片：Mem32(2×RAM16K)、Rf8x16、Alu32�
 python3 asm.py prog1.asm prog2.asm
 
 # 單一測試（跑 01/02/03a/03b/05 + 本目錄的晶片）
-node ../../_web_eda/cli/hdl2js.js \
+node ../_web_eda16/cli/hdl2js.js \
   --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
-  --dir ../Riscv5stage --test ../Riscv5stage/Rv5.tst
+  --dir . --test Rv5.tst
 
 # 一鍵驗證（組譯 + 全部 .tst）
 bash verify.sh

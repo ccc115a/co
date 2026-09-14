@@ -16,7 +16,7 @@
 // This way, any comparison failures during ALU.tst will be caused by errors in
 // the handling of the 'zr' and 'ng' status outputs.
 
-load ALU.hdl,
+load ALU-nostat.hdl,
 output-file ALU-nostat.out,
 compare-to ALU-nostat.cmp,
 output-list x%B1.16.1 y%B1.16.1 zx%B1.1.1 nx%B1.1.1 zy%B1.1.1 

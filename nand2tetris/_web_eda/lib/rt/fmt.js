@@ -24,23 +24,34 @@ export function center(text, w) {
   return ' '.repeat(left) + text + ' '.repeat(right);
 }
 
-/** 值欄位：二進位零填補到寬度 b（超過則不放開） */
+/** 值欄位：二進位零填補到寬度 b（超過則不放開；v 以 u32 呈現） */
 export function binField(v, b) {
-  let s = (v & 0xffff).toString(2);
+  let s = (v >>> 0).toString(2);
   if (s.length >= b) return s;
   return '0'.repeat(b - s.length) + s;
 }
 
-/** 值欄位：有號十進位右對齊（寬度 b） */
-export function decField(v, b) {
-  let s = String((v & 0xffff) > 0x7fff ? (v & 0xffff) - 0x10000 : (v & 0xffff));
+/**
+ * 值欄位：有號十進位右對齊（寬度 b）。
+ * w = 腳位/記憶體的實際位元寬度（32 → u32 語意；< 32 → 16-bit 有號語意，
+ * 與教材 .cmp 的 hex/tst %D 一致。兩者位元相同，僅顯示語意不同）。
+ */
+export function decField(v, b, w) {
+  let s;
+  if (w === 32) {
+    const u = v >>> 0;
+    s = String(u > 0x7fffffff ? u - 0x100000000 : u);
+  } else {
+    const x = (v & 0xffff) > 0x7fff ? (v & 0xffff) - 0x10000 : (v & 0xffff);
+    s = String(x);
+  }
   if (s.length >= b) return s;
   return ' '.repeat(b - s.length) + s;
 }
 
-/** 值欄位：十六進位右對齊（寬度 b） */
-export function hexField(v, b) {
-  let s = (v & 0xffff).toString(16).toUpperCase().padStart(4, '0');
+/** 值欄位：十六進位右對齊（寬度 b，w=32 → 8 位數、<32 → 4 位數） */
+export function hexField(v, b, w) {
+  let s = (v >>> 0).toString(16).toUpperCase().padStart(w === 32 ? 8 : 4, '0');
   if (s.length >= b) return s;
   return ' '.repeat(b - s.length) + s;
 }
@@ -52,8 +63,9 @@ export function headerLine(fields) {
 }
 
 /**
- * 由目前值產生一列資料。
- * `get` 傳回該名稱的值；null 表示未定義（輸出 `***`）。
+ * 產生一列資料。
+ * `get` 傳回一個欄位的取值：物件 `{ v, w }`（v=值、w=位元寬度）或 null（輸出 `***`）；
+ * 純值（無 w）視為 32 位元。寬度決定十進位/十六進位的有號語意。
  * `timeStr` 在 `%S` 欄位（名稱 `time`）使用。
  */
 export function dataLine(fields, timeStr, get) {
@@ -65,14 +77,16 @@ export function dataLine(fields, timeStr, get) {
       body.push(' '.repeat(f.a) + cell + ' '.repeat(f.c));
       continue;
     }
-    const v = get(f.name);
-    if (v === null || v === undefined) {
+    const o = get(f.name);
+    if (o === null || o === undefined) {
       body.push('*'.repeat(f.width()));
       continue;
     }
+    const v = typeof o === 'object' ? o.v : o;
+    const w = typeof o === 'object' && o.w !== undefined ? o.w : 32;
     const cell = f.kind === Kind.Bin ? binField(v, f.b)
-      : f.kind === Kind.Dec ? decField(v, f.b)
-      : hexField(v, f.b);
+      : f.kind === Kind.Dec ? decField(v, f.b, w)
+      : hexField(v, f.b, w);
     body.push(' '.repeat(f.a) + cell + ' '.repeat(f.c));
   }
   return `|${body.join('|')}|`;

@@ -361,7 +361,11 @@ function runSteps(model, script, steps, baseDir, out, st, verbose) {
         const timeStr = `${st.cycle}${st.half ? '+' : ''}`;
         if (script.outputList.length > 0) {
           const fields = script.outputList.map((f) => f.field);
-          const line = dataLine(fields, timeStr, (n) => model.getOutput(n));
+          const line = dataLine(fields, timeStr, (n) => {
+            const v = model.getOutput(n);
+            if (v === null || v === undefined) return null;
+            return { v, w: model.pinWidth(n) };
+          });
           out.push(line + '\n');
         }
         break;

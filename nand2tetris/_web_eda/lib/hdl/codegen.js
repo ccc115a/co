@@ -36,7 +36,7 @@ export function pinSan(name) {
 
 /** 位元擷取運算式：取 expr 的 [lo, lo+width) */
 function sub(expr, lo, n) {
-  if (n >= 16) return expr;
+  if (n >= 32) return expr;
   const mask = (1 << n) - 1;
   return `((${expr} >> ${lo}) & 0x${mask.toString(16)})`;
 }
@@ -56,7 +56,16 @@ function chipType(e, clip) {
     case Builtin.Rom32k: return 'Rom32KChip';
     case Builtin.Screen: return 'ScreenChip';
     case Builtin.Keyboard: return 'KeyboardChip';
+    case Builtin.Rom32w: return 'Rom32WChip';
+    case Builtin.Ram32w: return 'Ram32WChip';
+    case Builtin.Rf32: return 'Rf32Chip';
   }
+}
+
+/** 內建晶片多輸出 pin 的欄位名（RF32 有 d1/d2/d3；其餘單一 out） */
+function builtinOutField(b, opi) {
+  if (b === Builtin.Rf32) return ['d1', 'd2', 'd3'][opi] ?? 'out';
+  return 'out';
 }
 
 /** part 是否為有狀態（clocked）：eval 輸出取自狀態、輸入在 tick 才取樣 */
@@ -113,7 +122,7 @@ function emitInputs(chip, params, part, prefix, indent) {
 /** child 的輸出 pin 名稱（在 __o 上取欄位用） */
 function childOutPin(e, part, opi) {
   if (part.clip.kind === 'User') return pinSan(e.chips[part.clip.idx].outPins[opi].name);
-  return 'out';
+  return builtinOutField(part.clip.b, opi);
 }
 
 /** user chip 是否具有 `address` 輸入（判斷 RAM-like） */
@@ -158,8 +167,8 @@ export function generateJs(e, { asModule = false } = {}) {
   src.push('// 由 hackjs/hdl2js 自動產生，請勿手動編輯');
   src.push('// ---- 共用工具 ----');
   src.push('function setBits(w, lo, n, val) {');
-  src.push('  const mask = n >= 16 ? 0xffff : ((1 << n) - 1);');
-  src.push('  return (w & (~(mask << lo) & 0xffff)) | ((val & mask) << lo);');
+  src.push('  const mask = n >= 32 ? 0xffffffff : ((1 << n) - 1);');
+  src.push('  return ((w & (~(mask << lo) & 0xffffffff)) | ((val & mask) << lo)) & 0xffffffff;');
   src.push('}');
   src.push('');
 
@@ -178,10 +187,11 @@ export function generateJs(e, { asModule = false } = {}) {
     src.push('  eval() { return { out: this.q }; }');
     src.push('  sample(in_) { this.latch = in_ & 1; }');
     src.push('  tock() { this.q = this.latch; }');
-    src.push('  probeWhole() { return this.latch; }');
-    src.push('  probeBit(i) { return (this.latch >> i) & 1; }');
-    src.push('}');
-    src.push('');
+src.push('  probeWhole() { return this.latch; }');
+  src.push('  probeBit(i) { return (this.latch >> i) & 1; }');
+  src.push('  probe_width(name) { return 1; }');
+  src.push('}');
+  src.push('');
   }
   if (ub.some((b) => b === Builtin.ARegister || b === Builtin.DRegister)) {
     src.push('// ---- 內建 ARegister / DRegister（16-bit register）----');
@@ -192,6 +202,7 @@ export function generateJs(e, { asModule = false } = {}) {
     src.push('  tock() { this.q = this.latch; }');
     src.push('  probeWhole() { return this.latch; }');
     src.push('  probeBit(i) { return (this.latch >> i) & 1; }');
+    src.push('  probe_width(name) { return 16; }');
     src.push('}');
     src.push('');
   }
@@ -223,6 +234,7 @@ export function generateJs(e, { asModule = false } = {}) {
     src.push('    }');
     src.push('    return true;');
     src.push('  }');
+    src.push('  probe_width(name) { return 16; }');
     src.push('}');
     src.push('');
   }
@@ -233,6 +245,7 @@ export function generateJs(e, { asModule = false } = {}) {
     src.push('  eval(in_, load, address) { return { out: address < 8192 ? this.mem[address] : 0 }; }');
     src.push('  sample(in_, load, address) { if (load !== 0 && address < 8192) this.mem[address] = in_; }');
     src.push('  tock() {}');
+    src.push('  probe_width(name) { return 16; }');
     src.push('}');
     src.push('');
   }
@@ -243,7 +256,88 @@ export function generateJs(e, { asModule = false } = {}) {
     src.push('  eval() { return { out: this.key }; }');
     src.push('  setKey(v) { this.key = v & 0xffff; }');
     src.push('  probe() { return this.key; }');
+    src.push('  probe_width(name) { return 16; }');
     src.push('  tick() {} tock() {}');
+    src.push('}');
+    src.push('');
+  }
+  if (ub.includes(Builtin.Rom32w)) {
+    src.push('// ---- 內建 ROM32（32 位元指令記憶體，地址空間 32768）----');
+    src.push('class Rom32WChip {');
+    src.push('  constructor() { this.mem = new Uint32Array(32768); }');
+    src.push('  eval(address) { return { out: address < 32768 ? this.mem[address] : 0 }; }');
+    src.push('  tick() {} tock() {}');
+    src.push('  load(src) {');
+    src.push('    const readers = typeof globalThis !== "undefined" ? (globalThis.HACKJS_FS || {}) : {};');
+    src.push('    if (typeof src === "string" && !src.includes("\\n")) {');
+    src.push('      if (readers.read) {');
+    src.push('        const s = readers.read(src);');
+    src.push('        if (s !== null && s !== undefined) src = s;');
+    src.push('      }');
+    src.push('    }');
+    src.push('    if (typeof src !== "string" || src.trim() === "") return false;');
+    src.push('    let idx = 0;');
+    src.push('    for (const line of String(src).split("\\n")) {');
+    src.push('      const t = line.trim();');
+    src.push('      if (t === "") continue;');
+    src.push('      const bin = t.split(/\\s+/)[0];');
+    src.push('      const v = parseInt(bin, 2);');
+    src.push('      if (Number.isNaN(v)) return false;');
+    src.push('      if (idx >= 32768) break;');
+    src.push('      this.mem[idx] = v & 0xffffffff;');
+    src.push('      idx += 1;');
+    src.push('    }');
+    src.push('    return true;');
+    src.push('  }');
+    src.push('  probe_indexed(name, i) { return i < 32768 ? this.mem[i] : 0; }');
+    src.push('  probe_width(name) { return 32; }');
+    src.push('}');
+    src.push('');
+  }
+  if (ub.includes(Builtin.Ram32w)) {
+    src.push('// ---- 內建 RAM32W（32 位元資料記憶體，地址空間 32768，兩相寫入）----');
+    src.push('class Ram32WChip {');
+    src.push('  constructor() { this.mem = new Uint32Array(32768); this._b = 0; this._ba = 0; this._bl = false; }');
+    src.push('  eval(in_, load, address) {');
+    src.push('    const a = address & 0xffffffff;');
+    src.push('    return { out: a < 32768 ? this.mem[a] : 0 };');
+    src.push('  }');
+    src.push('  sample(in_, load, address) {');
+    src.push('    this._bl = load !== 0; this._b = in_ & 0xffffffff; this._ba = address & 0xffffffff;');
+    src.push('  }');
+    src.push('  tock() {');
+    src.push('    if (this._bl && this._ba < 32768) this.mem[this._ba] = this._b;');
+    src.push('    this._bl = false;');
+    src.push('  }');
+    src.push('  probe_whole() { return null; }');
+    src.push('  probe_indexed(name, i) { const a = i & 0xffffffff; return a < 32768 ? this.mem[a] : 0; }');
+    src.push('  probe_width(name) { return 32; }');
+    src.push('  set_probe(name, i, v) {');
+    src.push('    const a = i & 0xffffffff;');
+    src.push('    if (a < 32768) { this.mem[a] = v & 0xffffffff; return true; }');
+    src.push('    return false;');
+    src.push('  }');
+    src.push('}');
+    src.push('');
+  }
+  if (ub.includes(Builtin.Rf32)) {
+    src.push('// ---- 內建 RF32（32×32 暫存器檔，三讀一寫；x0 硬接 0）----');
+    src.push('class Rf32Chip {');
+    src.push('  constructor() { this.mem = new Uint32Array(32); this._wd = 0; this._rd = 0; this._we = false; }');
+    src.push('  eval(a1, a2, a3, rd, wd, we) {');
+    src.push('    const r1 = a1 & 31, r2 = a2 & 31, r3 = a3 & 31;');
+    src.push('    return { d1: r1 === 0 ? 0 : this.mem[r1], d2: r2 === 0 ? 0 : this.mem[r2], d3: r3 === 0 ? 0 : this.mem[r3] };');
+    src.push('  }');
+    src.push('  sample(a1, a2, a3, rd, wd, we) { this._we = we !== 0; this._wd = wd & 0xffffffff; this._rd = rd & 31; }');
+    src.push('  tock() { if (this._we && this._rd !== 0) this.mem[this._rd] = this._wd; this._we = false; }');
+    src.push('  probe_whole() { return null; }');
+    src.push('  probe_indexed(name, i) { const a = i & 31; return a === 0 ? 0 : this.mem[a]; }');
+    src.push('  probe_width(name) { return 32; }');
+    src.push('  set_probe(name, i, v) {');
+    src.push('    const a = i & 31;');
+    src.push('    if (a !== 0) { this.mem[a] = v & 0xffffffff; return true; }');
+    src.push('    return false;');
+    src.push('  }');
     src.push('}');
     src.push('');
   }
@@ -308,6 +402,7 @@ function genNativeRamChip(chip, src) {
   src.push(`    const a = i & 0xffff;`);
   src.push(`    return a < ${size} ? this.mem[a] : 0;`);
   src.push('  }');
+  src.push('  probe_width(name) { return 16; }');
   src.push('  set_probe(name, i, v) {');
   src.push(`    const a = i & 0xffff;`);
   src.push(`    if (a < ${size}) { this.mem[a] = v & 0xffff; return true; }`);
@@ -348,10 +443,6 @@ function genChip(e, chip, src) {
   // ---- sample：tick 邊緣，先重算落定的 wire，再遞迴取樣有狀態 children ----
   src.push(`  sample(${params.join(', ')}) {`);
   emitCascade(e, chip, params, '    ', src);
-  if (hasFeedback(e, chip)) {
-    src.push('    // 回饋迴圈：以最終 wire 再完整評估一輪（eval 為純函式）');
-    emitPartsEval(e, chip, params, '    ', src);
-  }
   if (chip.hasState) {
     src.push('    // 遞迴取樣有狀態 children');
     for (const slot of chip.evalOrder) {
@@ -414,6 +505,8 @@ function genChip(e, chip, src) {
       src.push(`      return this._p${slot}.probe();`);
     } else if (clip.kind === 'Builtin' && clip.b === Builtin.Screen) {
       src.push(`      return this._p${slot}.eval(0, 0, i).out;`);
+    } else if (clip.kind === 'Builtin' && (clip.b === Builtin.Ram32w || clip.b === Builtin.Rf32 || clip.b === Builtin.Rom32w)) {
+      src.push(`      return this._p${slot}.probe_indexed(name, i);`);
     } else if (clip.kind === 'Builtin' && clip.b === Builtin.Rom32k) {
       src.push(`      return this._p${slot}.eval(i).out;`);
     } else if (clip.kind === 'User' && hasAddress(e, clip.idx)) {
@@ -431,6 +524,37 @@ function genChip(e, chip, src) {
   for (let slot = 0; slot < chip.parts.length; slot++) {
     if (chip.parts[slot].clip.kind === 'User') {
       src.push(`    { const v = this._p${slot}.probe_indexed(name, i); if (v !== null) return v; }`);
+    }
+  }
+  src.push('    return null;');
+  src.push('  }');
+
+  // ---- probe_width：name（整根或 [i] 都一樣）→ 位元寬度；找不到回 null ----
+  src.push('  probe_width(name) {');
+  for (let slot = 0; slot < chip.parts.length; slot++) {
+    const part = chip.parts[slot];
+    src.push(`    // part ${slot}: ${part.label} (${chipType(e, part.clip)})`);
+    src.push(`    if (${partNameCond(part)}) {`);
+    const clip = part.clip;
+    if (clip.kind === 'User') {
+      const ow = e.chips[clip.idx].outPins[0]?.width ?? 16;
+      src.push(`      return ${ow};`);
+    } else if (clip.b === Builtin.Nand) {
+      src.push('      return null;');
+    } else if (clip.b === Builtin.Dff) {
+      src.push('      return 1;');
+    } else if (clip.b === Builtin.ARegister || clip.b === Builtin.DRegister || clip.b === Builtin.Rom32k
+        || clip.b === Builtin.Screen || clip.b === Builtin.Keyboard) {
+      src.push('      return 16;');
+    } else {
+      src.push('      return 32;');
+    }
+    src.push('    }');
+  }
+  src.push('    // 遞迴 user parts');
+  for (let slot = 0; slot < chip.parts.length; slot++) {
+    if (chip.parts[slot].clip.kind === 'User') {
+      src.push(`    { const w = this._p${slot}.probe_width(name); if (w !== null) return w; }`);
     }
   }
   src.push('    return null;');
@@ -463,6 +587,8 @@ function genChip(e, chip, src) {
       src.push(`      this._p${slot}.sample(val, 1, i);`);
       src.push(`      this._p${slot}.tock();`);
       src.push('      return true;');
+    } else if (clip.kind === 'Builtin' && (clip.b === Builtin.Ram32w || clip.b === Builtin.Rf32)) {
+      src.push(`      return this._p${slot}.set_probe(name, i, val);`);
     } else if (clip.kind === 'User' && hasAddress(e, clip.idx)) {
       const args = probeArgs(e, clip.idx, 'Set');
       src.push(`      this._p${slot}.sample(${args.join(', ')});`);
@@ -486,7 +612,7 @@ function genChip(e, chip, src) {
   src.push('  load_program(p) {');
   for (let slot = 0; slot < chip.parts.length; slot++) {
     const clip = chip.parts[slot].clip;
-    if (clip.kind === 'Builtin' && clip.b === Builtin.Rom32k) {
+    if (clip.kind === 'Builtin' && (clip.b === Builtin.Rom32k || clip.b === Builtin.Rom32w)) {
       src.push(`    if (this._p${slot}.load(p)) return true;`);
     } else if (clip.kind === 'User') {
       src.push(`    if (this._p${slot}.load_program(p)) return true;`);
@@ -499,10 +625,20 @@ function genChip(e, chip, src) {
   src.push('');
 }
 
-/** 產生 eval/sample 共用的「先算 wire 再算 part」程式碼 */
+/** 產生 eval/sample 共用的「先算 wire 再算 part」程式碼。
+ *  以定點收斂取代固定次數的評估：依拓樸序反覆求值，直到所有 wire 與上一輪相同。
+ *  （依賴鏈深時（Dec→RF 讀→ALU→RAM 位址→wbVal）兩輪常不足以讓落定值正確，
+ *   此處用穩定檢查，最多 wires.length+8 輪即收斂。） */
 function emitCascade(e, chip, params, indent, src) {
   emitWireDecls(chip, indent, src);
-  emitPartsEval(e, chip, params, indent, src);
+  if (chip.wires.length === 0) return;
+  src.push(`${indent}// 定點收斂：依拓樸序反覆求值直到所有 wire 穩定`);
+  src.push(`${indent}for (let __it = 0; __it < ${chip.wires.length + 8}; __it++) {`);
+  src.push(`${indent}  const ${chip.wires.map((_, i) => `s${i} = ${wname(chip, i)}`).join(', ')};`);
+  emitPartsEval(e, chip, params, indent + '  ', src);
+  const stable = chip.wires.map((_, i) => `${wname(chip, i)} === s${i}`).join(' && ');
+  src.push(`${indent}  if (${stable}) break;`);
+  src.push(`${indent}}`);
 }
 
 /** 每個 wire 的 `let w_xxx = 0;` 宣告 */

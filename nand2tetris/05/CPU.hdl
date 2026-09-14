@@ -2,7 +2,6 @@
 // and the book "The Elements of Computing Systems"
 // by Nisan and Schocken, MIT Press.
 // File name: projects/05/CPU.hdl
-
 /**
  * The Hack CPU (Central Processing unit), consisting of an ALU,
  * two registers named A and D, and a program counter named PC.
@@ -39,5 +38,38 @@ CHIP CPU {
         pc[15];          // address of next instruction
 
     PARTS:
-    // Put your code here:
+    // Decoder
+    Or16(a=false, b=instruction, out[15]=isC,
+         out[12]=a, out[11]=c1, out[10]=c2, out[9]=c3, out[8]=c4, out[7]=c5, out[6]=c6, 
+         out[5]=d1, out[4]=d2, out[3]=d3, out[2]=j1, out[1]=j2, out[0]=j3);
+    // A register
+    Not(in=isC, out=isA);             // isA = not isC = not I15
+    And(a=isC, b=d1, out=AluToA);     // AluToA = isC & d1
+    Or(a=isA, b=AluToA, out=Aload);
+    
+    Mux16(a=instruction, b=ALUout, sel=isC, out=Ain);
+
+    ARegister(in=Ain, load=Aload, out=Aout, out[0..14]=addressM);   // Aload = isA | (isC & d1),     addressM=Aout[0..14]
+    
+    // D register
+    And(a=isC, b=d2, out=Dload);
+    DRegister(in=ALUout, load=Dload, out=Dout);  // Dload = isC & d2
+    
+    // ALU
+    Mux16(a=Aout, b=inM, sel=a, out=AorM);
+    ALU(x=Dout, y=AorM, zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6, out=ALUout, out=outM, zr=zr, ng=ng);
+
+    // JUMP condition
+    Or(a=ng, b=zr, out=ngzr);             // ngzr = (ng | zr)
+    Not(in=ngzr, out=gt);                  // g = out > 0 = !(ng | zr);  ng = (out < 0);  zr = (out = 0)
+    And(a=ng, b=j1, out=passLT);          // passLT = (ng & LT)
+    And(a=zr, b=j2, out=passEQ);          // passEQ = (zr & EQ)
+    And(a=gt, b=j3, out=passGT);          // passGT = (gt & GT)
+    Or(a=passLT, b=passEQ, out=passLE);
+    Or(a=passLE, b=passGT, out=pass);
+    And(a=isC, b=pass, out=PCload);       // PCload = isC & pass
+    PC(in=Aout, load=PCload, inc=true, reset=reset, out[0..14]=pc); // PCload = isC & ((ng&j1) | (zr&j2) | (!ng&!zr&j3))
+
+    // output
+    And(a=isC, b=d3, out=writeM);         // writeM = isC & d3
 }

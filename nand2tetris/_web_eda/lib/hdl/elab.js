@@ -13,6 +13,9 @@ export const Builtin = {
   Rom32k: 'ROM32K',
   Screen: 'Screen',
   Keyboard: 'Keyboard',
+  Rom32w: 'ROM32',     // 32-bit word 程式記憶體（Riscv32 用）
+  Ram32w: 'RAM32W',    // 32-bit word 資料記憶體（Riscv32 用）
+  Rf32: 'RF32',        // 32×32 暫存器檔（Riscv32 用）
 };
 
 /** HDL 裡寫的內建晶片名 → Builtin 常數 */
@@ -24,6 +27,9 @@ const BUILTIN_NAME = {
   ROM32K: 'Rom32k',
   Screen: 'Screen',
   Keyboard: 'Keyboard',
+  ROM32: 'Rom32w',
+  RAM32W: 'Ram32w',
+  RF32: 'Rf32',
 };
 
 export function builtinOf(name) {
@@ -55,12 +61,28 @@ export function builtinInOut(b) {
       ];
     case Builtin.Keyboard:
       return [[], [{ name: 'out', width: 16 }]];
+    case Builtin.Rom32w:
+      return [[{ name: 'address', width: 15 }], [{ name: 'out', width: 32 }]];
+    case Builtin.Ram32w:
+      return [
+        [{ name: 'in', width: 32 }, { name: 'load', width: 1 }, { name: 'address', width: 15 }],
+        [{ name: 'out', width: 32 }],
+      ];
+    case Builtin.Rf32:
+      return [
+        [
+          { name: 'a1', width: 5 }, { name: 'a2', width: 5 }, { name: 'a3', width: 5 },
+          { name: 'rd', width: 5 }, { name: 'wd', width: 32 }, { name: 'we', width: 1 },
+        ],
+        [{ name: 'd1', width: 32 }, { name: 'd2', width: 32 }, { name: 'd3', width: 32 }],
+      ];
   }
 }
 
 /** 是否為有狀態（clocked）晶片 */
 export function builtinSequential(b) {
-  return b === Builtin.Dff || b === Builtin.ARegister || b === Builtin.DRegister || b === Builtin.Screen;
+  return b === Builtin.Dff || b === Builtin.ARegister || b === Builtin.DRegister || b === Builtin.Screen
+    || b === Builtin.Ram32w || b === Builtin.Rf32;
 }
 
 export class ElabError extends Error {
@@ -68,7 +90,7 @@ export class ElabError extends Error {
 }
 
 export function mask(n) {
-  return n >= 16 ? 0xffff : (1 << n) - 1;
+  return n >= 32 ? 0xffffffff : (1 << n) - 1;
 }
 
 /** pin 側的位元數：Whole 用 pin 寬度 pw，Bit/Slice 用 range 本身 */

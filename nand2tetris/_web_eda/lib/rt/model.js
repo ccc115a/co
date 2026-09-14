@@ -18,11 +18,31 @@ export class TopModel {
     this.outs = Object.fromEntries(this.outPins.map((n) => [n, undefined]));
     this.hasState = chip.hasState;
     this.time = 0;
+    /** 頂層輸入/輸出腳位的實際位元寬度（決定 %D/%X 的有號語意） */
+    this.pinWidthOf = new Map(
+      [...chip.inPins, ...chip.outPins].map((p) => [p.name, p.width]),
+    );
+  }
+
+  /**
+   * 欄位位元寬度：頂層腳位內建已知；記憶體對映/內部晶片探測走生成的 probe_width。
+   * 找不到時回 32（新 32-bit 記憶體的預設語意）。
+   */
+  pinWidth(name) {
+    const pr = PinRef.parse(name);
+    if (pr.idx.kind === 'Whole' && this.pinWidthOf.has(pr.name)) {
+      return this.pinWidthOf.get(pr.name);
+    }
+    if (this.chip.probe_width) {
+      const w = this.chip.probe_width(pr.name);
+      if (w) return w;
+    }
+    return 32;
   }
 
   /** 由輸入 pin 名稱取值（未定義回 0） */
   getIn(name) {
-    return (this.ins[name] ?? 0) & 0xffff;
+    return (this.ins[name] ?? 0) & 0xffffffff;
   }
 
   getInNames() {
@@ -47,7 +67,7 @@ export class TopModel {
     if (this.getOut('writeM') !== 1 && this.outPins.includes('writeM')) {
       throw new Error(`${name}: 試圖寫入，但 writeM 不是 1`);
     }
-    this.outs[name] = val & 0xffff;
+    this.outs[name] = val & 0xffffffff;
   }
 
   /** 把 `<pin> = val` 寫進輸入：支援 PinRef 或純字串（`a`、`RAM[3]`） */
@@ -57,7 +77,7 @@ export class TopModel {
       return this.setIdx(name, val);
     }
     if (this.inPins.includes(name)) {
-      this.ins[name] = val & 0xffff;
+      this.ins[name] = val & 0xffffffff;
       return true;
     }
     return this.chip.set_whole ? this.chip.set_whole(name, val) ?? false : false;

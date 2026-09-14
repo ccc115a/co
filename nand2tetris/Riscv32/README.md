@@ -1,8 +1,8 @@
 # Riscv32：RV32S 指令集與 CPU 核心（32 位元、word 定址）
 
 本目錄是 Nand2Tetris 第 5 章的延伸作業：把 HACK 擴展成 **RV32S**——
-32 位元資料通路、32 位元指令、RISC-V 基礎指令集子集，並用 `_web_eda32/`
-（hackjs 的 32-bit 分叉）整鏈路模擬。
+32 位元資料通路、32 位元指令、RISC-V 基礎指令集子集，並用 `_web_eda/`
+（hackjs 的 32-bit 引擎）整鏈路模擬。
 
 ## RV32S 指令集
 
@@ -44,7 +44,7 @@ node asm.js prog1.asm
 
 ## 工具鏈分叉說明
 
-`../_web_eda32/` 是 hackjs（`../_web_eda/`）的分叉，只為 RV32S 擴展：
+`_web_eda/` 是 hackjs 的 32-bit 引擎（16-bit 原版為 `../_web_eda16/`），只為 RV32S 擴展：
 
 - 內建晶片：`ROM32`、`RAM32W`、`RF32`（暫存器堆，ports `a1/a2/a3/d1/d2/d3/rd/wd/we`）。
 - 加法器 `Add32c`、比較器等依 32-bit 有號語意顯示。

@@ -407,8 +407,8 @@ load(src) {
 - `setBits()`（`codegen.js:160`）：`const mask = n >= 16 ? 0xffff : ((1 << n) - 1);`
 - `Rom32k / Reg / RAM family` 全部用 `Uint16Array`／`& 0xffff`。
 
-也就是說，`.hdl` 裡寫 `IN a[16]` 或更寬的 bus（例如 32-bit）時，目前 codegen
+也就是說，`.hdl` 裡寫 `IN a[16]` 或更寬的 bus 時，16-bit 原版（`../_web_eda16/`）的 codegen
 會把它當「≥16」直接整條過，值域仍是 0..0xffff。要做真正的 32-bit 資料通路，
-就得複製一份 `_web_eda/` 到 `_web_eda32/`，把 `sub()/setBits()` 的 mask 改成
-`0xffffffff`（JS 位元運算對 Number 仍然安全）、`Uint16Array` 換成
-`Uint32Array`，再自行提供 32-bit 版本的 Register/RAM/ROM 內建或原生融合規則。
+本引擎（`_web_eda/`）已把 `sub()/setBits()` 的 mask 改成
+`0xffffffff`（JS 位元運算對 Number 仍然安全）、記憶體/暫存器改用 32-bit 版本，
+再自行提供 32-bit 版本的 Register/RAM/ROM 內建或原生融合規則。
