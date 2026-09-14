@@ -180,7 +180,6 @@
         }
       }
       if (!top) throw new Error('找不到 top（.tst 裡沒有 load，從 .hdl 也讀不出芯片名）');
-
       const e = elab(lib, top);
       const src = generateJs(e);
       const TopClass = new Function(`${src}\nreturn ${topClassExpr(e)};`)();
