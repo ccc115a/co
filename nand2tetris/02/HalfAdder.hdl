@@ -13,6 +13,5 @@ CHIP HalfAdder {
         carry;  // Left bit of a + b
 
     PARTS:
-    Xor(a=a, b=b, out=sum);
-    And(a=a, b=b, out=carry);
+    // Put you code here:
 }

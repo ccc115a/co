@@ -156,6 +156,11 @@
         : el.tst.value;
       if (el.mode.value === 'chapter') {
         lib = fullLib();
+        // ccc:begin
+        const parsed = H.parseHdl(el.hdl.value);
+        const chip = Object.assign({}, parsed, { source: el.hdl.value });
+        lib = mergeLibs(lib, { [chip.name]: chip });
+        // ccc:end
         const tstPath = el.case.value;
         baseDir = dirname(tstPath);
         script = parseScript(tstText);
@@ -175,7 +180,6 @@
         }
       }
       if (!top) throw new Error('找不到 top（.tst 裡沒有 load，從 .hdl 也讀不出芯片名）');
-
       const e = elab(lib, top);
       const src = generateJs(e);
       const TopClass = new Function(`${src}\nreturn ${topClassExpr(e)};`)();
