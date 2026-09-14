@@ -1,0 +1,13 @@
+// Eq16：16 位元相等測試
+// a==b → out=1。先 XOR 再檢查是否全零。
+CHIP Eq16 {
+    IN a[16], b[16];
+    OUT out;
+
+    PARTS:
+    Xor16(a=a, b=b, out=x);
+    Or8Way(in=x[8..15], out=orhi);
+    Or8Way(in=x[0..7],  out=orlo);
+    Or(a=orhi, b=orlo, out=any);
+    Not(in=any, out=out);
+}

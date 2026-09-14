@@ -1,0 +1,47 @@
+// Rv32_1：RV32S 單週期核心。
+// 五段式資料通路（IF/ID/EX/MEM/WB），一週期一條指令。
+//
+// 簡化：word 定址（pc+1），ROM/RAM 各 32K×32（ROM32/RAM32W 內建），
+// 暫存器檔 32×32（RF32，x0 硬接 0）。
+//
+// HALT（opcode 1111111）：自鎖凍結 PC，處理器停在原地。
+CHIP Rv32_1 {
+    IN dbgRd[5];
+    OUT pc[32], dbgReg[32];
+
+    PARTS:
+    // ======================= IF =======================
+    R32(in=pcNext, load=pcLoad, out=pc);
+    ROM32(address=pc[0..14], out=romInstr);
+    One32(out=one);
+    Add32c(a=pc, b=one, cin=false, out=seqNext);
+    Add32c(a=pc, b=immX, cin=false, out=pcTgt);
+
+    // ======================= ID =======================
+    Dec(instr=romInstr, rd=rdI, rs1=rs1I, rs2=rs2I, immX=immX, ctl=ctlI, noRs=nrI);
+    RF32(a1=rs1I, a2=rs2I, a3=dbgRd, rd=rdI, wd=wbVal, we=ctlI[0],
+         d1=o1, d2=o2, d3=dbgReg);
+
+    // ======================= EX =======================
+    Mux4Way32(a=o1, b=immX, c=pc, d=o1, sel[0]=ctlI[5], sel[1]=ctlI[6], out=aX);
+    Mux32(a=o2, b=immX, sel=ctlI[7], out=bX);
+    Alu32r(a=aX, b=bX, fn=ctlI[13..15], y=aluY);
+    Cmp32(a=o1, b=o2, eq=eqAB, lt=ltAB);
+    Mux(a=eqAB, b=ltAB, sel=ctlI[14], out=base);
+    Xor(a=base, b=ctlI[13], out=cond);
+    And(a=cond, b=ctlI[9], out=taken);
+
+    // ======================= MEM =======================
+    RAM32W(in=o2, load=ctlI[1], address=aluY[0..14], out=memVal);
+
+    // ======================= WB =======================
+    Mux4Way32(a=aluY, b=memVal, c=seqNext, d=aluY, sel[0]=ctlI[3], sel[1]=ctlI[4], out=wbVal);
+
+    // ======================= HALT / PC 控制 =======================
+    R32(in=one, load=ctlI[8], out=haltReg);
+    Or(a=haltReg[0], b=ctlI[8], out=halted);
+    Not(in=halted, out=pcLoad);
+    Or(a=taken, b=ctlI[10], out=fl0);
+    Or(a=fl0, b=ctlI[11], out=flush);
+    Mux4Way32(a=seqNext, b=seqNext, c=pcTgt, d=aluY, sel[0]=ctlI[11], sel[1]=flush, out=pcNext);
+}

@@ -1,0 +1,16 @@
+// PR9：9×R32 管線暫存器（ID/EX）。
+CHIP PR9 {
+    IN in0[32], in1[32], in2[32], in3[32], in4[32], in5[32], in6[32], in7[32], in8[32], load;
+    OUT out0[32], out1[32], out2[32], out3[32], out4[32], out5[32], out6[32], out7[32], out8[32];
+
+    PARTS:
+    R32(in=in0, load=load, out=out0);
+    R32(in=in1, load=load, out=out1);
+    R32(in=in2, load=load, out=out2);
+    R32(in=in3, load=load, out=out3);
+    R32(in=in4, load=load, out=out4);
+    R32(in=in5, load=load, out=out5);
+    R32(in=in6, load=load, out=out6);
+    R32(in=in7, load=load, out=out7);
+    R32(in=in8, load=load, out=out8);
+}

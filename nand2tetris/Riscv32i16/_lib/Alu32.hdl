@@ -1,0 +1,23 @@
+// Alu32：32 位元 ALU，sel[1:0]：
+//   00 = OR, 01 = AND, 10 = ADD, 11 = SUB (b 取負加 1)
+// 對應 opcode 1=AND, 2=ADD, 3=SUB, 4=OR 的低位元編碼。
+CHIP Alu32 {
+    IN aLo[16], aHi[16], bLo[16], bHi[16], sel[2];
+    OUT outLo[16], outHi[16];
+
+    PARTS:
+    And16(a=aLo, b=bLo, out=andLo);
+    And16(a=aHi, b=bHi, out=andHi);
+    Or16(a=aLo, b=bLo, out=orLo);
+    Or16(a=aHi, b=bHi, out=orHi);
+    Not16(in=bLo, out=nbLo);
+    Not16(in=bHi, out=nbHi);
+    Mux(a=false, b=true, sel=sel[0], out=s0);
+    Mux(a=false, b=true, sel=sel[1], out=s1);
+    And(a=s0, b=s1, out=sub);
+    Mux16(a=bLo, b=nbLo, sel=sub, out=bLo2);
+    Mux16(a=bHi, b=nbHi, sel=sub, out=bHi2);
+    Add32c(aLo=aLo, aHi=aHi, bLo=bLo2, bHi=bHi2, cin=sub, outLo=adLo, outHi=adHi);
+    Mux4Way16(a=orLo, b=andLo, c=adLo, d=adLo, sel=sel, out=outLo);
+    Mux4Way16(a=orHi, b=andHi, c=adHi, d=adHi, sel=sel, out=outHi);
+}

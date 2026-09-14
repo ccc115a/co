@@ -1,0 +1,47 @@
+CHIP Cpu2stage {
+    IN  inM[16], instruction[16], reset;
+    OUT outM[16], writeM, addressM[15], pc[15];
+
+    PARTS:
+    // ============================================
+    // Stage 1: Fetch 
+    // ============================================
+    Mux16(a=instruction, b=false, sel=jumpTaken, out=fetchInst);
+    Register(in=fetchInst, load=true, out=exInst);
+
+    // ============================================
+    // Stage 2: Execute
+    // ============================================
+    Not(in=exInst[15], out=isA);
+    Not(in=isA, out=isC);
+    
+    And(a=isC, b=exInst[5], out=destA); 
+    And(a=isC, b=exInst[4], out=destD); 
+    And(a=isC, b=exInst[3], out=writeM); 
+
+    Or(a=isA, b=destA, out=loadA);
+    Mux16(a=aluOut, b=exInst, sel=isA, out=inA);
+    ARegister(in=inA, load=loadA, out=outA, out[0..14]=addressM);
+
+    DRegister(in=aluOut, load=destD, out=outD);
+
+    Mux16(a=outA, b=inM, sel=exInst[12], out=inAM);
+
+    ALU(x=outD, y=inAM, 
+        zx=exInst[11], nx=exInst[10], zy=exInst[9], ny=exInst[8], f=exInst[7], no=exInst[6], 
+        out=aluOut, out=outM, zr=zr, ng=ng);
+
+    Or(a=zr, b=ng, out=zrOrNg);
+    Not(in=zrOrNg, out=pos);
+    
+    And(a=exInst[0], b=pos, out=jgt);
+    And(a=exInst[1], b=zr, out=jeq);
+    And(a=exInst[2], b=ng, out=jlt);
+    
+    Or(a=jgt, b=jeq, out=jge);
+    Or(a=jge, b=jlt, out=jumpCond);
+    And(a=isC, b=jumpCond, out=jumpTaken);
+
+    Not(in=jumpTaken, out=inc);
+    PC(in=outA, load=jumpTaken, inc=inc, reset=reset, out[0..14]=pc);
+}

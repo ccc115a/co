@@ -1,0 +1,12 @@
+// PR5：5×R32 管線暫存器（EX/MEM）。
+CHIP PR5 {
+    IN in0[32], in1[32], in2[32], in3[32], in4[32], load;
+    OUT out0[32], out1[32], out2[32], out3[32], out4[32];
+
+    PARTS:
+    R32(in=in0, load=load, out=out0);
+    R32(in=in1, load=load, out=out1);
+    R32(in=in2, load=load, out=out2);
+    R32(in=in3, load=load, out=out3);
+    R32(in=in4, load=load, out=out4);
+}

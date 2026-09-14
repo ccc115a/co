@@ -1,0 +1,12 @@
+// Mem32：32 位元資料記憶體（word 定址，address[14] → 16384 words）。
+// 兩顆 RAM16K 並排：RAMlo 放低 16 位元、RAMhi 放高 16 位元，一起 load。
+// 觀察方式：測試腳本用拓墣 probe 讀 `RAM16K[i]`（回傳第一顆 = 低半）；
+// 高半無法從 probe 區分，若需精確讀高半請直接在 CPU 內拉 OUT pin。
+CHIP Mem32 {
+    IN loIn[16], hiIn[16], load, address[14];
+    OUT loOut[16], hiOut[16];
+
+    PARTS:
+    RAM16K(in=loIn, load=load, address=address, out=loOut);
+    RAM16K(in=hiIn, load=load, address=address, out=hiOut);
+}

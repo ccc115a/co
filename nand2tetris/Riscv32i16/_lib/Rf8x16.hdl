@@ -1,0 +1,22 @@
+// Rf8x16：8 個 16 位元暫存器（x0..x7），三讀一寫。
+// x0 永遠讀到 0，而且絕不會被寫入。
+// 寫入位址 wd 用 DMux8Way 轉成 8 條 load；讀取用 Mux8Way16×3。
+CHIP Rf8x16 {
+    IN in[16], wd[3], load, rdA[3], rdB[3], rdC[3];
+    OUT outA[16], outB[16], outC[16];
+
+    PARTS:
+    // DMux 不接 a（wd=000 的目標），所以 x0 永遠 load=0
+    DMux8Way(in=load, sel=wd, b=w1, c=w2, d=w3, e=w4, f=w5, g=w6, h=w7);
+    Register(in=in, load=false, out=r0);
+    Register(in=in, load=w1, out=r1);
+    Register(in=in, load=w2, out=r2);
+    Register(in=in, load=w3, out=r3);
+    Register(in=in, load=w4, out=r4);
+    Register(in=in, load=w5, out=r5);
+    Register(in=in, load=w6, out=r6);
+    Register(in=in, load=w7, out=r7);
+    Mux8Way16(a=r0, b=r1, c=r2, d=r3, e=r4, f=r5, g=r6, h=r7, sel=rdA, out=outA);
+    Mux8Way16(a=r0, b=r1, c=r2, d=r3, e=r4, f=r5, g=r6, h=r7, sel=rdB, out=outB);
+    Mux8Way16(a=r0, b=r1, c=r2, d=r3, e=r4, f=r5, g=r6, h=r7, sel=rdC, out=outC);
+}

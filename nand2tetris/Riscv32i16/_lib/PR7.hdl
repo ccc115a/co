@@ -1,0 +1,16 @@
+// PR7：7 條 16 位元管線暫存器（共用 load）。
+// EX/MEM（aluLo aluHi memdLo memdHi imm rd ctl）與
+// MEM/WB（memLo memHi aluLo aluHi imm rd ctl）都用這條。
+CHIP PR7 {
+    IN in0[16], in1[16], in2[16], in3[16], in4[16], in5[16], in6[16], load;
+    OUT out0[16], out1[16], out2[16], out3[16], out4[16], out5[16], out6[16];
+
+    PARTS:
+    Register(in=in0, load=load, out=out0);
+    Register(in=in1, load=load, out=out1);
+    Register(in=in2, load=load, out=out2);
+    Register(in=in3, load=load, out=out3);
+    Register(in=in4, load=load, out=out4);
+    Register(in=in5, load=load, out=out5);
+    Register(in=in6, load=load, out=out6);
+}

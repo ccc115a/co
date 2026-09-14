@@ -1,0 +1,25 @@
+// Pad3：3 位元欄位 → 16 位元 bus（高 13 位元補 0）。純組合電路，無時脈。
+// 管線暫存器都是 16 位元 lane，欄位（rd/rs 等）進 PR 前要先展開寬度，
+// 但不能用 Register（那會多延一拍），所以用不帶狀態的 Pad。
+CHIP Pad3 {
+    IN in[3];
+    OUT out[16];
+
+    PARTS:
+    Xor(a=in[0], b=false, out=out[0]);
+    Xor(a=in[1], b=false, out=out[1]);
+    Xor(a=in[2], b=false, out=out[2]);
+    Xor(a=false, b=false, out=out[3]);
+    Xor(a=false, b=false, out=out[4]);
+    Xor(a=false, b=false, out=out[5]);
+    Xor(a=false, b=false, out=out[6]);
+    Xor(a=false, b=false, out=out[7]);
+    Xor(a=false, b=false, out=out[8]);
+    Xor(a=false, b=false, out=out[9]);
+    Xor(a=false, b=false, out=out[10]);
+    Xor(a=false, b=false, out=out[11]);
+    Xor(a=false, b=false, out=out[12]);
+    Xor(a=false, b=false, out=out[13]);
+    Xor(a=false, b=false, out=out[14]);
+    Xor(a=false, b=false, out=out[15]);
+}

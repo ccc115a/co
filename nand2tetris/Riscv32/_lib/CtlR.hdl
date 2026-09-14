@@ -1,0 +1,39 @@
+// CtlR：16 位元 ctl → 32 位元 lane（零延伸）。
+CHIP CtlR {
+    IN in[16];
+    OUT out[32];
+
+    PARTS:
+    Or(a=in[0], b=false, out=out[0]);
+    Or(a=in[1], b=false, out=out[1]);
+    Or(a=in[2], b=false, out=out[2]);
+    Or(a=in[3], b=false, out=out[3]);
+    Or(a=in[4], b=false, out=out[4]);
+    Or(a=in[5], b=false, out=out[5]);
+    Or(a=in[6], b=false, out=out[6]);
+    Or(a=in[7], b=false, out=out[7]);
+    Or(a=in[8], b=false, out=out[8]);
+    Or(a=in[9], b=false, out=out[9]);
+    Or(a=in[10], b=false, out=out[10]);
+    Or(a=in[11], b=false, out=out[11]);
+    Or(a=in[12], b=false, out=out[12]);
+    Or(a=in[13], b=false, out=out[13]);
+    Or(a=in[14], b=false, out=out[14]);
+    Or(a=in[15], b=false, out=out[15]);
+    Or(a=false, b=false, out=out[16]);
+    Or(a=false, b=false, out=out[17]);
+    Or(a=false, b=false, out=out[18]);
+    Or(a=false, b=false, out=out[19]);
+    Or(a=false, b=false, out=out[20]);
+    Or(a=false, b=false, out=out[21]);
+    Or(a=false, b=false, out=out[22]);
+    Or(a=false, b=false, out=out[23]);
+    Or(a=false, b=false, out=out[24]);
+    Or(a=false, b=false, out=out[25]);
+    Or(a=false, b=false, out=out[26]);
+    Or(a=false, b=false, out=out[27]);
+    Or(a=false, b=false, out=out[28]);
+    Or(a=false, b=false, out=out[29]);
+    Or(a=false, b=false, out=out[30]);
+    Or(a=false, b=false, out=out[31]);
+}

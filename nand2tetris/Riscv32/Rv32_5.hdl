@@ -1,0 +1,128 @@
+// Rv32_5：RV32S 五級管線核心（IF/ID/EX/MEM/WB），32 位元資料通路、32 位元指令。
+//
+// 時序模型（tick 取樣、tock 提交）與兩層前饋（同 Rv5）：
+//   ID/EX 輸入端先抓「EX/MEM（差 2 拍）＋ MEM/WB（差 3 拍）」等級的現成產出，
+//   再於 EX 輸入端用「差 1 拍」的 EX/MEM 產出覆蓋一次（1-back overlap）。
+//   LW 在 MEM 級時記憶體讀出已可得（RAM32W 組合式讀取），可直接前遞；
+//   真正的 load-use 只在「LW 在 EX」時發生 → stall。
+//
+// 危障處理：
+//   - load-use stall：EX 是 LW（ctlX[2]=1）且其 rd 被 ID 指令用到 → 凍結 PC 與
+//     IF/ID、ID/EX 塞 NOP。
+//   - 分支/JAL/JALR 在 EX 解出 → flush：清 IF/ID、ID/EX 塞 NOP、PC 跳目標。
+//   - HALT（opcode 1111111）：任一級看到即自鎖凍結 PC（self-holding latch）。
+//   - x0：RF32 不做寫入（wd=0 傳 knop……由 RF32 內建忽略 rd=0）。
+//
+// 除錯接口：dbgRd[5] 讀暫存器（x0..x31）、pc；記憶體用 probe（RAM32W[i]）。
+CHIP Rv32_5 {
+    IN dbgRd[5];
+    OUT pc[32], dbgReg[32];
+
+    PARTS:
+    // ======================= IF =======================
+    R32(in=pcNext, load=pcLoad, out=pc);
+    ROM32(address=pc[0..14], out=romInstr);
+    One32(out=one);
+    Add32c(a=pc, b=one, cin=false, out=seqNextF);
+    Add32c(a=pcX, b=immX, cin=false, out=pcTgt);
+
+    // ======================= IF/ID =======================
+    Mux32(a=romInstr, b=iidInstr, sel=stall, out=t0);
+    Mux32(a=t0, b=false, sel=flush, out=iidInstrI);
+    Mux32(a=pc, b=iidPc, sel=stall, out=t0p);
+    Mux32(a=t0p, b=false, sel=flush, out=iidPcI);
+    Mux32(a=seqNextF, b=iidSeq, sel=stall, out=t0s);
+    Mux32(a=t0s, b=false, sel=flush, out=iidSeqI);
+    PR3(in0=iidInstrI, in1=iidPcI, in2=iidSeqI, load=true,
+        out0=iidInstr, out1=iidPc, out2=iidSeq);
+
+    // ======================= ID =======================
+    Dec(instr=iidInstr, rd=rdI, rs1=rs1I, rs2=rs2I, immX=immXI, ctl=ctlI, noRs=nrI);
+    Pad5(in=rdI, out=rdpI);
+    Pad5(in=rs1I, out=rs1lane);
+    Pad5(in=rs2I, out=rs2lane);
+    Pad16(in=ctlI, out=ctlpd);
+    Mux32(a=ctlpd, b=false, sel=bubble, out=ctlXI);
+    RF32(a1=rs1I, a2=rs2I, a3=dbgRd, rd=rdW[0..4], wd=emValW, we=ctlW[0],
+         d1=o1, d2=o2, d3=dbgReg);
+
+    // ---- load-use stall 偵測（EX 的 LW 目標被 ID 指令使用）----
+    Not(in=nrI, out=idNeed);
+    Comp5(a=rdXe[0..4], b=rs1I, out=eqRs1);
+    Comp5(a=rdXe[0..4], b=rs2I, out=eqRs2);
+    Or(a=eqRs1, b=eqRs2, out=useHaz);
+    Comp5(a=rdXe[0..4], b[0]=false, b[1]=false, b[2]=false, b[3]=false, b[4]=false, out=rdXZ);
+    Not(in=rdXZ, out=rdXNZ);
+    And(a=ctlX[2], b=rdXNZ, out=h1);
+    And(a=h1, b=idNeed, out=h2);
+    And(a=h2, b=useHaz, out=stall);
+
+    // ---- halt / flush / bubble ----
+    Or(a=ctlI[8], b=ctlX[8], out=hu0);
+    Or(a=hu0, b=ctlM[8], out=hu1);
+    Or(a=hu1, b=ctlW[8], out=hltComb);
+    R32(in=one, load=hltComb, out=haltReg);
+    Or(a=haltReg[0], b=hltComb, out=halted);
+    Or(a=stall, b=halted, out=pcHold);
+    Not(in=pcHold, out=pcLoad);
+    Or(a=stall, b=flush, out=bb0);
+    Or(a=bb0, b=halted, out=bubble);
+
+    // ---- 前饋（ID/EX 輸入端）：EX/MEM（新）優先、其次 MEM/WB ----
+    Comp5(a=rdMe[0..4], b=rs1I, out=mRs1);
+    Comp5(a=rdMe[0..4], b=rs2I, out=mRs2);
+    Comp5(a=rdW[0..4], b=rs1I, out=wRs1);
+    Comp5(a=rdW[0..4], b=rs2I, out=wRs2);
+    Comp5(a=rdMe[0..4], b[0]=false, b[1]=false, b[2]=false, b[3]=false, b[4]=false, out=rdMZ);
+    Not(in=rdMZ, out=rdMNZ);
+    Comp5(a=rdW[0..4], b[0]=false, b[1]=false, b[2]=false, b[3]=false, b[4]=false, out=rdWZ);
+    Not(in=rdWZ, out=rdWNZ);
+    And(a=ctlM[0], b=rdMNZ, out=pM);
+    And(a=ctlW[0], b=rdWNZ, out=pW);
+    And(a=pM, b=mRs1, out=fwdA_M);
+    And(a=pM, b=mRs2, out=fwdB_M);
+    And(a=pW, b=wRs1, out=fwdA_W);
+    And(a=pW, b=wRs2, out=fwdB_W);
+    Mux4Way32(a=aluM, b=memValM, c=seqNextM, d=aluM, sel[0]=ctlM[3], sel[1]=ctlM[4], out=emValM);
+    Mux32(a=o1, b=emValW, sel=fwdA_W, out=pa0);
+    Mux32(a=pa0, b=emValM, sel=fwdA_M, out=av);
+    Mux32(a=o2, b=emValW, sel=fwdB_W, out=pb0);
+    Mux32(a=pb0, b=emValM, sel=fwdB_M, out=bv);
+
+    // ======================= ID/EX =======================
+    PR9(in0=av, in1=bv, in2=immXI, in3=iidPc, in4=iidSeq, in5=rs1lane, in6=rs2lane, in7=rdpI, in8=ctlXI, load=true,
+        out0=exAv, out1=exBv, out2=immX, out3=pcX, out4=seqNextX, out5=exRs1, out6=exRs2, out7=rdXe, out8=ctlX);
+
+    // ======================= EX =======================
+    Comp5(a=rdMe[0..4], b=exRs1[0..4], out=exMRs1);
+    Comp5(a=rdMe[0..4], b=exRs2[0..4], out=exMRs2);
+    And(a=pM, b=exMRs1, out=exFwdA);
+    And(a=pM, b=exMRs2, out=exFwdB);
+    Mux32(a=exAv, b=emValM, sel=exFwdA, out=avX);
+    Mux32(a=exBv, b=emValM, sel=exFwdB, out=bvX);
+    Mux4Way32(a=avX, b=immX, c=pcX, d=avX, sel[0]=ctlX[5], sel[1]=ctlX[6], out=aXe);
+    Mux32(a=bvX, b=immX, sel=ctlX[7], out=bXe);
+    Alu32r(a=aXe, b=bXe, fn=ctlX[13..15], y=aluX);
+    Cmp32(a=avX, b=bvX, eq=eqAB, lt=ltAB);
+    Mux(a=eqAB, b=ltAB, sel=ctlX[14], out=base);
+    Xor(a=base, b=ctlX[13], out=cond);
+    And(a=cond, b=ctlX[9], out=taken);
+    Or(a=taken, b=ctlX[10], out=fl0);
+    Or(a=fl0, b=ctlX[11], out=flush);
+
+    // ======================= EX/MEM =======================
+    PR5(in0=aluX, in1=bvX, in2=seqNextX, in3=rdXe, in4=ctlX, load=true,
+        out0=aluM, out1=stM, out2=seqNextM, out3=rdMe, out4=ctlM);
+
+    // ======================= MEM =======================
+    RAM32W(in=stM, load=ctlM[1], address=aluM[0..14], out=memValM);
+
+    // ======================= MEM/WB =======================
+    PR3(in0=emValM, in1=rdMe, in2=ctlM, load=true, out0=emValW, out1=rdW, out2=ctlW);
+
+    // ======================= WB =======================
+    // emValW = 寫回值（mem / seq(link) / alu），RF32 寫入接在 ID 段；此級無額外邏輯。
+
+    // ======================= PC 選擇 =======================
+    Mux4Way32(a=seqNextF, b=seqNextF, c=pcTgt, d=aluX, sel[0]=ctlX[11], sel[1]=flush, out=pcNext);
+}

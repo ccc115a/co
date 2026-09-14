@@ -1,0 +1,22 @@
+// Alu32r：RV32S ALU。fn[2:0]：
+//   000 and｜001 or｜010 xor｜011 add｜100 sub｜101 passA(a)
+CHIP Alu32r {
+    IN a[32], b[32], fn[3];
+    OUT y[32];
+
+    PARTS:
+    Not(in=fn[1], out=nfn1);
+    Not(in=fn[0], out=nfn0);
+    And(a=fn[2], b=nfn1, out=top);      // fn==10x
+    And(a=top, b=nfn0, out=subsel);
+    And(a=top, b=fn[0], out=passsel);
+    Not32(a=b, out=nb);
+    Mux32(a=b, b=nb, sel=subsel, out=b2);
+    Add32c(a=a, b=b2, cin=subsel, out=addy, cout=mc);   // sub → a-~b-1 = a-b
+    And32(a=a, b=b, out=andy);
+    Or32(a=a, b=b, out=ory);
+    Xor32(a=a, b=b, out=xory);
+    Mux4Way32(a=andy, b=ory, c=xory, d=addy, sel[0]=fn[0], sel[1]=fn[1], out=m1);
+    Mux32(a=m1, b=addy, sel=subsel, out=m2);
+    Mux32(a=m2, b=a, sel=passsel, out=y);
+}

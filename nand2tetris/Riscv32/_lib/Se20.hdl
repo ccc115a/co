@@ -1,0 +1,39 @@
+// Se20：20 位元有號數 → 32 位元符號擴展（JAL 位移）。
+CHIP Se20 {
+    IN in[20];
+    OUT out[32];
+
+    PARTS:
+    Or(a=in[0], b=false, out=out[0]);
+    Or(a=in[1], b=false, out=out[1]);
+    Or(a=in[2], b=false, out=out[2]);
+    Or(a=in[3], b=false, out=out[3]);
+    Or(a=in[4], b=false, out=out[4]);
+    Or(a=in[5], b=false, out=out[5]);
+    Or(a=in[6], b=false, out=out[6]);
+    Or(a=in[7], b=false, out=out[7]);
+    Or(a=in[8], b=false, out=out[8]);
+    Or(a=in[9], b=false, out=out[9]);
+    Or(a=in[10], b=false, out=out[10]);
+    Or(a=in[11], b=false, out=out[11]);
+    Or(a=in[12], b=false, out=out[12]);
+    Or(a=in[13], b=false, out=out[13]);
+    Or(a=in[14], b=false, out=out[14]);
+    Or(a=in[15], b=false, out=out[15]);
+    Or(a=in[16], b=false, out=out[16]);
+    Or(a=in[17], b=false, out=out[17]);
+    Or(a=in[18], b=false, out=out[18]);
+    Or(a=in[19], b=false, out=out[19]);
+    Mux(a=false, b=true, sel=in[19], out=out[20]);
+    Mux(a=false, b=true, sel=in[19], out=out[21]);
+    Mux(a=false, b=true, sel=in[19], out=out[22]);
+    Mux(a=false, b=true, sel=in[19], out=out[23]);
+    Mux(a=false, b=true, sel=in[19], out=out[24]);
+    Mux(a=false, b=true, sel=in[19], out=out[25]);
+    Mux(a=false, b=true, sel=in[19], out=out[26]);
+    Mux(a=false, b=true, sel=in[19], out=out[27]);
+    Mux(a=false, b=true, sel=in[19], out=out[28]);
+    Mux(a=false, b=true, sel=in[19], out=out[29]);
+    Mux(a=false, b=true, sel=in[19], out=out[30]);
+    Mux(a=false, b=true, sel=in[19], out=out[31]);
+}

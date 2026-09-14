@@ -1,0 +1,15 @@
+// NibEq：4 位元相等測試（opcode 解碼用）
+CHIP NibEq {
+    IN a[4], b[4];
+    OUT out;
+
+    PARTS:
+    Xor(a=a[0], b=b[0], out=x0);
+    Xor(a=a[1], b=b[1], out=x1);
+    Xor(a=a[2], b=b[2], out=x2);
+    Xor(a=a[3], b=b[3], out=x3);
+    Or(a=x0, b=x1, out=o01);
+    Or(a=x2, b=x3, out=o23);
+    Or(a=o01, b=o23, out=any);
+    Not(in=any, out=out);
+}

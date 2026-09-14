@@ -1,0 +1,20 @@
+// PR10：10 條 16 位元管線暫存器（共用 load）。
+// ID/EX：rs1vLo rs1vHi rs2vLo rs2vHi offA offB imm pc rd ctl
+CHIP PR10 {
+    IN in0[16], in1[16], in2[16], in3[16], in4[16], in5[16],
+       in6[16], in7[16], in8[16], in9[16], load;
+    OUT out0[16], out1[16], out2[16], out3[16], out4[16], out5[16],
+        out6[16], out7[16], out8[16], out9[16];
+
+    PARTS:
+    Register(in=in0, load=load, out=out0);
+    Register(in=in1, load=load, out=out1);
+    Register(in=in2, load=load, out=out2);
+    Register(in=in3, load=load, out=out3);
+    Register(in=in4, load=load, out=out4);
+    Register(in=in5, load=load, out=out5);
+    Register(in=in6, load=load, out=out6);
+    Register(in=in7, load=load, out=out7);
+    Register(in=in8, load=load, out=out8);
+    Register(in=in9, load=load, out=out9);
+}

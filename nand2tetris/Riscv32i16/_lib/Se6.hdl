@@ -1,0 +1,25 @@
+// Se6：6 位元有號數 → 16 位元符號擴展
+// out[5:0]=in[5:0]，out[15:6]=in[5]（補正號）。
+// 工具鏈沒有 bus 常數，所以高位用 10 顆 Mux 逐 bit 複製符號位。
+CHIP Se6 {
+    IN in[6];
+    OUT out[16];
+
+    PARTS:
+    Or(a=in[0], b=false, out=out[0]);
+    Or(a=in[1], b=false, out=out[1]);
+    Or(a=in[2], b=false, out=out[2]);
+    Or(a=in[3], b=false, out=out[3]);
+    Or(a=in[4], b=false, out=out[4]);
+    Or(a=in[5], b=false, out=out[5]);
+    Mux(a=false, b=true, sel=in[5], out=out[6]);
+    Mux(a=false, b=true, sel=in[5], out=out[7]);
+    Mux(a=false, b=true, sel=in[5], out=out[8]);
+    Mux(a=false, b=true, sel=in[5], out=out[9]);
+    Mux(a=false, b=true, sel=in[5], out=out[10]);
+    Mux(a=false, b=true, sel=in[5], out=out[11]);
+    Mux(a=false, b=true, sel=in[5], out=out[12]);
+    Mux(a=false, b=true, sel=in[5], out=out[13]);
+    Mux(a=false, b=true, sel=in[5], out=out[14]);
+    Mux(a=false, b=true, sel=in[5], out=out[15]);
+}

@@ -1,0 +1,10 @@
+// PR3：3×R32 管線暫存器。
+CHIP PR3 {
+    IN in0[32], in1[32], in2[32], load;
+    OUT out0[32], out1[32], out2[32];
+
+    PARTS:
+    R32(in=in0, load=load, out=out0);
+    R32(in=in1, load=load, out=out1);
+    R32(in=in2, load=load, out=out2);
+}

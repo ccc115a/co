@@ -1,0 +1,13 @@
+// Comp3：3 位元相等測試（funct3 比對用）。b 為逐 bit 常數。
+CHIP Comp3 {
+    IN a[3], b[3];
+    OUT out;
+
+    PARTS:
+    Xor(a=a[0], b=b[0], out=x0);
+    Xor(a=a[1], b=b[1], out=x1);
+    Xor(a=a[2], b=b[2], out=x2);
+    Or(a=x0, b=x1, out=o01);
+    Or(a=o01, b=x2, out=any);
+    Not(in=any, out=out);
+}

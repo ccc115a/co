@@ -1,0 +1,17 @@
+// Comp5：5 位元相等測試（暫存器編號危障比對）。b 為逐 bit 常數。
+CHIP Comp5 {
+    IN a[5], b[5];
+    OUT out;
+
+    PARTS:
+    Xor(a=a[0], b=b[0], out=x0);
+    Xor(a=a[1], b=b[1], out=x1);
+    Xor(a=a[2], b=b[2], out=x2);
+    Xor(a=a[3], b=b[3], out=x3);
+    Xor(a=a[4], b=b[4], out=x4);
+    Or(a=x0, b=x1, out=o01);
+    Or(a=o01, b=x2, out=o012);
+    Or(a=o012, b=x3, out=o0123);
+    Or(a=o0123, b=x4, out=any);
+    Not(in=any, out=out);
+}

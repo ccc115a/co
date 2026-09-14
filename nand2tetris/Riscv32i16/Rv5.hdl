@@ -1,0 +1,167 @@
+// Rv5：RvMini 五級管線核心（IF/ID/EX/MEM/WB），32 位元資料通路、16 位元指令。
+//
+// 資料一律以 lo[16]+hi[16] 兩條 bus 表示 32 位元值。
+//
+// 管線暫存器：
+//   IF/ID   = PR2   (instr, fetchPc)
+//   ID/EX   = PR11  (avLo/Hi, bvLo/Hi, offA, offB, imm, pc, rd, ctl, rsFields)
+//   EX/MEM  = PR7   (aluLo, aluHi, memdLo/Hi=storeData, imm, rd, ctl)
+//   MEM/WB  = PR7   (memLo, memHi, aluLo, aluHi, imm, rd, ctl)
+//
+// 時序模型（tick 取樣、tock 提交）與前饋：
+//   ID/EX 在「取樣瞬間」看到的暫存器檔是上一拍 commit 後的值，因此
+//   前饋分兩層做：
+//   (1) ID/EX 輸入端：抓 EX/MEM 級（差 2 拍，較新）與 MEM/WB 級（差 3 拍）
+//       同一拍的產出，覆蓋掉 RAW 舊值（否則差 3 拍的產出者會在消費指令
+//       進 EX 前就被沖走）。
+//   (2) EX 輸入端：consumer 在 ID 時 producer 才在 EX（差 1 拍），用
+//       EX/MEM 級的現成結果再蓋掉一次。
+//   LW 在 MEM 級時記憶體讀出已可得（RAM16K 為組合式讀取），可直接前遞;
+//   真正的 load-use 只發生在「LW 在 EX」時 → stall。
+//
+// 危障處理：
+//   - load-use stall：EX 是 LW 且目標暫存器被 ID 指令使用時，凍結 PC 與 IF/ID、
+//     塞一顆 NOP 給 ID/EX（ctl 接 0），等一下拍。
+//   - BEQ/JAL 在 EX 解出（taken/jal）：清掉 IF/ID、ID/EX 塞 NOP、PC 跳目標。
+//   - HALT：任一級看到 halt 即永久凍結 PC（self-holding latch），持續塞 NOP。
+//   - x0 永不寫入（Rf8x16 的 DMux 不接 a）。
+//
+// 除錯接口：dbgRd[3] 讀暫存器（x0..x7）、pc；記憶體用 probe（RAM16K[i]，低半）。
+CHIP Rv5 {
+    IN dbgRd[3];
+    OUT pc[16], dbgRegLo[16], dbgRegHi[16];
+
+    PARTS:
+    // ======================= IF =======================
+    Register(in=pcNext, load=pcLoad, out=pc);
+    ROM32K(address=pc[0..14], out=romInstr);
+    Inc16(in=pc, out=inc);
+    Or(a=taken, b=jalX, out=pSel0);
+    Mux4Way16(a=inc, b=false, c=tgtB, d=tgtJ, sel[1]=pSel0, sel[0]=jalX, out=pcNext);
+
+    // ======================= IF/ID =======================
+    Mux16(a=romInstr, b=iidInstr, sel=stall, out=t0);
+    Mux16(a=t0, b=false, sel=flush, out=iidInstrI);
+    Mux16(a=pc, b=iidPc, sel=stall, out=iidPcI);
+    PR2(in0=iidInstrI, in1=iidPcI, load=true, out0=iidInstr, out1=iidPc);
+
+    // ======================= ID =======================
+    Dec(instr=iidInstr, rd=rdI, rs1=rs1I, rs2=rs2I, imm=immI, offA=offAI, offB=offBI, ctl=ctlI);
+    Rf8x16(in=wbValLo, wd=rdW[0..2], load=ctlW[0], rdA=rs1I, rdB=rs2I, rdC=dbgRd,
+           outA=r1l, outB=r2l, outC=dbgRegLo);
+    Rf8x16(in=wbValHi, wd=rdW[0..2], load=ctlW[0], rdA=rs1I, rdB=rs2I, rdC=dbgRd,
+           outA=r1h, outB=r2h, outC=dbgRegHi);
+
+    // ---- load-use stall 偵測（EX 是 LW，且 ID 指令要用它的 rd）----
+    Comp3(a=rdXe[0..2], b=rs1I, out=eqRs1);
+    Comp3(a=rdXe[0..2], b=rs2I, out=eqRs2);
+    Or(a=eqRs1, b=eqRs2, out=useHaz);
+    Or(a=ctlI[12], b=ctlI[7], out=nr0);
+    Or(a=nr0, b=ctlI[8], out=idNl);
+    Not(in=idNl, out=idNeed);
+    Or(a=rdXe[0], b=rdXe[1], out=nz0);
+    Or(a=nz0, b=rdXe[2], out=rdNZ);
+    And(a=ctlX[9], b=rdNZ, out=h1);
+    And(a=h1, b=idNeed, out=h2);
+    And(a=h2, b=useHaz, out=stall);
+
+    // ---- halt / flush / bubble ----
+    Or(a=ctlI[8], b=ctlX[8], out=hlt0);
+    Or(a=hlt0, b=ctlM[8], out=hlt1);
+    Or(a=hlt1, b=ctlW[8], out=hltComb);
+    Register(in=true, load=hltComb, out=haltReg);     // 只要曾解到 HALT 就永久凍結
+    And(a=haltReg[15], b=true, out=haltBit);
+    Or(a=haltBit, b=hltComb, out=halted);
+    Or(a=taken, b=jalX, out=flush);
+    Or(a=stall, b=halted, out=pcHold);
+    Not(in=pcHold, out=pcLoad);
+    Or(a=stall, b=flush, out=bb0);
+    Or(a=bb0, b=halted, out=bubble);
+
+    // ---- 前饋（做在 ID/EX 輸入端）：EX/MEM 級（新）優先，其次 MEM/WB 級 ----
+    Comp3(a=rdMe[0..2], b=rs1I, out=mRs1);
+    Comp3(a=rdMe[0..2], b=rs2I, out=mRs2);
+    Comp3(a=rdW[0..2], b=rs1I, out=wRs1);
+    Comp3(a=rdW[0..2], b=rs2I, out=wRs2);
+    Or(a=rdMe[0], b=rdMe[1], out=rdMNZ0);
+    Or(a=rdMNZ0, b=rdMe[2], out=rdMNZ);
+    Or(a=rdW[0], b=rdW[1], out=rdWNZ0);
+    Or(a=rdWNZ0, b=rdW[2], out=rdWNZ);
+    And(a=ctlM[0], b=rdMNZ, out=pMv);
+    And(a=ctlW[0], b=rdWNZ, out=pW);
+    And(a=pMv, b=mRs1, out=fwdA_M);
+    And(a=pMv, b=mRs2, out=fwdB_M);
+    And(a=pW, b=wRs1, out=fwdA_W);
+    And(a=pW, b=wRs2, out=fwdB_W);
+    Mux16(a=false, b=true, sel=immM[15], out=imMh);
+    // EX/MEM 級產出：li→imm、lw→讀記憶體（MEM 級已可得）、其餘→ALU 結果
+    Mux16(a=aluM, b=memLo, sel=ctlM[9], out=emS);
+    Mux16(a=emS, b=immM, sel=ctlM[12], out=emVl);
+    Mux16(a=aluMh, b=memHi, sel=ctlM[9], out=emTh);
+    Mux16(a=emTh, b=imMh, sel=ctlM[12], out=emVh);
+    Mux16(a=r1l, b=wbValLo, sel=fwdA_W, out=pa0);
+    Mux16(a=pa0, b=emVl, sel=fwdA_M, out=avLo);
+    Mux16(a=r1h, b=wbValHi, sel=fwdA_W, out=pa1);
+    Mux16(a=pa1, b=emVh, sel=fwdA_M, out=avHi);
+    Mux16(a=r2l, b=wbValLo, sel=fwdB_W, out=pb0);
+    Mux16(a=pb0, b=emVl, sel=fwdB_M, out=bvLo);
+    Mux16(a=r2h, b=wbValHi, sel=fwdB_W, out=pb1);
+    Mux16(a=pb1, b=emVh, sel=fwdB_M, out=bvHi);
+
+    // ---- ID/EX（bubble 時 ctl 塞 0 = NOP）----
+    Mux16(a=ctlI, b=false, sel=bubble, out=ctlIx);
+    Pad3(in=rdI, out=rdIe);
+    Pad6(in[0..2]=rs1I, in[3..5]=rs2I, out=rsFe);
+    PR11(in0=avLo, in1=avHi, in2=bvLo, in3=bvHi, in4=offAI, in5=offBI,
+         in6=immI, in7=iidPc, in8=rdIe, in9=ctlIx, in10=rsFe, load=true,
+         out0=exAvLo, out1=exAvHi, out2=exBvLo, out3=exBvHi,
+         out4=offAt, out5=offBt, out6=immX, out7=pcX, out8=rdXe, out9=ctlX,
+         out10=rsFe2);
+
+    // ======================= EX =======================
+    // 前遞覆蓋：consumer 在 ID 時 producer 才在 EX（差一拍情況），EX/MEM 級
+    // 結果（emVal）此刻已定，直接蓋掉 ID/EX 抓起來的舊值。
+    Comp3(a=rdMe[0..2], b=rsFe2[0..2], out=exMRs1);
+    Comp3(a=rdMe[0..2], b=rsFe2[3..5], out=exMRs2);
+    And(a=pMv, b=exMRs1, out=exFwdA);
+    And(a=pMv, b=exMRs2, out=exFwdB);
+    Mux16(a=exAvLo, b=emVl, sel=exFwdA, out=exFAlo);
+    Mux16(a=exAvHi, b=emVh, sel=exFwdA, out=exFAhi);
+    Mux16(a=exBvLo, b=emVl, sel=exFwdB, out=exFBlo);
+    Mux16(a=exBvHi, b=emVh, sel=exFwdB, out=exFBhi);
+    Xor(a=ctlX[7], b=false, out=jalX);              // JAL 控制位的「已存 EX」版
+    Mux16(a=offBt, b=offAt, sel=ctlX[5], out=offSel);
+    Mux16(a=exFBlo, b=offSel, sel=ctlX[4], out=bAlLo);
+    Mux16(a=exFBhi, b=offSel, sel=ctlX[4], out=bAlHi);
+    Alu32(aLo=exFAlo, aHi=exFAhi, bLo=bAlLo, bHi=bAlHi,
+          sel[1]=ctlX[11], sel[0]=ctlX[10], outLo=aluLo, outHi=aluHi);
+    Eq32(aLo=exFAlo, aHi=exFAhi, bLo=exFBlo, bHi=exFBhi, out=eqAB);
+    And(a=eqAB, b=ctlX[6], out=taken);
+    Inc16(in=pcX, out=linkLo);
+    Mux16(a=aluLo, b=linkLo, sel=jalX, out=aluLoM);
+    Mux16(a=aluHi, b=false, sel=jalX, out=aluHiM);
+
+    // ---- 分支目標以「該指令自己的 PC」（pcX）為基準，非流動 PC ----
+    Add16c(a=pcX, b=offBt, cin=true, out=tgtB, cout=ctB);
+    Add16c(a=pcX, b=immX,  cin=true, out=tgtJ, cout=ctJ);
+
+    // ======================= EX/MEM =======================
+    PR7(in0=aluLoM, in1=aluHiM, in2=exFBlo, in3=exFBhi, in4=immX, in5=rdXe, in6=ctlX,
+        load=true, out0=aluM, out1=aluMh, out2=memdLo, out3=memdHi, out4=immM,
+        out5=rdMe, out6=ctlM);
+
+    // ======================= MEM =======================
+    Mem32(loIn=memdLo, hiIn=memdHi, load=ctlM[1], address=aluM[0..13],
+          loOut=memLo, hiOut=memHi);
+
+    // ======================= MEM/WB =======================
+    PR7(in0=memLo, in1=memHi, in2=aluM, in3=aluMh, in4=immM, in5=rdMe, in6=ctlM,
+        load=true, out0=memW, out1=memWh, out2=aluW, out3=aluWh, out4=immW,
+        out5=rdW, out6=ctlW);
+
+    // ======================= WB =======================
+    Mux16(a=false, b=true, sel=immW[15], out=imWh);
+    Mux4Way16(a=aluW, b=memW, c=immW, d=aluW, sel[1]=ctlW[3], sel[0]=ctlW[2], out=wbValLo);
+    Mux4Way16(a=aluWh, b=memWh, c=imWh, d=aluWh, sel[1]=ctlW[3], sel[0]=ctlW[2], out=wbValHi);
+    // rdW/ctlW 供 RF 寫入（RF.in=wbVal, wd=rdW[0..2], load=ctlW[0]，接在 ID 段的 Rf8x16）
+}

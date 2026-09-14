@@ -1,0 +1,63 @@
+// Rv1：單週期 RvMini 核心（32 位元資料通路，16 位元指令）。
+//
+// 每一 clock 週期（tick+tock）執行一條指令：
+//   fetch -> decode -> 讀暫存器 -> ALU/記憶體 -> 寫回（同一個負緣提交）。
+// 32 位元值一律以 lo[16]+hi[16] 兩條 bus 傳遞。
+//
+// 除錯介面：
+//   dbgRd[3]   選要讀哪個暫存器（x0..x7）
+//   pc         目前 PC（執行完當週期指令後的位址）
+//   dbgRegLo/Hi 讀出暫存器低 16 位元 / 高 16 位元
+//   資料記憶體在測窗中直接寫 `RAM16K[#]`（probe 回傳低半）。
+CHIP Rv1 {
+    IN dbgRd[3];
+    OUT pc[16], dbgRegLo[16], dbgRegHi[16];
+
+    PARTS:
+    // ===== IF/加載 =====
+    Register(in=pcNext, load=pcLoad, out=pc);
+    ROM32K(address=pc[0..14], out=instr);
+
+    // ===== ID/解碼 =====
+    Dec(instr=instr, rd=rdI, rs1=rs1I, rs2=rs2I,
+        imm=imm, offA=offA, offB=offB, ctl=ctl);
+
+    // ===== 暫存器檔（32 位元 = lo/hi 兩顆 Rf8x16）=====
+    Rf8x16(in=rwLo, wd=rdI, load=ctl[0], rdA=rs1I, rdB=rs2I, rdC=dbgRd,
+           outA=r1Lo, outB=r2Lo, outC=dbgRegLo);
+    Rf8x16(in=rwHi, wd=rdI, load=ctl[0], rdA=rs1I, rdB=rs2I, rdC=dbgRd,
+           outA=r1Hi, outB=r2Hi, outC=dbgRegHi);
+
+    // ===== EX/運算元選擇 =====
+    Mux16(a=offB, b=offA, sel=ctl[5], out=offSel);   // LW 用 offA，SW/BEQ 用 offB
+    Mux16(a=r2Lo, b=offSel, sel=ctl[4], out=bAluLo); // bOff: LW/SW 算位址；其餘用 rs2
+    Mux16(a=r2Hi, b=offSel, sel=ctl[4], out=bAluHi);
+    Alu32(aLo=r1Lo, aHi=r1Hi, bLo=bAluLo, bHi=bAluHi,
+          sel[1]=ctl[11], sel[0]=ctl[10], outLo=aluLo, outHi=aluHi);
+    Eq32(aLo=r1Lo, aHi=r1Hi, bLo=r2Lo, bHi=r2Hi, out=eq);
+    And(a=eq, b=ctl[6], out=taken);
+
+    // ===== MEM =====
+    Mem32(loIn=r2Lo, hiIn=r2Hi, load=ctl[1], address=aluLo[0..13],
+          loOut=memLo, hiOut=memHi);
+
+    // ===== 連結位址（JAL）/ 後繼位址 =====
+    Inc16(in=pc, out=linkLo);
+    Mux16(a=false, b=true, sel=imm[15], out=immHi);
+    Mux4Way16(a=aluLo, b=memLo, c=imm,  d=linkLo, sel[1]=ctl[3], sel[0]=ctl[2], out=rwLo);
+    Mux4Way16(a=aluHi, b=memHi, c=immHi, d=false, sel[1]=ctl[3], sel[0]=ctl[2], out=rwHi);
+
+    // ===== 分支 / 跳躍 / 停止 =====
+    Add16c(a=pc, b=offB, cin=true, out=tgtB, cout=cB);
+    Add16c(a=pc, b=imm,  cin=true, out=tgtJ, cout=cJ);
+    Mux(a=false, b=true, sel=ctl[7], out=jalF);
+    Or(a=taken, b=jalF, out=pSel1);
+    Or(a=ctl[7], b=incCase, out=pSel0);
+    Not(in=jalF, out=ncJal);
+    Not(in=taken, out=ntaken);
+    Not(in=ctl[8], out=nhalt);
+    And(a=nhalt, b=ntaken, out=n1);
+    And(a=n1, b=ncJal, out=incCase);
+    Mux4Way16(a=pc, b=linkLo, c=tgtB, d=tgtJ, sel[1]=pSel1, sel[0]=pSel0, out=pcNext);
+    Not(in=ctl[8], out=pcLoad);
+}

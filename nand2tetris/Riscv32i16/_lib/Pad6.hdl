@@ -1,0 +1,24 @@
+// Pad6：6 位元欄位 → 16 位元 bus（rs1+rs2 兩組 3 位元，pack 進低 6 位元）。
+// 純組合電路，無時脈。
+CHIP Pad6 {
+    IN in[6];
+    OUT out[16];
+
+    PARTS:
+    Xor(a=in[0], b=false, out=out[0]);
+    Xor(a=in[1], b=false, out=out[1]);
+    Xor(a=in[2], b=false, out=out[2]);
+    Xor(a=in[3], b=false, out=out[3]);
+    Xor(a=in[4], b=false, out=out[4]);
+    Xor(a=in[5], b=false, out=out[5]);
+    Xor(a=false, b=false, out=out[6]);
+    Xor(a=false, b=false, out=out[7]);
+    Xor(a=false, b=false, out=out[8]);
+    Xor(a=false, b=false, out=out[9]);
+    Xor(a=false, b=false, out=out[10]);
+    Xor(a=false, b=false, out=out[11]);
+    Xor(a=false, b=false, out=out[12]);
+    Xor(a=false, b=false, out=out[13]);
+    Xor(a=false, b=false, out=out[14]);
+    Xor(a=false, b=false, out=out[15]);
+}

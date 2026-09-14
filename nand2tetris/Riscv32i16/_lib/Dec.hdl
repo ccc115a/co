@@ -1,0 +1,83 @@
+// Dec：指令解碼器。16 位元指令 → 控制訊號（打包成 16 位元 ctl）+ 欄位。
+//
+// 指令格式（RvMini ISA）：
+//   0   LI rd, imm9        rd=instr[11:9] imm9=instr[8:0]（有號）
+//   1   AND rd,rs1,rs2     rd=11:9 rs1=8:6 rs2=5:3
+//   2   ADD rd,rs1,rs2     同上；ALU sel=instr[1:0]（1=AND 2=ADD 3=SUB 4=OR → 01 10 11 00）
+//   3   SUB rd,rs1,rs2
+//   4   OR  rd,rs1,rs2
+//   5   LW  rd,rs1,off6     offA=instr[5:0]
+//   6   SW  rs1,rs2,off6    offB=instr[11:6]，rs1=instr[5:3] rs2=instr[2:0]
+//   7   BEQ rs1,rs2,off6    offB=instr[11:6]，rs1=instr[5:3] rs2=instr[2:0]
+//   8   JAL rd,off9         imm=instr[8:0]
+//   9   HALT
+//
+// SW/BEQ 為了讓出 6 位元偏移，rs1/rs2 位在 [5:3]/[2:0]（與 ALU/LW 的
+// [8:6]/[5:3] 不同），所以 rs1/rs2 輸出是依指令位置調整好的欄位。
+//
+// ctl 佈局：
+//   0 regW   1 sw   2 wSel0   3 wSel1   4 bOff   5 offA(LW 用 offA)
+//   6 beq    7 jal  8 halt    9 lw     10 alsel0 11 alsel1 12 li
+// wSel: 00=alu 01=mem 10=imm 11=alu(link 記在 alu lane)
+CHIP Dec {
+    IN instr[16];
+    OUT rd[3], rs1[3], rs2[3],
+        imm[16], offA[16], offB[16],
+        ctl[16];
+
+    PARTS:
+    // ---- opcode 解碼 ----
+    NibEq(a=instr[12..15], b[3]=false, b[2]=false, b[1]=false, b[0]=false, out=eq0);
+    NibEq(a=instr[12..15], b[3]=false, b[2]=false, b[1]=false, b[0]=true,  out=eq1);
+    NibEq(a=instr[12..15], b[3]=false, b[2]=false, b[1]=true,  b[0]=false, out=eq2);
+    NibEq(a=instr[12..15], b[3]=false, b[2]=false, b[1]=true,  b[0]=true,  out=eq3);
+    NibEq(a=instr[12..15], b[3]=false, b[2]=true,  b[1]=false, b[0]=false, out=eq4);
+    NibEq(a=instr[12..15], b[3]=false, b[2]=true,  b[1]=false, b[0]=true,  out=eq5);
+    NibEq(a=instr[12..15], b[3]=false, b[2]=true,  b[1]=true,  b[0]=false, out=eq6);
+    NibEq(a=instr[12..15], b[3]=false, b[2]=true,  b[1]=true,  b[0]=true,  out=eq7);
+    NibEq(a=instr[12..15], b[3]=true,  b[2]=false, b[1]=false, b[0]=false, out=eq8);
+    NibEq(a=instr[12..15], b[3]=true,  b[2]=false, b[1]=false, b[0]=true,  out=eq9);
+
+    Or(a=eq1, b=eq2, out=aluA);
+    Or(a=eq3, b=eq4, out=aluB);
+    Or(a=aluA, b=aluB, out=cAlu);
+
+    // ---- 欄位截取（rs1/rs2 隨指令位置不同）----
+    Or(a=eq6, b=eq7, out=regBc);              // SW/BEQ：rs1 在 instr[5..3]、rs2 在 instr[2..0]
+    Mux(a=instr[8], b=instr[5], sel=regBc, out=rs1[2]);
+    Mux(a=instr[7], b=instr[4], sel=regBc, out=rs1[1]);
+    Mux(a=instr[6], b=instr[3], sel=regBc, out=rs1[0]);
+    Mux(a=instr[5], b=instr[2], sel=regBc, out=rs2[2]);
+    Mux(a=instr[4], b=instr[1], sel=regBc, out=rs2[1]);
+    Mux(a=instr[3], b=instr[0], sel=regBc, out=rs2[0]);
+
+    // ---- rd（一律 instr[11:9]）----
+    Xor(a=instr[11], b=false, out=rd[2]);
+    Xor(a=instr[10], b=false, out=rd[1]);
+    Xor(a=instr[9],  b=false, out=rd[0]);
+
+    // ---- 立即數 / 偏移符號擴展 ----
+    Se9(in=instr[0..8],  out=imm);
+    Se6(in=instr[0..5],  out=offA);
+    Se6(in=instr[6..11], out=offB);
+
+    // ---- 控制字組 ----
+    Or(a=cAlu, b=eq0, out=rw01);          // alu | li
+    Or(a=eq5,  b=eq8, out=rw02);          // lw | jal
+    Or(a=rw01, b=rw02, out=ctl[0]);       // regW
+    Mux(a=false, b=true, sel=eq6, out=ctl[1]);  // sw
+    Or(a=eq5, b=eq8, out=ctl[2]);         // wSel0
+    Or(a=eq0, b=eq8, out=ctl[3]);         // wSel1
+    Or(a=eq5, b=eq6, out=ctl[4]);         // bOff (lw|sw)
+    Mux(a=false, b=true, sel=eq5, out=ctl[5]);  // offA (lw)
+    Mux(a=false, b=true, sel=eq7, out=ctl[6]);  // beq
+    Mux(a=false, b=true, sel=eq8, out=ctl[7]);  // jal
+    Mux(a=false, b=true, sel=eq9, out=ctl[8]);  // halt
+    Mux(a=false, b=true, sel=eq5, out=ctl[9]);  // lw
+    Mux(a=false, b=instr[0], sel=cAlu, out=ctl[10]); // alsel0
+    Mux(a=false, b=instr[1], sel=cAlu, out=ctl[11]); // alsel1
+    Mux(a=false, b=true, sel=eq0, out=ctl[12]);  // li
+    Or(a=false, b=false, out=ctl[13]);
+    Or(a=false, b=false, out=ctl[14]);
+    Or(a=false, b=false, out=ctl[15]);
+}

@@ -1,0 +1,11 @@
+// Add32c：32 位元加法器，低 16 位與高 16 位各掛一條 16 位元 bus（lo/hi）。
+// 32 位元資料在此工具鏈中一律以「lo 16b + hi 16b」兩條 bus 表示，
+// 任何個別 wire 都不會超過 16 位元。
+CHIP Add32c {
+    IN aLo[16], aHi[16], bLo[16], bHi[16], cin;
+    OUT outLo[16], outHi[16], cout;
+
+    PARTS:
+    Add16c(a=aLo, b=bLo, cin=cin, out=outLo, cout=cLo);
+    Add16c(a=aHi, b=bHi, cin=cLo, out=outHi, cout=cout);
+}

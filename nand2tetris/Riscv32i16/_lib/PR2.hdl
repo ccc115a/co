@@ -1,0 +1,9 @@
+// PR2：2 條 16 位元管線暫存器（共用 load），IF/ID 用來夾 pc 與指令。
+CHIP PR2 {
+    IN in0[16], in1[16], load;
+    OUT out0[16], out1[16];
+
+    PARTS:
+    Register(in=in0, load=load, out=out0);
+    Register(in=in1, load=load, out=out1);
+}

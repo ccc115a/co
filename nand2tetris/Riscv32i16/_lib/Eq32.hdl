@@ -1,0 +1,10 @@
+// Eq32：32 位元相等測試（lo/hi 各驗一次再 AND）
+CHIP Eq32 {
+    IN aLo[16], aHi[16], bLo[16], bHi[16];
+    OUT out;
+
+    PARTS:
+    Eq16(a=aLo, b=bLo, out=eqLo);
+    Eq16(a=aHi, b=bHi, out=eqHi);
+    And(a=eqLo, b=eqHi, out=out);
+}
