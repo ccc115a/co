@@ -244,3 +244,6 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
+# Riscv32 示範/驗證的暫存輸出（run.sh/verify.sh 產生；其餘 .out 依 repo 慣例照常 commit）
+nand2tetris/Riscv32/*.out
+
