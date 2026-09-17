@@ -289,6 +289,16 @@ RET_axpy_10:
 
 ## 在硬體上驗證
 
+一鍵跑全部（`riscv/gpu_examples.sh`，可帶 kernel 名只跑指定的；
+`prog.hex` 自動備份還原，不污染 repo）：
+
+```sh
+cd riscv
+./gpu_examples.sh
+```
+
+手動逐步跑：
+
 ```sh
 cd riscv/_web_tools
 node cli/cu2rv.js kernels/vecadd.ku -o /tmp/vecadd.s
@@ -305,6 +315,24 @@ vvp sim
 done at cycle 254, lanes_halted=1111
 PASS: 向量加法全對（C=11,22,..,88，a0=0）
 ```
+
+## 其他 kernel 的硬體實測
+
+`riscvgpu_test.v` 的陣列黃金值是按 vecadd 寫死的（`B=10×`、`C=11×`），
+所以 `saxpy`／`relu`／`sum` 跑它一定會報陣列不符——但這不代表程式錯。
+判斷方式：只看 `done`＋有沒有 `lane0 a0` FAIL（`a0` 是 kernel 內建
+`expect` 的錯誤數，`a0=0` 即語意正確）。實測（`.hex` 暫代 `prog.hex`）：
+
+| kernel | 結果 | 說明 |
+|---|---|---|
+| `vecadd` | `PASS`（cycle 254） | 與黃金值完全一致 |
+| `saxpy` | `done`（cycle 321），無 `a0` FAIL | 函式呼叫 ABI 在硬體上正確；`C=4,7,10,…,25`（`=3i+4`）與語意相符，16 個 FAIL 全是黃金值對不上 |
+| `relu` | `done`（cycle 98），無 `a0` FAIL | `if`／`else` 在硬體上正確 |
+| `sum` | `done`（cycle 183），無 `a0` FAIL | reduction＋`barrier` 在硬體上正確 |
+
+四者皆 `lanes_halted=1111`（四條通道全部跑完停機）。結論：
+cu2rv 產生的組語經組譯後，四個 kernel 都能在 verilog riscvgpu 上跑，
+且語意全對。
 
 附註：`rvemu` 是單通道、統一編址的模擬器（`tid=0`、`ntid=1`），
 `vecadd` 這種資料在低位址（`0x100`）的多通道 kernel 不適合直接餵給它；
