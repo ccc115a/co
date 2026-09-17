@@ -89,7 +89,7 @@ describe('isa：decode 與指令表', () => {
       assert.equal(e.op, 0x33);
       assert.equal(e.f7, 0x01);
     }
-    for (const e of INSTR) assert.ok(['R', 'I', 'S', 'B', 'U', 'J'].includes(e.fmt), e.mn);
+    for (const e of INSTR) assert.ok(['R', 'I', 'S', 'B', 'U', 'J', 'G'].includes(e.fmt), e.mn);
   });
   it('PSEUDO 含 8 個虛擬指令', () => {
     for (const m of ['nop', 'li', 'mv', 'not', 'neg', 'j', 'jr', 'ret', 'call']) {

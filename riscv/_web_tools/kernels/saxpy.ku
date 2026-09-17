@@ -1,0 +1,14 @@
+# saxpy.ku — 常數縮放加法：C[i] = a*A[i] + B[i]（a=2）
+# 展示 param＋暫存變數＋多敘述 kernel
+lanes 4
+n 8
+mem A @ 0x100
+mem B @ 0x120
+mem C @ 0x140
+param a = 2
+init:
+  A[i] = i + 1
+  B[i] = i + 2
+kernel:
+  t = a * A[i]
+  C[i] = t + B[i]

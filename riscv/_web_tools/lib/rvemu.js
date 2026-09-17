@@ -222,6 +222,14 @@ export class Emulator {
         }
         break;
       case 0x0f: break; // fence：空運算
+      case 0x0b: { // riscvgpu custom-0（單通道語意：tid=0、ntid=1、barrier=nop；多通道以 iverilog 為準）
+        if (f7 !== 0 || rs1 !== 0 || rs2 !== 0) throw new Error(`未支援指令：pc=0x${pc.toString(16)} word=0x${word.toString(16)}`);
+        if (f3 === 0) this.setReg(rd, 0); // tid
+        else if (f3 === 1) this.setReg(rd, 1); // ntid
+        else if (f3 === 2) { /* barrier：單通道無需等待 */ }
+        else throw new Error(`未支援指令：pc=0x${pc.toString(16)} word=0x${word.toString(16)}`);
+        break;
+      }
       case 0x73: { // ecall／ebreak
         if (f3 !== 0) throw new Error(`未支援指令：pc=0x${pc.toString(16)} word=0x${word.toString(16)}`);
         if (imm === 1) { this.halted = true; this.exitCode = 0; break; } // ebreak：停機

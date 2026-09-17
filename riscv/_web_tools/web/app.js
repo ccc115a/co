@@ -1,7 +1,9 @@
 /* app.js：RV32 IDE 邏輯（classic script，file:// 直開可用）。
- * 契約（由 dist/rvjs.js 提供）：全域 RVJS = { assemble, disassemble, Emulator }。
+ * 契約（由 dist/rvjs.js 提供）：全域 RVJS = { assemble, disassemble, Emulator, compileKernel }。
  * 語料：dist/corpus.js（若存在）提供 globalThis.RVJS_CORPUS = [{name, src}...]，
- *       存在時覆蓋下拉選單；否則用下方內嵌 3 個預設範例。
+ *       存在時覆蓋組語下拉選單；否則用下方內嵌 3 個預設範例。
+ *       dist/kucorpus.js（若存在）提供 globalThis.RVJS_KUCORPUS = [{name, src}...]，
+ *       存在時覆蓋 DSL 下拉選單；否則用內嵌 DSL 範例。
  * 本檔對「lib/ 尚未就緒」做防禦式相容：RVJS 缺失時顯示提示，不拋未捕捉例外。
  */
 (function () {
@@ -91,6 +93,7 @@
 
   var S = {
     examples: BUILTIN_EXAMPLES,
+    kuExamples: null, // init 時填入（getKuExamples 或內嵌）
     words: [],
     origin: 0,
     emu: null,
@@ -122,6 +125,34 @@
       return c;
     }
     return BUILTIN_EXAMPLES;
+  }
+
+  var BUILTIN_KU = [
+    {
+      name: 'tiny（單通道向量加法）',
+      src: [
+        '# tiny：lanes=1、n=2，單通道可完整跑完（verify 全過 exit=0）',
+        'lanes 1',
+        'n 2',
+        'mem A @ 0x100',
+        'mem B @ 0x120',
+        'mem C @ 0x140',
+        'init:',
+        '  A[i] = i + 1',
+        '  B[i] = 10 * (i + 1)',
+        'kernel:',
+        '  C[i] = A[i] + B[i]'
+      ].join('\n')
+    }
+  ];
+
+  function getKuExamples() {
+    var c = (typeof globalThis !== 'undefined') ? globalThis.RVJS_KUCORPUS : null;
+    if (Array.isArray(c) && c.length > 0 &&
+        c.every(function (e) { return e && typeof e.name === 'string' && typeof e.src === 'string'; })) {
+      return c;
+    }
+    return BUILTIN_KU;
   }
 
   function fmtHex(v, digits) {
@@ -214,13 +245,13 @@
     S.prevRegs = next;
   }
 
-  // 錯誤行號提示：從例外訊息萃取行號，並把 textarea 選取範圍移到該行
-  function hintErrorLine(src, msg) {
+  // 錯誤行號提示：從例外訊息萃取行號，並把指定 textarea 選取範圍移到該行
+  function hintErrorLine(src, msg, taId) {
     var m = /[Ll]ine\s*(\d+)|第\s*(\d+)\s*行|:(\d+)[:\s]/.exec(String(msg));
     var n = m ? parseInt(m[1] || m[2] || m[3], 10) : NaN;
     if (isNaN(n) || n < 1) return null;
     try {
-      var ta = $('src');
+      var ta = $(taId || 'src');
       var lines = String(src).split('\n');
       if (n > lines.length) return null;
       var off = 0;
@@ -454,6 +485,40 @@
     if (ex) $('src').value = ex.src;
   }
 
+  function onKuChange() {
+    var sel = $('kuexample');
+    if (!sel) return;
+    var ex = S.kuExamples[parseInt(sel.value, 10)];
+    if (ex) $('kusrc').value = ex.src;
+  }
+
+  function doCompileKu() {
+    if (!needRVJS()) return;
+    if (typeof globalThis.RVJS.compileKernel !== 'function') {
+      setStatus('compileKernel 尚未提供（lib/cu2rv.js 未併入）：請重新 node tools/build.js', 'error');
+      return;
+    }
+    var src = $('kusrc').value;
+    var res;
+    try {
+      res = globalThis.RVJS.compileKernel(src);
+    } catch (e) {
+      var ln = hintErrorLine(src, e.message, 'kusrc');
+      setStatus('DSL 編譯失敗' + (ln ? '（第 ' + ln + ' 行）' : '') + '：' + e.message, 'error');
+      $('statMsg').textContent = String((e && e.message) || e);
+      return;
+    }
+    var asm = (res && res.asm != null) ? String(res.asm) : '';
+    if (!asm) { setStatus('DSL 編譯回傳空組語', 'error'); return; }
+    $('src').value = asm;
+    // 組語已換新：作廢舊組譯狀態，提示接著按［組譯］
+    S.words = [];
+    S.emu = null;
+    S.assembledSrc = null;
+    setStatus('DSL 編譯成功：已送入組語原始碼，請按［組譯］', 'ok');
+    $('statMsg').textContent = '';
+  }
+
   function init() {
     S.examples = getExamples();
     var sel = $('example');
@@ -465,6 +530,18 @@
       sel.appendChild(o);
     }
     if (S.examples.length) $('src').value = S.examples[0].src;
+    S.kuExamples = getKuExamples();
+    var ksel = $('kuexample');
+    if (ksel) {
+      ksel.innerHTML = '';
+      for (var k = 0; k < S.kuExamples.length; k++) {
+        var ko = document.createElement('option');
+        ko.value = String(k);
+        ko.textContent = S.kuExamples[k].name;
+        ksel.appendChild(ko);
+      }
+      if (S.kuExamples.length) $('kusrc').value = S.kuExamples[0].src;
+    }
     renderRegs();
     if (!globalThis.RVJS) {
       setStatus('RVJS 尚未載入（lib/ 撰寫中）：可先瀏覽範例，組譯需等 dist/rvjs.js', 'error');
@@ -476,7 +553,9 @@
     doRun: doRun,
     doStep: doStep,
     doReset: doReset,
-    onExampleChange: onExampleChange
+    onExampleChange: onExampleChange,
+    onKuChange: onKuChange,
+    doCompileKu: doCompileKu
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

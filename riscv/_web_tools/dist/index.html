@@ -22,6 +22,17 @@
 <main>
   <div class="col">
     <div class="panel">
+      <h2>Kernel DSL（cu2rv，自訂 CUDA-like 語法）</h2>
+      <div class="row" style="margin-bottom:6px">
+        <label>DSL 範例
+          <select id="kuexample" onchange="App.onKuChange()"></select>
+        </label>
+        <button onclick="App.doCompileKu()">編譯 DSL→組語</button>
+      </div>
+      <textarea id="kusrc" spellcheck="false" style="min-height:160px"></textarea>
+      <div class="hint">編譯結果送到下方「組語原始碼」，再按［組譯］［執行］（單通道語意；4 通道請跑硬體）。完整語法見 kernels/README.md。</div>
+    </div>
+    <div class="panel">
       <h2>組語原始碼</h2>
       <textarea id="src" spellcheck="false"></textarea>
       <div class="row" style="margin-top:6px">
@@ -54,6 +65,7 @@
 </footer>
 <script src="./rvjs.js"></script>
 <script src="./corpus.js"></script>
+<script src="./kucorpus.js"></script>
 <script src="./app.js"></script>
 </body>
 </html>

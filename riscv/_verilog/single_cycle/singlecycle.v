@@ -14,6 +14,16 @@ module singlecycle (
   // ---- PC ----
   reg [31:0] pc;
 
+  // ---- 模擬載入：imem 由 prog.hex 載入，dmem/PC/halted 歸零 ----
+  parameter HEX = "prog.hex";
+  integer m;
+  initial begin
+    $readmemh(HEX, imem);
+    pc = 32'd0;
+    halted = 1'b0;
+    for (m = 0; m < 1024; m = m + 1) dmem[m] = 8'd0;
+  end
+
   // ---- 取指 ----
   wire [31:0] instr = imem[pc[9:2]];
   wire [6:0] opcode = instr[6:0];

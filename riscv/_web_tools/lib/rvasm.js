@@ -139,6 +139,14 @@ function encodeOne(mn, args, labels, pc, lineno) {
         need(2); // jal rd, label|offset
         return [encodeJ(e.op, R(args[0]), relOff(args[1]))];
       }
+      case 'G': { // riscvgpu custom-0：rs1=rs2=0，f7=0
+        if (mn === 'barrier') {
+          need(0);
+          return [encodeR(e.op, 0, 0, 0, e.f3, 0)];
+        }
+        need(1); // tid rd／ntid rd
+        return [encodeR(e.op, R(args[0]), 0, 0, e.f3, 0)];
+      }
       default:
         throw new Error(`第${lineno}行：未定義指令：${mn}`);
     }

@@ -48,12 +48,13 @@ globalThis.RVJS = {
   assemble: (typeof assemble !== 'undefined' ? assemble : undefined),
   disassemble: (typeof disassemble !== 'undefined' ? disassemble : undefined),
   Emulator: (typeof Emulator !== 'undefined' ? Emulator : undefined),
+  compileKernel: (typeof compileKernel !== 'undefined' ? compileKernel : undefined),
 };
 `;
   return { out, hit };
 }
 
-const libs = ['lib/isa.js', 'lib/rvasm.js', 'lib/rvdis.js', 'lib/rvemu.js'];
+const libs = ['lib/isa.js', 'lib/rvasm.js', 'lib/rvdis.js', 'lib/rvemu.js', 'lib/cu2rv.js'];
 
 fs.mkdirSync(path.join(root, 'dist'), { recursive: true });
 
@@ -78,6 +79,7 @@ for (const f of ['index.html', 'enc.html']) {
   let html = fs.readFileSync(src, 'utf8');
   html = html.split('../dist/rvjs.js').join('./rvjs.js');
   html = html.split('../dist/corpus.js').join('./corpus.js');
+  html = html.split('../dist/kucorpus.js').join('./kucorpus.js');
   fs.writeFileSync(path.join(root, 'dist', f), html);
   products.push(`dist/${f}`);
 }
@@ -100,6 +102,27 @@ for (const f of ['index.html', 'enc.html']) {
     products.push(`dist/corpus.js（${entries.length} 個語料：${entries.map((e) => e.name).join('、')}）`);
   } else {
     products.push('dist/corpus.js（略：examples/*.s 不存在，頁面用內嵌預設範例）');
+  }
+}
+
+// 4. kernels/*.ku → dist/kucorpus.js（讀到才併入，讀不到不報錯）
+{
+  const kuDir = path.join(root, 'kernels');
+  let entries = [];
+  if (fs.existsSync(kuDir)) {
+    entries = fs.readdirSync(kuDir).filter((f) => f.endsWith('.ku')).sort()
+      .map((f) => ({ name: path.basename(f, '.ku'), src: fs.readFileSync(path.join(kuDir, f), 'utf8') }));
+  }
+  if (entries.length > 0) {
+    const outPath = path.join(root, 'dist', 'kucorpus.js');
+    const body = entries.map((e) => `  { name: ${JSON.stringify(e.name)}, src: ${JSON.stringify(e.src)} }`).join(',\n');
+    fs.writeFileSync(outPath,
+      '// cu2rv DSL 語料（tools/build.js 由 kernels/*.ku 產生，勿手動編輯）\n' +
+      '// web/app.js 優先用它覆蓋 DSL 下拉選單。\n' +
+      `globalThis.RVJS_KUCORPUS = [\n${body}\n];\n`);
+    products.push(`dist/kucorpus.js（${entries.length} 個語料：${entries.map((e) => e.name).join('、')}）`);
+  } else {
+    products.push('dist/kucorpus.js（略：kernels/*.ku 不存在，頁面用內嵌 DSL 範例）');
   }
 }
 

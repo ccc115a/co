@@ -1,0 +1,12 @@
+# tiny.ku — 單通道最小例（供 rvemu 單通道自檢：tid=0、ntid=1）
+# lanes=1 時單通道算完全部元素，verify 全過，exit=0
+lanes 1
+n 2
+mem A @ 0x100
+mem B @ 0x120
+mem C @ 0x140
+init:
+  A[i] = i + 1
+  B[i] = 10 * (i + 1)
+kernel:
+  C[i] = A[i] + B[i]

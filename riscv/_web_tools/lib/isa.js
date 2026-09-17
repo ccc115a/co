@@ -142,7 +142,9 @@ export function decodeWord(w) {
       fmt = 'U';
       imm = (w & 0xfffff000) | 0;
       break;
-    case 0x6f: { // J
+    case 0x0b: // G：riscvgpu custom-0（tid/ntid/barrier）
+      fmt = 'G'; imm = 0;
+      break;    case 0x6f: { // J
       fmt = 'J';
       const b20 = (w >>> 31) & 1, b19_12 = (w >>> 12) & 0xff;
       const b11 = (w >>> 20) & 1, b10_1 = (w >>> 21) & 0x3ff;
@@ -214,6 +216,10 @@ export const INSTR = [
   { mn: 'divu', fmt: 'R', op: 0x33, f3: 5, f7: 0x01 },
   { mn: 'rem', fmt: 'R', op: 0x33, f3: 6, f7: 0x01 },
   { mn: 'remu', fmt: 'R', op: 0x33, f3: 7, f7: 0x01 },
+  // G 型：riscvgpu custom-0（op=0x0b，rs1=rs2=0，f7=0）
+  { mn: 'tid', fmt: 'G', op: 0x0b, f3: 0, f7: 0 },
+  { mn: 'ntid', fmt: 'G', op: 0x0b, f3: 1, f7: 0 },
+  { mn: 'barrier', fmt: 'G', op: 0x0b, f3: 2, f7: 0 },
 ];
 
 // 以助憶符查表（小寫鍵）。

@@ -57,6 +57,10 @@ function mnemonic(d, w) {
       }
       return null;
     }
+    case 0x0b: { // riscvgpu custom-0：rs1=rs2=0，f7=0 才認
+      if (d.rs1 !== 0 || d.rs2 !== 0 || f7 !== 0) return null;
+      return { 0: 'tid', 1: 'ntid', 2: 'barrier' }[f3] ?? null;
+    }
     default: return null;
   }
 }
@@ -90,6 +94,11 @@ function operands(mn, d, w) {
     // U 型：高 20 位印十六進位
     case 'lui': case 'auipc':
       return `${R(d.rd)}, 0x${((w >>> 12) & 0xfffff).toString(16)}`;
+    // G 型：tid/ntid 取 rd；barrier 無運算元
+    case 'tid': case 'ntid':
+      return `${R(d.rd)}`;
+    case 'barrier':
+      return '';
     // 無運算元
     case 'fence': case 'ecall': case 'ebreak':
       return '';

@@ -1,0 +1,14 @@
+# vecadd.ku — 向量加法（對應 riscvgpu/prog.s 語意：C[i]=A[i]+B[i]）
+# A[i]=i+1、B[i]=10*(i+1)、C[i]=11*(i+1)；4 通道各算 2 個
+# 驗證鏈：node cli/cu2rv.js kernels/vecadd.ku -o /tmp/vecadd.s
+#   → node cli/rvasm.js /tmp/vecadd.s → 暫代 prog.hex 跑 iverilog（見 kernels/README.md）
+lanes 4
+n 8
+mem A @ 0x100
+mem B @ 0x120
+mem C @ 0x140
+init:
+  A[i] = i + 1
+  B[i] = 10 * (i + 1)
+kernel:
+  C[i] = A[i] + B[i]
