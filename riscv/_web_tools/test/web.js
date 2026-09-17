@@ -21,8 +21,8 @@ for (const id of ids) els[id] = mkEl();
 els.origin.value = '0x0';
 
 const KU2 = [
-  { name: 'vecadd', src: 'lanes 4\nn 8\nmem A @ 0x100\nmem B @ 0x120\nmem C @ 0x140\ninit:\n  A[i] = i + 1\nkernel:\n  C[i] = A[i]\n' },
-  { name: 'bad', src: 'lanes 4\nn 8\nmem A @ 0x100\nkernel:\n  C[i] = A[i]\n' },
+  { name: 'vecadd', src: 'lanes 4;\nn 8;\nmem A[8] @ 0x100 = i + 1;\nmem B[8] @ 0x120;\nmem C[8] @ 0x140;\nkernel k {\n  for (i: int = tid; i < n; i += ntid) {\n    C[i] = A[i];\n  }\n  barrier();\n}\nexpect {\n  C[0] = 1;\n}\n' },
+  { name: 'bad', src: 'lanes 4;\nn 8;\nmem A[8] @ 0x100;\nmem B[8] @ 0x120;\nkernel k {\n  C[i] = A[i];\n}\n' },
 ];
 
 globalThis.document = {

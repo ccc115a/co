@@ -1,0 +1,25 @@
+# sum.ku — reduction 示範：total[0] = sum(x)
+# 各通道先部分和 → partial[tid] → barrier → lane0 加總
+lanes 4;
+n 16;
+mem x[16] = i + 1;
+mem partial[4];
+mem total[1];
+kernel sum {
+  s: int = 0;
+  for (i: int = tid; i < n; i += ntid) {
+    s = s + x[i];
+  }
+  partial[tid] = s;
+  barrier();
+  if (tid == 0) {
+    t: int = 0;
+    for (k: int = 0; k < ntid; k += 1) {
+      t = t + partial[k];
+    }
+    total[0] = t;
+  }
+}
+expect {
+  total[0] = 136;
+}

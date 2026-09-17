@@ -131,17 +131,21 @@
     {
       name: 'tiny（單通道向量加法）',
       src: [
-        '# tiny：lanes=1、n=2，單通道可完整跑完（verify 全過 exit=0）',
-        'lanes 1',
-        'n 2',
-        'mem A @ 0x100',
-        'mem B @ 0x120',
-        'mem C @ 0x140',
-        'init:',
-        '  A[i] = i + 1',
-        '  B[i] = 10 * (i + 1)',
-        'kernel:',
-        '  C[i] = A[i] + B[i]'
+        '# tiny：lanes=1、n=2，單通道可完整跑完（expect 全過 exit=0）',
+        'lanes 1;',
+        'n 2;',
+        'mem A[2] @ 0x100 = i + 1;',
+        'mem B[2] @ 0x120 = 10 * (i + 1);',
+        'mem C[2] @ 0x140;',
+        'kernel tiny {',
+        '  for (i: int = tid; i < n; i += ntid) {',
+        '    C[i] = A[i] + B[i];',
+        '  }',
+        '  barrier();',
+        '}',
+        'expect {',
+        '  C[i] = A[i] + B[i];',
+        '}'
       ].join('\n')
     }
   ];

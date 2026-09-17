@@ -1,0 +1,23 @@
+# relu.ku — if/else 示範：y[i] = max(0, x[i])
+# 展示區域變數＋條件分支＋自動記憶體配置（無 @ 即從 0x100 起接續）
+lanes 4;
+n 8;
+mem x[8] = i - 4;
+mem y[8];
+kernel relu {
+  for (i: int = tid; i < n; i += ntid) {
+    v: int = x[i];
+    if (v < 0) {
+      y[i] = 0;
+    } else {
+      y[i] = v;
+    }
+  }
+  barrier();
+}
+expect {
+  y[0] = 0;
+  y[3] = 0;
+  y[4] = 0;
+  y[7] = 3;
+}
