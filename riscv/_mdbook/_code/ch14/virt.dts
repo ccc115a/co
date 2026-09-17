@@ -1,0 +1,38 @@
+// virt.dts — QEMU virt 最小 Device Tree 片段（對應 14.3）
+// 驗證：dtc -I dts -O dtb -o virt.dtb virt.dts（若無 dtc 則略過）
+// 交棒時 OpenSBI 經 a1 把 DTB 位址傳給 Kernel；Kernel 以 compatible 配驅動。
+
+/dts-v1/;
+
+/ {
+    #address-cells = <0x02>;      // 64 位元位址以兩 cell 表示
+    #size-cells = <0x02>;
+    compatible = "riscv-virtio";  // 板級 compatible
+
+    chosen {
+        bootargs = "console=ttyS0 earlycon"; // 核心命令列
+        stdout-path = "serial0:115200n8";    // 早期主控台指向串口
+    };
+
+    memory@80000000 {
+        device_type = "memory";                       // 記憶體節點
+        reg = <0x00 0x80000000 0x00 0x80000000>;       // 2GB @0x80000000
+    };
+
+    serial0: serial@10000000 {
+        compatible = "ns16550a";                      // 16550 驅動配對鍵
+        reg = <0x00 0x10000000 0x00 0x100>;            // UART MMIO 窗
+        clock-frequency = <0x384000>;                 // 3.6864MHz（QEMU virt 約定）
+    };
+
+    cpus {
+        #address-cells = <0x01>;
+        #size-cells = <0x00>;
+        cpu@0 {
+            device_type = "cpu";                      // boot hart
+            compatible = "riscv";                     // RISC-V CPU 節點
+            riscv,isa = "rv64imafdc";                 // G 擴充字串
+            reg = <0x00>;                             // hartid 0
+        };
+    };
+};

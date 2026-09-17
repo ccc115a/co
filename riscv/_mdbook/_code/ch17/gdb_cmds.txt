@@ -1,0 +1,15 @@
+# gdb_cmds.txt — 給 riscv64-unknown-elf-gdb 的腳本（對應 17.4）
+# 用法：riscv64-unknown-elf-gdb kernel.elf -x gdb_cmds.txt
+# 前提：另一終端已跑 ./qemu_gdb.sh（-s -S 在 :1234 等 GDB）。
+echo --- connect qemu gdb stub ---\n
+target remote :1234
+echo --- break at entry and main ---\n
+break *0x80000000
+break main
+echo --- inspect cpu state ---\n
+info registers
+x/4i $pc
+echo --- disassemble main ---\n
+disassemble main
+echo --- go (ctrl-c to interrupt) ---\n
+continue

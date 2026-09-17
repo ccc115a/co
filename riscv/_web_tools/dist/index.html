@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RV32 IDE — rvjs 純前端開發工具</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header>
+  <h1>RV32 IDE</h1>
+  <nav><a href="./enc.html">指令編碼瀏覽器</a></nav>
+  <label>範例
+    <select id="example" onchange="App.onExampleChange()"></select>
+  </label>
+  <label>起始位址
+    <input type="text" id="origin" value="0x0" size="8">
+  </label>
+  <span class="spacer"></span>
+  <span id="status">就緒</span>
+</header>
+<main>
+  <div class="col">
+    <div class="panel">
+      <h2>組語原始碼</h2>
+      <textarea id="src" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button onclick="App.doAssemble()">組譯</button>
+        <button onclick="App.doRun()">執行</button>
+        <button onclick="App.doStep()">單步</button>
+        <button onclick="App.doReset()" class="danger">重設</button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>UART 主控台</h2>
+      <div id="uart" class="panel"></div>
+    </div>
+  </div>
+  <div class="col">
+    <div class="panel">
+      <h2>反組譯 / 機器碼</h2>
+      <pre id="listing">（尚未組譯）</pre>
+    </div>
+    <div class="panel">
+      <h2>暫存器（x0–x31，ABI 別名）</h2>
+      <div id="regs"></div>
+    </div>
+  </div>
+</main>
+<footer>
+  <span id="statSteps">steps: -</span>
+  <span id="statExit">exit: -</span>
+  <span id="statMsg"></span>
+</footer>
+<script src="./rvjs.js"></script>
+<script src="./corpus.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>

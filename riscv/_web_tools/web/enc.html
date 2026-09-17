@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RV32 指令編碼瀏覽器 — rvjs</title>
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<header>
+  <h1>指令編碼瀏覽器</h1>
+  <nav><a href="./index.html">RV32 IDE</a></nav>
+  <span class="spacer"></span>
+  <span id="status">就緒</span>
+</header>
+<main>
+  <div class="col">
+    <div class="panel">
+      <h2>編碼（格式 → 助記符 → 欄位）</h2>
+      <div class="row">
+        <label>格式
+          <select id="fmt" onchange="Enc.onFmtChange()">
+            <option value="R">R</option>
+            <option value="I">I</option>
+            <option value="S">S</option>
+            <option value="B">B</option>
+            <option value="U">U</option>
+            <option value="J">J</option>
+          </select>
+        </label>
+        <label>助記符
+          <select id="mnem" onchange="Enc.onMnemChange()"></select>
+        </label>
+      </div>
+      <div id="fields" style="margin-top:8px"></div>
+      <div id="encout" class="panel" style="margin-top:8px"></div>
+      <p class="hint">欄位即時編碼：改任一欄位即更新下方 32 位二進位分段與 hex。暫存器可填 x0–x31 或 ABI 別名（如 a0）。</p>
+    </div>
+  </div>
+  <div class="col">
+    <div class="panel">
+      <h2>解碼（貼 hex → 欄位）</h2>
+      <div class="row">
+        <input type="text" id="hexin" value="0x00500093" size="14">
+        <button onclick="Enc.doDecode()">解碼</button>
+      </div>
+      <div id="decout" class="panel" style="margin-top:8px">（輸入 32 位 hex 後按解碼）</div>
+      <p class="hint">欄位由本頁內建解碼表解析；組語行另以 RVJS.disassemble 對照顯示（若 dist/rvjs.js 已產生）。</p>
+    </div>
+  </div>
+</main>
+<script src="../dist/rvjs.js"></script>
+<script src="./enc.js"></script>
+</body>
+</html>
