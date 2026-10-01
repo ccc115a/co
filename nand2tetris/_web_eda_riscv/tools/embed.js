@@ -26,13 +26,9 @@ function bundleLibs(libs, exportsBlock) {
     if (/node:fs|node:path/.test(src) && !needFsPath) {
       throw new Error(`${rel} 依賴 node fs/path，但 bundle 沒有對應 shim 約定`);
     }
-    src = src
-      .split('\n')
-      .filter((l) => !/^\s*import\b/.test(l))
-      .map((l) => l.replace(/^\s*export\s+(const|let|function|class)\b/, '$1'))
-      .join('\n');
-    out += `\n/***** ${rel} *****/\n${src}\n`;
+    out += `\n/***** ${rel} *****/\n${stripEsm(src)}\n`;
   }
+  out += `\n/***** riscv toolchain (rvasm+rvemu) *****/\n${bundleRvSection(rvLibs)}\n`;
   out += `\n/***** exports *****/\n${exportsBlock}\n`;
   return out;
 }
@@ -52,6 +48,33 @@ const libs = [
   'lib/rt/model.js',
 ];
 
+// RISC-V 工具鏈（riscv/_web_tools 的 isa＋rvasm＋rvdis＋rvemu，四檔互無同名符號）。
+// 不動對方原始碼：包成獨立 IIFE 再匯出（其 assemble 與 HackAsm.assemble 同名，直接拼接會覆蓋）。
+const rvLibs = [
+  '../../riscv/_web_tools/lib/isa.js',
+  '../../riscv/_web_tools/lib/rvasm.js',
+  '../../riscv/_web_tools/lib/rvdis.js',
+  '../../riscv/_web_tools/lib/rvemu.js',
+];
+
+function stripEsm(src) {
+  return src
+    .split('\n')
+    .filter((l) => !/^\s*import\b/.test(l))
+    .map((l) => l.replace(/^\s*export\s+(const|let|function|class)\b/, '$1'))
+    .join('\n');
+}
+
+function bundleRvSection(files) {
+  let inner = '';
+  for (const rel of files) {
+    const src = fs.readFileSync(path.join(root, rel), 'utf8');
+    if (/node:fs|node:path/.test(src)) throw new Error(`${rel} 依賴 node fs/path，不可進瀏覽器 bundle`);
+    inner += `\n/***** ${rel} *****/\n${stripEsm(src)}\n`;
+  }
+  return `const RvToolchain = (() => {\n${inner}\nreturn { assemble, disassemble, Emulator };\n})();`;
+}
+
 const exportsBlock = `(function (win) {
   win.HackVM = {
     Vm,
@@ -61,6 +84,11 @@ const exportsBlock = `(function (win) {
   win.HackAsm = { D_MAP, C_MAP, J_MAP, PREDEFINED, parseAsmLine, code2binary, assemble };
   win.HackVm2Asm = { translate };
   win.HackVm2Rv = { translate: Vm2Rv.translate };
+  win.HackRv = {
+    assemble: RvToolchain.assemble,
+    disassemble: RvToolchain.disassemble,
+    Emulator: RvToolchain.Emulator,
+  };
   win.HackJack2Vm = { compileJack };
   win.HackHdl = {
     parseHdl,

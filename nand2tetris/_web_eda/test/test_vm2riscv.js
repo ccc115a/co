@@ -11,7 +11,7 @@ import { Vm2Rv } from '../lib/riscv/vm2riscv.js';
 import { assemble } from '../../../riscv/_web_tools/lib/rvasm.js';
 import { Emulator } from '../../../riscv/_web_tools/lib/rvemu.js';
 
-const { translate, STACK_BASE, TEMP_BASE, STATIC_BASE, STATIC_STRIDE } = Vm2Rv;
+const { translate, STACK_BASE, TEMP_BASE, STATIC_BASE, STATIC_STRIDE, MIRROR_BASE } = Vm2Rv;
 
 const REPO = path.resolve(import.meta.dirname, '../../');
 const NOOS = path.join(REPO, '11', 'jackNoOs');
@@ -47,11 +47,30 @@ describe('vm2riscv 單元', () => {
     const s = t1('push local 2\npush argument 3\npush this 4\npush that 5\npush temp 6\npush pointer 0\npush pointer 1\npush static 2\n');
     assert.ok(s.includes('add t1, s2, t1')); // local＝s2
     assert.ok(s.includes('add t1, s3, t1')); // argument＝s3
-    assert.ok(s.includes('add t1, s4, t1')); // this＝s4
-    assert.ok(s.includes('add t1, s5, t1')); // that＝s5
     assert.ok(s.includes(`li t1, ${TEMP_BASE + 6 * 4}`)); // temp 固定位址
     assert.ok(s.includes('addi t0, s4, 0') && s.includes('addi t0, s5, 0')); // pointer
     assert.ok(s.includes(`li t1, ${STATIC_BASE + 0 * STATIC_STRIDE + 2 * 4}`)); // static 第 0 檔
+  });
+
+  it('this/that 走 Jack 位址鏡像（MIRROR＋4*base＋4*index）', () => {
+    const s = t1('push this 4\npush that 5\npop this 1\npop that 2\n');
+    assert.ok(s.includes(`li t2, ${MIRROR_BASE + 4 * 4}`));
+    assert.ok(s.includes(`li t2, ${MIRROR_BASE + 5 * 4}`));
+    assert.ok(s.includes('slli t1, s4, 2') && s.includes('slli t1, s5, 2'));
+    // pointer 仍搬運 word 值本身，不經鏡像
+    const p = t1('push pointer 0\npop pointer 1\n');
+    assert.ok(p.includes('addi t0, s4, 0') && p.includes('addi s5, t0, 0'));
+    assert.ok(!p.includes('slli'));
+  });
+
+  it('Output.printChar／printInt／println／printString 內聯為 UART（ecall）', () => {
+    const s = translate([{
+      path: 'M.vm',
+      src: 'function Main.main 0\npush constant 65\ncall Output.printChar 1\npop temp 0\npush constant 7\ncall Output.printInt 1\npop temp 0\ncall Output.println 0\npop temp 0\nreturn\nfunction Sys.init 0\ncall Main.main 0\nreturn\n',
+    }]);
+    assert.ok(s.includes('li a7, 1') && s.includes('ecall'));
+    assert.ok(s.includes('remu') && s.includes('divu')); // printInt 十進位迴圈
+    assert.ok(!s.includes('jal ra, Output.printChar'));
   });
 
   it('第二檔 static 位址按 STRIDE 偏移', () => {
@@ -240,21 +259,144 @@ describe('vm2riscv dist bundle（jack.html .s 分頁）', () => {
     );
   });
 
-  it('Seven＋OS：嚴格模式 throw，lenient 顯示模式產出 .s（含外部表頭）', () => {
+  function osVmFiles() {
     const osDir = path.resolve(import.meta.dirname, '../gen/os_src');
-    const vmFiles = [];
-    for (const f of fs.readdirSync(osDir).filter((f) => f.endsWith('.jack')).sort()) {
-      vmFiles.push({
-        path: f.replace(/\.jack$/, '.vm'),
-        src: compileJack(fs.readFileSync(path.join(osDir, f), 'utf8')).join('\n') + '\n',
-      });
-    }
+    return fs.readdirSync(osDir).filter((f) => f.endsWith('.jack')).sort().map((f) => ({
+      path: f.replace(/\.jack$/, '.vm'),
+      src: compileJack(fs.readFileSync(path.join(osDir, f), 'utf8')).join('\n') + '\n',
+    }));
+  }
+
+  it('Seven＋OS：嚴格模式可翻譯＋組譯＋執行，UART 印出 7', () => {
+    const files = osVmFiles();
     const seven = fs.readFileSync(path.join(REPO, '11', 'jack', 'Seven', 'Main.jack'), 'utf8');
-    vmFiles.push({ path: 'Main.vm', src: compileJack(seven).join('\n') + '\n' });
-    assert.throws(() => translate(vmFiles), /不支援的 OS 呼叫/);
-    const s = translate(vmFiles, { lenient: true });
-    assert.ok(s.length > 10000, 'OS 全量應有萬行以上');
-    assert.ok(s.includes('#   外部：'), '應列出外部未定義呼叫');
-    assert.ok(s.includes('Sys.main:') || s.includes('Main.main:'));
+    files.push({ path: 'Main.vm', src: compileJack(seven).join('\n') + '\n' });
+    const s = translate(files); // 嚴格模式不再 throw（含 Output 內聯、OS 全量）
+    assert.ok(s.includes('# ========== File: Main.vm =========='));
+    assert.ok(s.includes('# ========== File: Sys.vm =========='));
+    const { words } = assemble(s, { origin: 0 });
+    assert.ok(words.length * 4 < TEMP_BASE, `程式 ${words.length * 4} bytes 超出 ${TEMP_BASE}`);
+    const emu = new Emulator();
+    emu.loadWords(words, 0);
+    for (let steps = 1; steps <= 2000000; steps++) {
+      emu.step();
+      if (steps % 1000 === 0 && emu.uart.includes('7')) break;
+    }
+    assert.ok(emu.uart.includes('7'), `UART=${JSON.stringify(emu.uart)}`);
+  });
+
+  it('heap 綜合（String＋Array＋printString／printInt）：UART＝Hi!\\n333', () => {
+    const files = osVmFiles();
+    const src = `class Main {
+      function void main() {
+        var String s;
+        var Array a;
+        let s = String.new(5);
+        do s.appendChar(72);
+        do s.appendChar(105);
+        do s.appendChar(33);
+        do Output.printString(s);
+        do Output.println();
+        do s.dispose();
+        let a = Array.new(3);
+        let a[0] = 111;
+        let a[2] = 222;
+        do Output.printInt(a[0] + a[2]);
+        return;
+      }
+    }`;
+    files.push({ path: 'Main.vm', src: compileJack(src).join('\n') + '\n' });
+    const s = translate(files);
+    const { words } = assemble(s, { origin: 0 });
+    assert.ok(words.length * 4 < TEMP_BASE);
+    const emu = new Emulator();
+    emu.loadWords(words, 0);
+    for (let steps = 1; steps <= 3000000; steps++) {
+      emu.step();
+      if (steps % 1000 === 0 && emu.uart.includes('333')) break;
+    }
+    assert.ok(emu.uart.includes('Hi!'), `UART=${JSON.stringify(emu.uart)}`);
+    assert.ok(emu.uart.includes('333'), `UART=${JSON.stringify(emu.uart)}`);
+  });
+
+  it('Pong＋OS：嚴格模式可翻譯＋組譯（執行需鍵盤，只驗到組譯）', () => {
+    const files = osVmFiles();
+    const dir = path.join(REPO, '11', 'jack', 'Pong');
+    for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.jack')).sort()) {
+      files.push({ path: f.replace(/\.jack$/, '.vm'), src: compileJack(fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\n' });
+    }
+    const s = translate(files);
+    const { words } = assemble(s, { origin: 0 });
+    assert.ok(words.length * 4 < TEMP_BASE, `程式 ${words.length * 4} bytes 超出 ${TEMP_BASE}`);
+  });
+});
+
+// ==================== RISCV 後端執行路徑（前端 bundle＋CLI 與 lib 一致） ====================
+import { execFileSync } from 'node:child_process';
+
+describe('vm2riscv 執行路徑（bundle HackRv＋cli/riscv_run.js）', () => {
+  const DIST = path.resolve(import.meta.dirname, '../dist');
+
+  function sumS() {
+    const d = path.join(REPO, '11', 'jackNoOs', 'Sum');
+    const files = ['Main.jack', 'Sys.jack'].map((f, i) => ({
+      path: i === 0 ? 'Main.vm' : 'Sys.vm',
+      src: compileJack(fs.readFileSync(path.join(d, f), 'utf8')).join('\n') + '\n',
+    }));
+    return translate(files);
+  }
+
+  function loadBundleRv() {
+    const g = globalThis;
+    const prev = g.window;
+    g.window = g;
+    try {
+      (0, eval)(fs.readFileSync(path.join(DIST, 'embed.js'), 'utf8'));
+      return g.window.HackRv;
+    } finally {
+      g.window = prev;
+    }
+  }
+
+  it('bundle HackRv：組譯→反組譯→執行得 STATIC＝5050（前端 RISCV 模式同路）', () => {
+    const HackRv = loadBundleRv();
+    assert.equal(typeof HackRv.assemble, 'function');
+    assert.equal(typeof HackRv.disassemble, 'function');
+    assert.equal(typeof HackRv.Emulator, 'function');
+    const { words } = HackRv.assemble(sumS(), { origin: 0 });
+    assert.ok(words.length > 0);
+    const dis = HackRv.disassemble(words.slice(0, 1), 0);
+    assert.ok(/^00000000: [0-9a-f]{8} /.test(dis[0]));
+    const emu = new HackRv.Emulator();
+    emu.loadWords(words, 0);
+    for (let k = 0; k < 20000; k++) emu.step();
+    assert.equal(emu.loadWord(STATIC_BASE), 5050);
+  });
+
+  it('bundle 未覆蓋 HackAsm.assemble（拼接回歸）', () => {
+    const g = globalThis;
+    const prev = g.window;
+    g.window = g;
+    try {
+      (0, eval)(fs.readFileSync(path.join(DIST, 'embed.js'), 'utf8'));
+      assert.equal(g.window.HackAsm.assemble('@2\nD=A\n').hack.split('\n')[0], '0000000000000010');
+    } finally {
+      g.window = prev;
+    }
+  });
+
+  it('cli/riscv_run.js：Sum 跑滿步數印 STATIC＝5050', () => {
+    const tmp = fs.mkdtempSync(path.join(process.env.TMPDIR || '/tmp', 'rvrun-'));
+    try {
+      const sp = path.join(tmp, 'sum.s');
+      fs.writeFileSync(sp, sumS());
+      const out = execFileSync(process.execPath,
+        [path.resolve(import.meta.dirname, '../cli/riscv_run.js'), sp, '--max', '100000'],
+        { encoding: 'utf8' });
+      assert.ok(out.includes('5050'), out);
+      assert.ok(out.includes('跑滿 100000 步即停'));
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 });
