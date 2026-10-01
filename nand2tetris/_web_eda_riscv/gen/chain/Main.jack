@@ -1,0 +1,12 @@
+class Main {
+    static int x;
+
+    function void init() {
+        let x = 5;
+    }
+
+    function void loop() {
+        while (true) {
+        }
+    }
+}

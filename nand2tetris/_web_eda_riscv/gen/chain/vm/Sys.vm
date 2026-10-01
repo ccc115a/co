@@ -1,0 +1,7 @@
+function Sys.init 0
+call Main.init 0
+pop temp 0
+call Main.loop 0
+pop temp 0
+push constant 0
+return
