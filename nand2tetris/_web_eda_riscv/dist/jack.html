@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Jack 編譯器全鏈路（v1.0）— 金門大學 計算機結構</title>
+<title>nand2tetris — Jack 編譯器</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -33,9 +33,25 @@
 </head>
 <body>
 <header>
-  <h1>Jack 全鏈路編譯器（HackCPU／RISCV 雙後端）</h1>
-  <a href="index.html">← 組語 Emulator</a>
-  <a href="hdl.html">← HDL 模擬器</a>
+  <h1>nand2tetris <span style="font-size:11px;color:#9fb2c8">Jack 編譯器</span></h1>
+  <select id="nav" title="切換工具">
+    <option value="index.html">HACK 模擬器</option>
+    <option value="hdl.html">HDL 模擬器</option>
+    <option value="jack.html">Jack 編譯器</option>
+    <option value="rvemu.html">RISCV 模擬器</option>
+  </select>
+  <script>
+  // 四頁共用：頁面切換選單；jack.html ⇄ rvemu.html 互切時攜帶 #prog=
+  (function () {
+    var sel = document.getElementById('nav');
+    sel.value = 'jack.html';
+    sel.onchange = function () {
+      var h = location.hash || '';
+      var carry = /^#prog=/.test(h) && /^(jack\.html|rvemu\.html)$/.test(sel.value);
+      location.href = sel.value + (carry ? h : '');
+    };
+  })();
+  </script>
   <select id="mode">
     <option value="builtin">內建程式</option>
     <option value="custom">自訂貼上</option>
@@ -47,7 +63,7 @@
   </select>
   <label style="font-size:12px;color:#9fb2c8">含作業系統 <input id="withOS" type="checkbox"></label>
   <button id="run" title="依所選後端編譯＋執行：HackCPU（jack2vm → vm2asm → hackasm → hackemu）或 RISCV（jack2vm → vm2riscv → rvasm → rvemu），瀏覽器內免伺服器">編譯＋執行</button>
-  <button id="emu" title="把編譯結果送到「組語 Emulator」（新視窗），可互動玩 Pong 並觀察暫存器/RAM/螢幕">在組語 Emulator 跑 ▸</button>
+  <button id="emu" title="把編譯結果送到模擬器（新視窗）">在 HACK 模擬器跑 ▸</button>
   <span class="spacer"></span>
   <span id="status"></span>
 </header>
@@ -81,6 +97,6 @@
 <script src="corpus.js?v=10"></script>
 <script src="hdl-rt.js?v=10"></script>
 <script src="embed.js?v=14"></script>
-<script src="jack.js?v=18"></script>
+<script src="jack.js?v=21"></script>
 </body>
 </html>

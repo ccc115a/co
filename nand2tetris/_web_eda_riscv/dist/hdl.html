@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HDL 模擬器（v0.9）— 金門大學 計算機結構</title>
+<title>nand2tetris — HDL 模擬器</title>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -38,9 +38,25 @@
 </head>
 <body>
 <header>
-  <h1>HackHDL 模擬器（批次，v0.9）</h1>
-  <a href="index.html">← 組語 Emulator</a>
-  <a href="jack.html" title="Jack 全鏈路（v1.0）">Jack 編譯器 →</a>
+  <h1>nand2tetris <span style="font-size:11px;color:#9fb2c8">HDL 模擬器</span></h1>
+  <select id="nav" title="切換工具">
+    <option value="index.html">HACK 模擬器</option>
+    <option value="hdl.html">HDL 模擬器</option>
+    <option value="jack.html">Jack 編譯器</option>
+    <option value="rvemu.html">RISCV 模擬器</option>
+  </select>
+  <script>
+  // 四頁共用：頁面切換選單；jack.html ⇄ rvemu.html 互切時攜帶 #prog=
+  (function () {
+    var sel = document.getElementById('nav');
+    sel.value = 'hdl.html';
+    sel.onchange = function () {
+      var h = location.hash || '';
+      var carry = /^#prog=/.test(h) && /^(jack\.html|rvemu\.html)$/.test(sel.value);
+      location.href = sel.value + (carry ? h : '');
+    };
+  })();
+  </script>
   <select id="mode">
     <option value="chapter">內建章節晶片</option>
     <option value="custom">自訂貼上</option>

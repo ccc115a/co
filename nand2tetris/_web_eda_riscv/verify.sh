@@ -98,7 +98,7 @@ for (const s of ["corpus.js", "hdl-rt.js", "embed.js", "jack.js"]) {
 }
 for (const [from, to] of [["index.html", "jack.html"], ["hdl.html", "jack.html"]]) {
   const f = fs.readFileSync("dist/" + from, "utf8");
-  if (!f.includes(`href="${to}"`)) { console.error("dist/" + from + " 缺 jack.html 連結"); process.exit(1); }
+  if (!f.includes(`value="${to}"`)) { console.error("dist/" + from + " 的切換選單缺 " + to); process.exit(1); }
 }
 console.log("jack 頁面引用與互相連節完整");
 '

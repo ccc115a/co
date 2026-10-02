@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>nand2tetris — HACK 模擬器</title>
+<title>nand2tetris — RISCV 模擬器</title>
 <style>
   :root { --bg:#111; --panel:#1c1c1f; --line:#333; --fg:#eee; --dim:#999; --accent:#4da6ff; --danger:#ff5c5c; }
   * { box-sizing:border-box; }
@@ -11,11 +11,14 @@
   body { display:flex; flex-direction:column; }
   header { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:8px 12px; border-bottom:1px solid var(--line); }
   h1 { font-size:16px; margin:0 12px 0 0; }
+  a { color:#7ec3ff; text-decoration:none; }
   button { background:#2a2a2e; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:4px 10px; cursor:pointer; }
   button:hover { border-color:var(--accent); }
+  button:disabled { opacity:.45; cursor:default; }
   button.danger:hover { border-color:var(--danger); }
-  select { background:#2a2a2e; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:4px 6px; }
+  button.key { min-width:44px; font-size:16px; }
   label { display:flex; align-items:center; gap:4px; color:var(--dim); font-size:12px; }
+  select, input[type=text], input[type=number] { background:#0c0c0e; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:3px 6px; font:inherit; font-size:12px; }
   .spacer { flex:1; }
   #status { color:var(--accent); font-size:12px; }
   #status.error { color:var(--danger); }
@@ -30,17 +33,19 @@
   .row { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
   #screenwrap { border:1px solid var(--line); border-radius:6px; background:#000; line-height:0; }
   canvas { width:100%; image-rendering:pixelated; }
-  #regs { font-size:13px; }
+  #regs, #uart { font-size:12px; white-space:pre-wrap; word-break:break-all; }
+  #uart { color:#9fe8a9; max-height:120px; }
   #chips { font-size:12px; column-count:4; column-gap:12px; }
-  #ramBody { font-size:12px; white-space:pre; }
+  #memBody { font-size:12px; white-space:pre; }
   .rambar { display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
-  input[type=number] { width:70px; background:#0c0c0e; color:var(--fg); border:1px solid var(--line); border-radius:4px; padding:2px 4px; }
-  #smoke { display:none; }
+  input[type=number] { width:90px; }
+  input[type=range] { accent-color:var(--accent); }
+  #fps { font-size:12px; color:var(--dim); }
 </style>
 </head>
 <body>
 <header>
-  <h1>nand2tetris <span style="font-size:11px;color:var(--dim)">HACK 模擬器</span></h1>
+  <h1>nand2tetris <span style="font-size:11px;color:var(--dim)">RISCV 模擬器</span></h1>
   <select id="nav" title="切換工具">
     <option value="index.html">HACK 模擬器</option>
     <option value="hdl.html">HDL 模擬器</option>
@@ -51,7 +56,7 @@
   // 四頁共用：頁面切換選單；jack.html ⇄ rvemu.html 互切時攜帶 #prog=
   (function () {
     var sel = document.getElementById('nav');
-    sel.value = 'index.html';
+    sel.value = 'rvemu.html';
     sel.onchange = function () {
       var h = location.hash || '';
       var carry = /^#prog=/.test(h) && /^(jack\.html|rvemu\.html)$/.test(sel.value);
@@ -59,63 +64,77 @@
     };
   })();
   </script>
+  <select id="example" title="內建範例（Jack 程式，選取即編成 RISCV 組語）"></select>
+  <button id="build" title="把目前範例的 Jack 重新編成 .s">重編 Jack ▸</button>
+  <button id="load" title="組譯左方 .s 並載入">組譯並載入</button>
   <button id="run">執行 ▶</button>
   <button id="step">Step</button>
   <button id="reset" class="danger">Reset</button>
-  <button id="open">開啟 .asm…</button>
-  <input type="file" id="file" accept=".asm,.hack" hidden>
-  <button id="load">組譯並載入</button>
-  <label title="對數刻度：每幀執行步數">速度 <input type="range" id="speed" min="0" max="100" value="80"></label>
-  <span id="fps" title="執行迴圈 FPS"></span>
+  <label title="每幀執行步數（316..10 萬步，預設 1 萬步：Pong 球約每幀走一格）">速度 <input type="range" id="speed" min="0" max="100" value="60"></label>
+  <label title="上限步數：0＝無限跑（Pong 等遊戲永不 halt，預設無限）；填正整數則跑滿即停，停住後再按執行可續跑">上限 <input type="number" id="maxsteps" value="0"></label>
+  <span id="fps"></span>
   <span class="spacer"></span>
   <span id="status"></span>
 </header>
 <main>
   <section class="col">
-    <h2>① 程式（HACK 組語）</h2>
+    <h2>① 程式（RISCV 組語 .s）</h2>
     <div class="panel" style="flex:1.2">
-      <textarea id="asm" spellcheck="false" placeholder="貼上 HACK 組語（.asm），再按「組譯並載入」…
-範例可直接載入底下 R0-R15 = 乘法：@2 D=A @3 M=D …"></textarea>
+      <textarea id="src" spellcheck="false" placeholder="RISCV 組語（.s），按「組譯並載入」…"></textarea>
     </div>
     <div class="panel" style="flex:1">
-      <h2 style="margin-bottom:4px">原始碼（PC 高亮）</h2>
+      <h2 style="margin-bottom:4px">機器碼（PC 高亮）</h2>
       <div id="listing"></div>
     </div>
   </section>
   <section class="col">
-    <h2>② 螢幕（512×256）</h2>
+    <h2>② 螢幕（Jack SCREEN 鏡像 512×256，只看得到寫入）</h2>
     <div id="screenwrap">
       <canvas id="screen" width="512" height="256"></canvas>
     </div>
     <div class="panel">
-      <div id="regs">PC=0　A=0　D=0　SP=0　(指令 #0)</div>
+      <div id="regs">PC=0（指令 #0）</div>
     </div>
     <div class="panel">
-      <h2 style="margin-bottom:4px">暫存器 R0–R15</h2>
+      <h2 style="margin-bottom:4px">暫存器 x0–x31</h2>
       <div id="chips"></div>
+    </div>
+    <div class="panel">
+      <h2 style="margin-bottom:4px">UART（Output.print* 從這裡出來）</h2>
+      <div id="uart"></div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <span style="font-size:12px;color:var(--dim)">按鍵（寫入 KBD 鏡像；Pong 用 ◀ ▶）：</span>
+        <button class="key" data-key="130">◀</button>
+        <button class="key" data-key="132">▶</button>
+        <button class="key" data-key="131">▲</button>
+        <button class="key" data-key="133">▼</button>
+        <button class="key" data-key="32">␣</button>
+      </div>
     </div>
   </section>
   <section class="col">
-    <h2>③ 記憶體</h2>
+    <h2>③ 記憶體（word 單位）</h2>
     <div class="panel" style="flex:1">
       <div class="rambar">
-        <button data-ram="0" data-len="16">R0-15</button>
-        <button data-ram="16" data-len="16">static</button>
-        <button data-ram="256" data-len="32">stack</button>
-        <button data-ram="2048" data-len="32">heap</button>
-        <button id="ramPrev" data-page="-1">‹</button>
-        <label>起點 <input id="ramStart" type="number" value="256"></label>
-        <label>長度 <input id="ramLen" type="number" value="128"></label>
-        <button id="ramNext" data-page="1">›</button>
-        <button id="ramBtn">讀取</button>
+        <button data-mem="0x11000" data-len="8">STATIC</button>
+        <button data-mem="0x1C000" data-len="16">stack</button>
+        <button data-mem="0x22000" data-len="16">heap鏡像</button>
+        <button data-mem="0x30000" data-len="16">SCREEN鏡像</button>
+        <button id="memPrev">‹</button>
+        <label>起點 <input id="memStart" type="text" value="0x11000"></label>
+        <label>長度 <input id="memLen" type="number" value="32"></label>
+        <button id="memNext">›</button>
+        <button id="memBtn">讀取</button>
       </div>
-      <div id="ramBody"></div>
+      <div id="memBody"></div>
     </div>
   </section>
 </main>
 <script src="corpus.js?v=10"></script>
 <script src="hdl-rt.js?v=10"></script>
 <script src="embed.js?v=14"></script>
-<script src="app.js?v=10"></script>
+<script src="rvemu.js?v=5"></script>
 </body>
 </html>

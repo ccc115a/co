@@ -1,7 +1,8 @@
 /* jack.html 頁面邏輯：內建 Jack 程式（需 OS / 無 OS / 虛擬 chain）＋自訂多檔貼上。
    雙後端（頁首選單＋網址 backend=hackcpu|riscv 指定，預設 HackCPU）：
-   1) HackCPU：.jack → .vm → .asm → .hack → hackemu（▶執行與送 Emulator 用 OS 在前的全量）
-   2) RISCV：.jack → .vm → .s → bytecode → rvemu 定步執行（OS 全量參與，Output 內聯為 UART）
+   1) HackCPU：.jack → .vm → .asm → .hack → hackemu（▶執行與送 HACK 模擬器用 OS 在前的全量）
+   2) RISCV：.jack → .vm → .s → bytecode → rvemu 定步執行（OS 全量參與，Output 內聯為 UART；
+      送 RISCV 模擬器用同一份全量 .s，rvjs-* 跨視窗協議）
    分頁（.vm／.asm／.hack／RISCV／bytecode）只顯示使用者模組，不含 OS；
    bytecode 需模組可獨立組譯（含 OS 呼叫的模組只顯示原因）；▶執行永遠用全量。 */
 (() => {
@@ -26,7 +27,7 @@
   };
 
   const BACKENDS = ['hackcpu', 'riscv'];
-  const RV_STEPS = 200000;
+  const RV_STEPS = 2000000;
   const RV_STATIC_BASE = 0x11000; // 與 lib/riscv/vm2riscv.js 的 STATIC_BASE 同值（第 0 檔 static 區）
 
   const { compileJack } = window.HackJack2Vm;
@@ -60,7 +61,7 @@
   const KEYS_RV = ['vm', 's', 'bytecode', 'run'];
 
   let fileState = { names: [], active: 0 };      // 自訂模式的檔案 tab
-  let lastRun = { backend: 'hackcpu', vm: '', asm: '', hack: '', s: '', bytecode: '', run: '', fullAsm: '' };
+  let lastRun = { backend: 'hackcpu', vm: '', asm: '', hack: '', s: '', bytecode: '', run: '', fullAsm: '', fullS: '' };
 
   function jackSources(dir) {
     return Object.keys(corpus)
@@ -251,7 +252,7 @@
         const { words } = rvAssemble(execS, { origin: 0 });
         if (words.length === 0) throw new Error('組譯結果為空');
         const runOut = runRv(words, RV_STEPS, fullVm.length === 1);
-        lastRun = { backend, vm: vmText(userVm), s: sText, bytecode, run: runOut };
+        lastRun = { backend, vm: vmText(userVm), s: sText, bytecode, run: runOut, fullS: execS };
         statusLine = `完成（RISCV）：${userVm.length} 個 .vm、${words.length} words RV32`;
       } else {
         const fullVm = fullVmOf(userVm);
@@ -323,10 +324,11 @@
 
   function syncEmu() {
     const rv = el.backend.value === 'riscv';
-    el.emu.disabled = rv;
+    el.emu.disabled = false;
+    el.emu.textContent = rv ? '在 RISCV 模擬器跑 ▸' : '在 HACK 模擬器跑 ▸';
     el.emu.title = rv
-      ? '組語 Emulator 只支援 HackCPU（RISCV 後端請看 ▶執行）'
-      : '把編譯結果送到「組語 Emulator」（新視窗），可互動玩 Pong 並觀察暫存器/RAM/螢幕';
+      ? '把全量 RISCV 組語送到「RISCV 模擬器」（新視窗），可互動玩 Pong 並觀察暫存器/STATIC/螢幕'
+      : '把編譯結果送到「HACK 模擬器」（新視窗），可互動玩 Pong 並觀察暫存器/RAM/螢幕';
   }
 
   el.mode.onchange = applyMode;
@@ -341,11 +343,26 @@
   };
   el.run.onclick = doRun;
 
-  const emuState = { win: null, ready: false, pending: null, pingT: null, tries: 0 };
+  // 送模擬器橋接（雙後端共用一台狀態機）：HackCPU 走 hackjs-* 到 index.html，
+  // RISCV 走 rvjs-* 到 rvemu.html（送全量 .s）。
+  const BRIDGES = {
+    hackcpu: {
+      win: 'hackjs-emu', home: 'index.html', ready: 'hackjs-ready', ping: 'hackjs-ping',
+      pack: (t) => ({ type: 'hackjs-load', asm: t }),
+      sent: (n) => `已送出 ${n} 字元組語到 HACK 模擬器（新視窗可玩可觀察）`,
+    },
+    riscv: {
+      win: 'rvemu-win', home: 'rvemu.html', ready: 'rvjs-ready', ping: 'rvjs-ping',
+      pack: (t) => ({ type: 'rvjs-load', s: t }),
+      sent: (n) => `已送出 ${n} 字元 RISCV 組語到 RISCV 模擬器（新視窗可玩可觀察）`,
+    },
+  };
+  const emuState = { win: null, ready: false, pending: null, pingT: null, tries: 0, bridgeName: 'hackcpu' };
   function emuReply() {
-    if (emuState.pending !== null && emuState.ready && emuState.win && !emuState.win.closed) {
-      emuState.win.postMessage({ type: 'hackjs-load', asm: emuState.pending }, '*');
-      setStatus(`已送出 ${emuState.pending.length} 字元組語到 Emulator（新視窗可玩可觀察）`);
+    const b = BRIDGES[emuState.bridgeName];
+    if (emuState.pending !== null && emuState.ready && emuState.win && !emuState.win.closed && b) {
+      emuState.win.postMessage(b.pack(emuState.pending), '*');
+      setStatus(b.sent(emuState.pending.length));
       emuState.pending = null;
       if (emuState.pingT) { clearInterval(emuState.pingT); emuState.pingT = null; }
     }
@@ -354,40 +371,45 @@
     if (emuState.pingT) { clearInterval(emuState.pingT); emuState.pingT = null; }
     emuState.tries = 0;
     emuState.pingT = setInterval(() => {
-      if (emuState.pending === null || emuState.ready || !emuState.win || emuState.win.closed) {
+      const b = BRIDGES[emuState.bridgeName];
+      if (emuState.pending === null || emuState.ready || !emuState.win || emuState.win.closed || !b) {
         clearInterval(emuState.pingT); emuState.pingT = null; return;
       }
-      try { emuState.win.postMessage({ type: 'hackjs-ping' }, '*'); } catch (_) {}
+      try { emuState.win.postMessage({ type: b.ping }, '*'); } catch (_) {}
       emuState.tries++;
       if (emuState.tries === 15 && emuState.win && !emuState.win.closed) {
-        setStatus('Emulator 無回應，強制重新載入一次…');
-        try { emuState.win.location.href = 'index.html?er=' + Date.now(); } catch (_) {}
+        setStatus('模擬器無回應，強制重新載入一次…');
+        try { emuState.win.location.href = b.home + '?er=' + Date.now(); } catch (_) {}
         emuState.ready = false;
         emuState.tries = 0;
       } else if (emuState.tries > 22) {
         clearInterval(emuState.pingT); emuState.pingT = null;
-        setStatus('Emulator 視窗一直未回應（請對該視窗按 ⌘⇧R 重新整理後重試）');
+        setStatus('模擬器視窗一直未回應（請對該視窗按 ⌘⇧R 重新整理後重試）');
       }
     }, 250);
   }
   window.addEventListener('message', (e) => {
     const d = e.data || {};
-    if (d.type === 'hackjs-ready' && emuState.win && !emuState.win.closed) {
+    const b = BRIDGES[emuState.bridgeName];
+    if (b && d.type === b.ready && emuState.win && !emuState.win.closed) {
       emuState.ready = true;
       emuReply();
     }
   });
   el.emu.onclick = () => {
-    if (el.backend.value !== 'hackcpu') return;
-    if (!lastRun.hack) doRun();
-    if (!lastRun.fullAsm) return;
-    if (!emuState.win || emuState.win.closed) {
-      emuState.win = window.open('index.html', 'hackjs-emu');
+    const rv = el.backend.value === 'riscv';
+    const want = rv ? 'riscv' : 'hackcpu';
+    if (lastRun.backend !== el.backend.value || (rv ? !lastRun.fullS : !lastRun.hack)) doRun();
+    const text = rv ? lastRun.fullS : lastRun.fullAsm;
+    if (!text) return;
+    if (!emuState.win || emuState.win.closed || emuState.bridgeName !== want) {
+      emuState.win = window.open(rv ? 'rvemu.html' : 'index.html', rv ? 'rvemu-win' : 'hackjs-emu');
       emuState.ready = false;
+      emuState.bridgeName = want;
     }
-    emuState.pending = lastRun.fullAsm;
+    emuState.pending = text;
     if (emuState.ready) emuReply();
-    else { setStatus('等待 Emulator 就緒…'); emuPing(); }
+    else { setStatus('等待模擬器就緒…'); emuPing(); }
   };
   el.addfile.onclick = () => {
     const n = el.fname.value.trim();

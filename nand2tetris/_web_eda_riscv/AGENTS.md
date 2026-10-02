@@ -34,11 +34,13 @@ hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 2
   真值 true＝-1；整數 32-bit 語意（Hack 原生 16-bit，小數值一致）。
 - `Math.multiply/divide` 內聯 `mul/div`；`Output.printChar/printInt/println/printString`
   內聯為 UART（`ecall a7=1`，void 照推 0；`gen/os_src` 的 Output 是空殼，內聯後才看得到輸出）。
-  OS 全量（`gen/os_src` 8 檔）可嚴格翻譯執行（Seven 印 `7`、Pong 跑得動只看不到畫面）；
+  OS 全量（`gen/os_src` 8 檔）可嚴格翻譯執行（Seven 印 `7`；Pong 方向鍵有反應，
+  左右按住 300 萬步 bat 最小 x 分離＞100 px，有回歸測試）；
   其餘未定義 OS 呼叫嚴格模式 throw，`translate(files, { lenient: true })` 顯示模式則照發
   `jal` 並列在表頭（僅供檢視、不可組譯）；結尾檢查 `call` 皆有對應 `function`（顯示模式跳過）。
 - 已知限制：Keyboard 恆讀 0（rvemu 無鍵盤），`readChar/readInt` 類會空等；
-  `keyPressed` 非阻塞可用；Screen 寫入只進鏡像 Ram，看不到畫面。
+  `keyPressed` 非阻塞可用（`rvemu.html` 按鍵注入 KBD 鏡像，Pong 擋板會動）；
+  Screen 寫入只進鏡像 Ram（`rvemu.html` 即時重繪），無實體螢幕。
 - 產物不 halt（尾巴是無窮迴圈或 `Sys.halt`）：不用 run-to-halt 驗證，
   以 `step()` 定步後讀 static／UART 比對：chain 5、Sum 5050、Factorial 120、Fib 6765、
   GCD 63、PrimeUnder100 97、Seven UART `7`、heap 綜合 `Hi!`＋`333`
@@ -47,11 +49,22 @@ hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 2
   切換寫回 `#prog=X&backend=Y`）。HackCPU 分頁 `.vm/.asm/.hack`，RISCV 分頁
   `.vm/RISCV/bytecode`，其中 `.vm` 只顯示使用者模組，`RISCV` 是模組的 lenient 預覽
   （OS 呼叫列外部表頭）；`bytecode` 需模組可獨立組譯（含未定義呼叫時只顯示原因）；
-  `▶執行`與「送 Emulator（僅 HackCPU）」用 OS 在前的全量。
-  用 OS 在前的全量。RISCV 執行＝嚴格翻譯→rvasm 組譯→rvemu 跑滿 20 萬步，
+  `▶執行`與「送模擬器」用 OS 在前的全量（HackCPU 送 `.asm` 到 HACK 模擬器，
+  RISCV 送全量 `.s` 到 RISCV 模擬器，`rvjs-*` 跨視窗協議，橋接狀態機共用）。
+  用 OS 在前的全量。RISCV 執行＝嚴格翻譯→rvasm 組譯→rvemu 跑滿 200 萬步
+  （Pong 光初始化就要約 100 萬步；舊 20 萬步連首幀都畫不出來），
   印 `ra/s1/a0`＋`STATIC[0..7]`＋`UART`（OS 程式可跑；無鍵盤程式除外，見上）。
   `rvasm/rvemu/rvdis/isa` 由 `tools/embed.js` 包成 `RvToolchain` IIFE
   （`window.HackRv`），**勿改 `riscv/_web_tools` 原始碼**（`assemble` 同名會覆蓋）。
+- `dist/rvemu.html`＋`dist/rvemu.js` 是 RISCV 互動 Emulator（仿 `index.html` 三欄）：
+  12 支 Jack 範例現場編成 `.s`（OS 在前、嚴格翻譯），可執行／單步（PC 高亮，
+  只動 class 不重建列表）／重設（重開全新 Emulator，畫面立刻全黑）；
+  SCREEN 取 Jack 鏡像渲染（`0x20000`＋4W，逐 word 讀一次再展 16 像素）；
+  按鍵（◀▶▲▼␣＋實體方向鍵）寫入 KBD 鏡像 `0x38000`，放開歸零；
+  上限預設 `0`＝無限跑（遊戲永不 halt；填正整數則跑滿即停，停住後再按執行可續跑）；
+  速度滑桿 0..100 對應約 316..10 萬步/幀，預設 60（1 萬步/幀；
+  Pong 每約 9 千步走一格，預設即每幀一格可玩，舊 HACK 映射 10..10^7 會讓球暴衝秒結束）；
+  網址 `#prog=Pong[&run=1]`；新檔 `?v=` 從 1 起跳。
   改 `dist/*.js` 後把引用它的 `?v=` 版號＋1（快取用；
   `index.html`/`hdl.html` 的 `embed.js` 連帶一起加）。
 

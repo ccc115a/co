@@ -17,7 +17,8 @@ rvasm（RV32I+M）＋rvemu，兩目錄須在同一 repo 共存。
 
 ```sh
 open dist/jack.html    # Jack 雙後端編譯器
-open dist/index.html   # Hack 組語 Emulator
+open dist/index.html   # Hack HACK 模擬器
+open dist/rvemu.html   # RISCV 模擬器（RV32，範例同 jack.html 12 支）
 open dist/hdl.html     # HDL 批次模擬
 ```
 
@@ -29,9 +30,12 @@ jack.html#prog=Fib&backend=riscv&run=1    # RISCV 跑 Fib 並自動執行
 ```
 
 - 顯示分頁（`.vm/.asm/.hack`、`.vm/RISCV/bytecode`）只看使用者模組，不含 OS。
-- `▶執行`與「送 Emulator（僅 HackCPU）」用 OS 在前的全量。
+- `▶執行`與「送模擬器」用 OS 在前的全量（HackCPU 送 `.asm` 到 HACK 模擬器，
+  RISCV 送全量 `.s` 到 RISCV 模擬器，可互動玩 Pong）。
 - RISCV 執行＝嚴格翻譯→組譯→跑滿 20 萬步，印 `ra/s1/a0`＋`STATIC[0..7]`＋`UART`。
   只有無 OS 程式與 OS 全量可跑；`readChar/readInt` 類會等不到鍵盤（見限制）。
+- `rvemu.html` 是互動版：12 支 Jack 範例現場編成 `.s`，可單步（PC 高亮）、
+  看 x0–x31／STATIC／UART／SCREEN 鏡像，◀▶▲▼ 按鍵寫入 KBD 鏡像（Pong 擋板會動）。
 
 ## 命令列（cwd 在本目錄；語料先複製到 /tmp 再玩，`jack2vm` 會在來源旁寫 `output/`）
 
@@ -101,7 +105,8 @@ static＝`0x11000`＋檔序*`0x400`＋4i；Jack word 位址 W 經 this/that 映�
 ## 已知限制
 
 - Keyboard 恆讀 0：`readChar/readInt` 類（如 Average）會空等，`keyPressed` 可用；
-  Screen 寫入只進鏡像 Ram，看不到 Pong 畫面。
+  RISCV 模擬器的 ◀▶▲▼ 按鍵寫入 KBD 鏡像，Pong 擋板會動（方向鍵實測：bat 分離＞100 px）。
+- Screen 寫入只進鏡像 Ram（RISCV 模擬器即時重繪），無實體螢幕。
 - 產物不 halt：一律跑滿步數即停，看 STATIC／UART 驗收，不看結束碼。
 
 ## 更多文件

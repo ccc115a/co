@@ -54,9 +54,11 @@ OS 自帶定義的呼叫（如 `Memory.alloc`）走正常呼叫；翻譯結尾�
 ## 驗證與已知限制
 
 OS 全量（`gen/os_src` 8 檔）可嚴格翻譯執行：Seven UART 印 `7`、
-heap 綜合（String＋Array）印 `Hi!`＋`333`、Pong 可翻譯組譯（執行需鍵盤）。
+heap 綜合（String＋Array）印 `Hi!`＋`333`、Pong 可翻譯組譯＋方向鍵實測通過
+（左右按住 300 萬步 bat 最小 x 分離＞100，見 `test/test_vm2riscv.js`）。
 Keyboard 恆讀 0（rvemu 無鍵盤）：`readChar/readInt` 類會空等，
-`keyPressed` 非阻塞可用；Screen 寫入只進鏡像 Ram，看不到畫面。
+`keyPressed` 非阻塞可用（`rvemu.html` 按鍵注入 KBD 鏡像）；Screen 寫入只進鏡像 Ram
+（`rvemu.html` 即時重繪），無實體螢幕。
 
 ## 驗證方式
 

@@ -329,6 +329,37 @@ describe('vm2riscv dist bundle（jack.html .s 分頁）', () => {
     const { words } = assemble(s, { origin: 0 });
     assert.ok(words.length * 4 < TEMP_BASE, `程式 ${words.length * 4} bytes 超出 ${TEMP_BASE}`);
   });
+
+  it('Pong 方向鍵回應（bat 位置隨按鍵分離，讀 SCREEN 鏡像 229..236 列）', () => {    const files = osVmFiles();
+    const dir = path.join(REPO, '11', 'jack', 'Pong');
+    for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.jack')).sort()) {
+      files.push({ path: f.replace(/\.jack$/, '.vm'), src: compileJack(fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\n' });
+    }
+    const { words } = assemble(translate(files), { origin: 0 });
+    const batMinX = (emu) => {
+      let mn = 512;
+      for (let y = 229; y < 237; y++) {
+        for (let bx = 0; bx < 32; bx++) {
+          const w = emu.loadWord(MIRROR_BASE + (16384 + y * 32 + bx) * 4);
+          for (let b = 0; b < 16; b++) {
+            if (w & (1 << (15 - b))) mn = Math.min(mn, bx * 16 + b);
+          }
+        }
+      }
+      return mn;
+    };
+    const runHeld = (key, n) => {
+      const emu = new Emulator();
+      emu.loadWords(words, 0);
+      emu.storeWord(MIRROR_BASE + 24576 * 4, key); // KBD 鏡像按住不放
+      for (let k = 0; k < n; k++) emu.step();
+      return { emu, x: batMinX(emu) };
+    };
+    const left = runHeld(130, 3000000);
+    const right = runHeld(132, 3000000);
+    assert.ok(right.x - left.x > 100, `方向鍵未分離 bat (left=${left.x}, right=${right.x})`);
+    assert.ok(left.emu.uart.includes('Score'), `UART=${JSON.stringify(left.emu.uart)}`);
+  });
 });
 
 // ==================== RISCV 後端執行路徑（前端 bundle＋CLI 與 lib 一致） ====================
@@ -399,4 +430,49 @@ describe('vm2riscv 執行路徑（bundle HackRv＋cli/riscv_run.js）', () => {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
   });
+});
+
+// ==================== 12 支 Jack 範例在 RV32 上跑成功（前端雙後端同名單） ====================
+describe('vm2riscv 全範例執行（needsOS 含 OS 全量，跑 5 萬步不崩）', () => {
+  const JACK = path.resolve(REPO, '11', 'jack');
+  const NOOS = path.join(REPO, '11', 'jackNoOs');
+  const PROGRAMS = [
+    { name: 'Seven', dir: path.join(JACK, 'Seven'), needsOS: true },
+    { name: 'Average', dir: path.join(JACK, 'Average'), needsOS: true },
+    { name: 'ComplexArrays', dir: path.join(JACK, 'ComplexArrays'), needsOS: true },
+    { name: 'ConvertToBin', dir: path.join(JACK, 'ConvertToBin'), needsOS: true },
+    { name: 'Square', dir: path.join(JACK, 'Square'), needsOS: true },
+    { name: 'Pong', dir: path.join(JACK, 'Pong'), needsOS: true },
+    { name: 'Sum', dir: path.join(NOOS, 'Sum'), needsOS: false },
+    { name: 'Factorial', dir: path.join(NOOS, 'Factorial'), needsOS: false },
+    { name: 'Fib', dir: path.join(NOOS, 'Fib'), needsOS: false },
+    { name: 'GCD', dir: path.join(NOOS, 'GCD'), needsOS: false },
+    { name: 'PrimeUnder100', dir: path.join(NOOS, 'PrimeUnder100'), needsOS: false },
+    { name: 'chain', dir: path.resolve(import.meta.dirname, '../gen/chain'), needsOS: false },
+  ];
+  const osDir = path.resolve(import.meta.dirname, '../gen/os_src');
+
+  function buildFiles(p) {
+    const files = [];
+    if (p.needsOS) {
+      for (const f of fs.readdirSync(osDir).filter((f) => f.endsWith('.jack')).sort()) {
+        files.push({ path: f.replace(/\.jack$/, '.vm'), src: compileJack(fs.readFileSync(path.join(osDir, f), 'utf8')).join('\n') + '\n' });
+      }
+    }
+    for (const f of fs.readdirSync(p.dir).filter((f) => f.endsWith('.jack')).sort()) {
+      files.push({ path: f.replace(/\.jack$/, '.vm'), src: compileJack(fs.readFileSync(path.join(p.dir, f), 'utf8')).join('\n') + '\n' });
+    }
+    return files;
+  }
+
+  for (const p of PROGRAMS) {
+    it(`${p.name}${p.needsOS ? '（OS）' : ''}：嚴格翻譯＋組譯＋5 萬步不崩`, () => {
+      const { words } = assemble(translate(buildFiles(p)), { origin: 0 });
+      assert.ok(words.length > 0);
+      assert.ok(words.length * 4 < TEMP_BASE);
+      const emu = new Emulator();
+      emu.loadWords(words, 0);
+      for (let k = 0; k < 50000; k++) emu.step(); // 阻塞讀鍵的程式在此空轉，同樣不崩即算跑成功
+    });
+  }
 });
