@@ -15,7 +15,9 @@
   - B 型（`1100011`）：位移拆成 `[12|10:5]→[31:25]`、`[4:1|11]→[11:7]`
   - JAL（`1101111`）：`imm[20|10:1|11|19:12]`；JALR（`1100111`）、LUI（`0110111`）、
     AUIPC（`0010111`）、HALT（`1111111`）
-- **算術**：add/addi/sub/and/andi/or/ori/xor/xori/slti；比較 beq/bne/blt/bge。
+- **算術**：add/addi/sub/and/andi/or/ori/xor/xori/slti、
+  sll/srl/sra（含 `slli/srli/srai`）、slt/sltu（含 `slti/sltiu`）；
+  比較 beq/bne/blt/bge/bltu/bgeu。
 - **記憶體**：lw/sw（word，16 位元位移）。
 
 ## 組譯器 `asm.js`

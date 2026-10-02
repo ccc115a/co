@@ -1,0 +1,21 @@
+// Cmp7：7 位元相等測試（opcode 比對用）。
+CHIP Cmp7 {
+    IN a[7], b[7];
+    OUT out;
+
+    PARTS:
+    Xor(a=a[0], b=b[0], out=x0);
+    Xor(a=a[1], b=b[1], out=x1);
+    Xor(a=a[2], b=b[2], out=x2);
+    Xor(a=a[3], b=b[3], out=x3);
+    Xor(a=a[4], b=b[4], out=x4);
+    Xor(a=a[5], b=b[5], out=x5);
+    Xor(a=a[6], b=b[6], out=x6);
+    Or(a=x0, b=x1, out=o01);
+    Or(a=x2, b=x3, out=o23);
+    Or(a=x4, b=x5, out=o45);
+    Or(a=o01, b=o23, out=o0123);
+    Or(a=o45, b=x6, out=o456);
+    Or(a=o0123, b=o456, out=any);
+    Not(in=any, out=out);
+}

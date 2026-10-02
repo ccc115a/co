@@ -4,10 +4,11 @@
 //       .bin 每行一顆 32 位元指令（binary 字串，直接餵 ROM32 load）。
 //
 // RV32S 語法（word 定址，一 word=一位址）：
-//   R 型： add/sub/and/or/xor rd, rs1, rs2
-//   I 型： addi/andi/ori/xori rd, rs1, imm
+//   R 型： add/sub/and/or/xor/sll/srl/sra/slt/sltu rd, rs1, rs2
+//   I 型： addi/andi/ori/xori/slti/sltiu rd, rs1, imm
+//          slli/srli/srai rd, rs1, shamt
 //   載入： lw  rd, imm(rs1)         存回： sw  rs2, imm(rs1)
-//   分支： beq/bne/blt/bge rs1, rs2, label   （imm = label_addr - pc_addr）
+//   分支： beq/bne/blt/bge/bltu/bgeu rs1, rs2, label   （imm = label_addr - pc_addr）
 //   跳躍： jal rd, label   ； jalr rd, rs1, imm
 //   LUI： lui rd, imm20    ； AUIPC： auipc rd, imm20
 //   暫存器 x0..x31（r0..r31 亦可）；立即數支援十進位／0x…／label。
@@ -50,8 +51,12 @@ function check12(x, what) {
 function encode(mnem, args, labels, pcAddr) {
   const m = mnem.toLowerCase();
   const R = { add: [0x33, 0x0, 0x00], sub: [0x33, 0x0, 0x20],
-              and: [0x33, 0x7, 0x00], or: [0x33, 0x6, 0x00], xor: [0x33, 0x4, 0x00] };
-  const I = { addi: [0x13, 0x0], andi: [0x13, 0x7], ori: [0x13, 0x6], xori: [0x13, 0x4] };
+              and: [0x33, 0x7, 0x00], or: [0x33, 0x6, 0x00], xor: [0x33, 0x4, 0x00],
+              sll: [0x33, 0x1, 0x00], srl: [0x33, 0x5, 0x00], sra: [0x33, 0x5, 0x20],
+              slt: [0x33, 0x2, 0x00], sltu: [0x33, 0x3, 0x00] };
+  const I = { addi: [0x13, 0x0], andi: [0x13, 0x7], ori: [0x13, 0x6], xori: [0x13, 0x4],
+              slti: [0x13, 0x2], sltiu: [0x13, 0x3] };
+  const SH = { slli: [0x13, 0x1, 0x00], srli: [0x13, 0x5, 0x00], srai: [0x13, 0x5, 0x20] };
 
   if (Object.prototype.hasOwnProperty.call(R, m)) {
     const rd = reg(args[0]), rs1 = reg(args[1]), rs2 = reg(args[2]);
@@ -63,6 +68,13 @@ function encode(mnem, args, labels, pcAddr) {
     const imm = check12(immVal(args[2], labels, pcAddr), 'imm12');
     const [op, f3] = I[m];
     return (imm << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op;
+  }
+  if (Object.prototype.hasOwnProperty.call(SH, m)) {
+    const rd = reg(args[0]), rs1 = reg(args[1]);
+    const sh = immVal(args[2], labels, pcAddr);
+    if (sh < 0 || sh > 31) throw new Error('shamt out of range 0..31: ' + sh);
+    const [op, f3, f7] = SH[m];
+    return (f7 << 25) | ((sh & 0x1F) << 20) | (rs1 << 15) | (f3 << 12) | (rd << 7) | op;
   }
   if (m === 'lw') {
     const rd = reg(args[0]);
@@ -77,10 +89,10 @@ function encode(mnem, args, labels, pcAddr) {
     const hi = (imm >> 5) & 0x7F, lo = imm & 0x1F;
     return (hi << 25) | (rs2 << 20) | (rs1 << 15) | (0x2 << 12) | (lo << 7) | 0x23;
   }
-  if (['beq', 'bne', 'blt', 'bge'].includes(m)) {
+  if (['beq', 'bne', 'blt', 'bge', 'bltu', 'bgeu'].includes(m)) {
     const rs1 = reg(args[0]), rs2 = reg(args[1]);
     const off = check12(immVal(args[2], labels, pcAddr), 'branch imm');
-    const f3 = { beq: 0x0, bne: 0x1, blt: 0x4, bge: 0x5 }[m];
+    const f3 = { beq: 0x0, bne: 0x1, blt: 0x4, bge: 0x5, bltu: 0x6, bgeu: 0x7 }[m];
     const hi = (off >> 5) & 0x7F, lo = off & 0x1F;
     return (hi << 25) | (rs2 << 20) | (rs1 << 15) | (f3 << 12) | (lo << 7) | 0x63;
   }

@@ -18,6 +18,7 @@ hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 2
   （產物不 halt，永遠跑滿即停），印 `ra/s1/a0`＋`UART`＋`MEM` 區（預設 static 區 8 bytes）。
   完整路徑 2：`jack2vm` → `vm2riscv` →（`rvasm` 或）`riscv_run`。
 - 重建 `dist/`：`node tools/gen_corpus.js && node tools/embed.js`；`npm run build` 是壞的（`tools/build.js` 不存在）。`dist/` 有 commit（靠本目錄 `.gitignore` 的 `!dist/`），改 `lib/`/`cli/` 影響網頁時要重建並 commit；`gen/` 產物不 commit。
+- `Riscv32i/`（RV32I 單週期處理器，本目錄自有）：`node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 --dir Riscv32i --test Riscv32i/rv32i.tst`（60 指令綜合測資，`.cmp` 比對；另有 `sum10.tst`＝1+…+10 存 `mem[16]` 的記憶體示範）。測資程式由 `Riscv32i/*.asm` 經 `../Riscv32/asm.js` 產生（`.hack` 供 `ROM32 load`，CLI 與 web 共用；`.asm` 不進語料）；`Riscv32i/` 已收進 `tools/gen_corpus.js` 與 `dist/hdl.js` 章節選單（`06 RV32I 處理器`），改 `.hdl/.tst/.cmp/.hack` 後重建 `dist/corpus.js` 並把 `corpus.js` 的 `?v=` 在四頁一起＋1。
 
 ## vm2riscv（VM→RV32，`lib/riscv/vm2riscv.js`＋`cli/vm2riscv.js`）
 

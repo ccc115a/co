@@ -1,0 +1,43 @@
+// RvBr：RV32I 分支條件（f3＝funct3）。
+// 000 beq｜001 bne｜100 blt｜101 bge｜110 bltu｜111 bgeu。
+// eq/ltS 取自 Cmp32；ltU（無號小於）＝a-b 無借位（~cout）。
+CHIP RvBr {
+    IN a[32], b[32], f3[3];
+    OUT taken;
+
+    PARTS:
+    Cmp32(a=a, b=b, eq=eq, lt=ltS);
+    Not32(a=b, out=nb);
+    Add32c(a=a, b=nb, cin=true, out=diff, cout=cout);
+    Not(in=cout, out=ltU);
+    Not(in=eq, out=ne);
+    Not(in=ltS, out=geS);
+    Not(in=ltU, out=geU);
+
+    // ---- f3 解碼 ----
+    Not(in=f3[0], out=n0);
+    Not(in=f3[1], out=n1);
+    Not(in=f3[2], out=n2);
+    And(a=n2, b=n1, out=t01);
+    And(a=t01, b=n0, out=isEq);
+    And(a=t01, b=f3[0], out=isNe);
+    And(a=f3[2], b=n1, out=t21);
+    And(a=t21, b=n0, out=isLt);
+    And(a=t21, b=f3[0], out=isGe);
+    And(a=f3[2], b=f3[1], out=t22);
+    And(a=t22, b=n0, out=isLtu);
+    And(a=t22, b=f3[0], out=isGeu);
+
+    // ---- taken＝六項 OR ----
+    And(a=isEq, b=eq, out=c0);
+    And(a=isNe, b=ne, out=c1);
+    And(a=isLt, b=ltS, out=c2);
+    And(a=isGe, b=geS, out=c3);
+    And(a=isLtu, b=ltU, out=c4);
+    And(a=isGeu, b=geU, out=c5);
+    Or(a=c0, b=c1, out=o01);
+    Or(a=c2, b=c3, out=o23);
+    Or(a=c4, b=c5, out=o45);
+    Or(a=o01, b=o23, out=o0123);
+    Or(a=o0123, b=o45, out=taken);
+}

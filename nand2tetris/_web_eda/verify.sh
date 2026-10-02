@@ -102,4 +102,18 @@ for (const [from, to] of [["index.html", "jack.html"], ["hdl.html", "jack.html"]
 }
 console.log("jack 頁面引用與互相連節完整");
 '
+echo "== v2.4：RV32I 單週期處理器（Riscv32i/rv32i：.asm 可重現 .hack＋60 指令 .cmp 比對）=="
+node ../Riscv32/asm.js Riscv32i/rv32i_prog.asm
+cmp Riscv32i/rv32i_prog.bin Riscv32i/rv32i_prog.hack
+rm -f Riscv32i/rv32i_prog.bin
+node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 --dir Riscv32i \
+  --test Riscv32i/rv32i.tst
+rm -f Riscv32i/rv32i.out
+echo "== v2.5：RV32I 記憶體示範（Riscv32i/sum10：1+...+10=55 存 mem[16]）=="
+node ../Riscv32/asm.js Riscv32i/sum10.asm
+cmp Riscv32i/sum10.bin Riscv32i/sum10.hack
+rm -f Riscv32i/sum10.bin
+node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 --dir Riscv32i \
+  --test Riscv32i/sum10.tst
+rm -f Riscv32i/sum10.out
 echo "== 全部 PASS =="

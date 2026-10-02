@@ -1,0 +1,20 @@
+// Cmp32：32 位元比較。eq=a==b；lt=a<b（有號）。
+// 減法 a-b：借位表示 a<b（無號）；有號比較再依符號修正。
+CHIP Cmp32 {
+    IN a[32], b[32];
+    OUT eq, lt;
+
+    PARTS:
+    Eq32(a=a, b=b, out=eq);
+    Not32(a=b, out=nb);
+    Add32c(a=a, b=nb, cin=true, out=diff, cout=borrow);
+    Not(in=borrow, out=ltU);
+    Xor(a=a[31], b=false, out=aS);
+    Xor(a=b[31], b=false, out=bS);
+    Xor(a=aS, b=bS, out=sgnDiff);
+    Not(in=sgnDiff, out=sameSgn);
+    Not(in=bS, out=nbS);
+    And(a=aS, b=nbS, out=diffNeg);
+    And(a=sameSgn, b=ltU, out=sgnCand);
+    Or(a=diffNeg, b=sgnCand, out=lt);
+}

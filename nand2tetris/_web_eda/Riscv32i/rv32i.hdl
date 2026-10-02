@@ -1,0 +1,60 @@
+// rv32i：RV32I 單週期處理器（word 定址；程式格式與 Riscv32/RV32S 相容）。
+//
+// 資料通路（單週期，一週期一條指令）：
+//   IF：PC（R32）→ ROM32 取指；pcSeq＝pc＋1；pcTgt＝pc＋imm。
+//   ID：RvDec 解碼（rd/rs1/rs2/imm/ctl）；RF32 讀 r1/r2（a3＝dbgRd 供除錯）。
+//   EX：A 選（r1/imm/pc）× B 選（r2/imm）→ RvAlu；RvBr 判分支；
+//       JALR 目標＝r1＋imm（word 定址不斷 LSB）。
+//   MEM：RAM32W（SW 寫 r2；位址取 aluY[14:0]）。
+//   WB：aluY / memOut / pcSeq（JAL/JALR link）三選一。
+//
+// 指令集：R 型全 10 種（add/sub/sll/slt/sltu/xor/srl/sra/or/and）、
+//   I 型（addi/slli/srli/srai/slti/sltiu/xori/ori/andi）、LW/SW、
+//   LUI/AUIPC、JAL/JALR、六種分支（beq/bne/blt/bge/bltu/bgeu）、
+//   HALT（opcode 1111111：黏住 halted，凍結 PC）。
+// 省略（ word 定址簡化，同 RV32S）：LB/LH/LBU/LHU/SB/SH、FENCE/ECALL。
+//
+// 除錯介面（同 Rv32_1）：dbgRd[5] 選讀暫存器 → dbgReg；RAM 經 RAM32W[i] 探測。
+CHIP rv32i {
+    IN dbgRd[5];
+    OUT pc[32], dbgReg[32];
+
+    PARTS:
+    // ======================= IF =======================
+    R32(in=pcNext, load=pcLoad, out=pc);
+    ROM32(address=pc[0..14], out=instr);
+    One32(out=one);
+    Add32c(a=pc, b=one, cin=false, out=pcSeq);
+    Add32c(a=pc, b=imm, cin=false, out=pcTgt);
+
+    // ======================= ID =======================
+    RvDec(instr=instr, rd=rd, rs1=rs1, rs2=rs2, imm=imm, ctl=ctl);
+    RF32(a1=rs1, a2=rs2, a3=dbgRd, rd=rd, wd=wbData, we=ctl[0],
+         d1=r1, d2=r2, d3=dbgReg);
+
+    // ======================= EX =======================
+    Mux32(a=r1, b=imm, sel=ctl[5], out=aT);
+    Mux32(a=aT, b=pc, sel=ctl[6], out=aX);
+    Mux32(a=r2, b=imm, sel=ctl[7], out=bX);
+    RvAlu(a=aX, b=bX, fn=ctl[12..15], y=aluY);
+    RvBr(a=r1, b=r2, f3=instr[12..14], taken=brTaken);
+    And(a=brTaken, b=ctl[9], out=doBr);
+    // JALR 目標＝r1＋imm（注意：word 定址下奇數 PC 合法，不可照 byte 版 RV 清 LSB；
+    // 若 & ~1，回跳 35 會變成 34——Rv32_1 同樣直接省略）。
+    Add32c(a=r1, b=imm, cin=false, out=jrTgt);
+    Or(a=doBr, b=ctl[10], out=useTgt);
+    Mux32(a=pcSeq, b=pcTgt, sel=useTgt, out=pcB);
+    Mux32(a=pcB, b=jrTgt, sel=ctl[11], out=pcNext);
+
+    // ======================= HALT（黏住凍結）=======================
+    R32(in=one, load=ctl[8], out=halted);
+    Or(a=halted[0], b=ctl[8], out=haltAny);
+    Not(in=haltAny, out=pcLoad);
+
+    // ======================= MEM =======================
+    RAM32W(in=r2, load=ctl[1], address=aluY[0..14], out=memOut);
+
+    // ======================= WB =======================
+    Mux32(a=aluY, b=memOut, sel=ctl[3], out=wbT);
+    Mux32(a=wbT, b=pcSeq, sel=ctl[4], out=wbData);
+}

@@ -20,7 +20,7 @@ globalThis.window = globalThis;
 const H = globalThis.HackHdl;
 const { loadLibrary, mergeLibsList, elab, generateJs, topClassExpr, parseScript, run, TopModel } = H;
 
-const CHAPTERS = ['../01', '../02', '../03/a', '../03/b', '../05', '../04/mult', '../04/fill', 'gen/chain'];
+const CHAPTERS = ['../01', '../02', '../03/a', '../03/b', '../05', '../04/mult', '../04/fill', 'gen/chain', 'Riscv32i'];
 
 let lib = {};
 for (const d of CHAPTERS) {

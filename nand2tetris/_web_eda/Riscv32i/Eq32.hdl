@@ -1,0 +1,16 @@
+// Eq32：32 位元相等測試（Xor 後檢查全零）。
+CHIP Eq32 {
+    IN a[32], b[32];
+    OUT out;
+
+    PARTS:
+    Xor32(a=a, b=b, out=x);
+    Or8Way(in=x[0..7], out=r0);
+    Or8Way(in=x[8..15], out=r1);
+    Or8Way(in=x[16..23], out=r2);
+    Or8Way(in=x[24..31], out=r3);
+    Or(a=r0, b=r1, out=o01);
+    Or(a=r2, b=r3, out=o23);
+    Or(a=o01, b=o23, out=any);
+    Not(in=any, out=out);
+}

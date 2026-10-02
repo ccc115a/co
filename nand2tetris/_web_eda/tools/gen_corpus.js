@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 
-const DIRS = ['../01', '../02', '../03/a', '../03/b', '../05', '../04/mult', '../04/fill', 'gen/chain'];
+const DIRS = ['../01', '../02', '../03/a', '../03/b', '../05', '../04/mult', '../04/fill', 'gen/chain', 'Riscv32i'];
 const EXTS = ['.hdl', '.tst', '.cmp', '.hack'];
 const SKIP = new Set(['Keyboard.tst', 'Mult.tst', 'Fill.tst', 'FillAutomatic.tst', 'FillAutomatic.cmp']); // 互動式（需人工按鍵/螢幕）或引擎不支援的 clock 指令，batch 不可跑
 
