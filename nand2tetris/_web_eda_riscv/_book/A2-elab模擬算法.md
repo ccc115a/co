@@ -19,7 +19,7 @@ Bit       → 3 條 wire，evalOrder [1,0]，hasState true
 
 ## 完整範例一：FullAdder 的拓樸排序是怎麼排出来的
 
-輸入（[`FullAdder.hdl`](../../02/FullAdder.hdl)，part 編號 0–6 照原文順序：
+輸入（[`FullAdder.hdl`](../third_party/courses/02/FullAdder.hdl)，part 編號 0–6 照原文順序：
 0:Xor、1:Xor、2:And、3:And、4:And、5:Or、6:Or，全是無記憶內建）：
 
 ```
@@ -65,7 +65,7 @@ Or(a=abORbc, b=ac, out=carry);  // part 6
 
 ## 完整範例二：Bit 的迴圈是怎麼斷開的
 
-輸入（[`Bit.hdl`](../../03/a/Bit.hdl)，part 0:Mux、part 1:DFF）：
+輸入（[`Bit.hdl`](../third_party/courses/03/a/Bit.hdl)，part 0:Mux、part 1:DFF）：
 
 ```
 Mux(a=do, b=in, sel=load, out=mo);

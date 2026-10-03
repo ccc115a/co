@@ -2,14 +2,15 @@
    引擎＝HackAsm（組譯）＋ HackVM（虛擬機），全部由 dist/embed.js 提供全域物件。 */
 (() => {
   'use strict';
-  const VM = window.HackVM, ASM = window.HackAsm;
-  if (!VM || !ASM) {
-    document.getElementById('status').textContent = 'embed.js 載入失敗（缺 HackVM/HackAsm）';
+  const VM = window.HackVM, ASM = window.HackAsm, EC = window.EmuCommon;
+  if (!VM || !ASM || !EC) {
+    document.getElementById('status').textContent = 'embed.js／emu-common.js 載入失敗（缺 HackVM/HackAsm/EmuCommon）';
     return;
   }
 
   const el = {
     ta: document.getElementById('asm'),
+    example: document.getElementById('example'),
     openBtn: document.getElementById('open'),
     file: document.getElementById('file'),
     loadBtn: document.getElementById('load'),
@@ -60,16 +61,35 @@
     el.chips.innerHTML = Array.from(r.slice(0, 16)).map((v, i) => `R${i}=${v}`).join('\n');
   }
 
-  function renderListing(pcNow) {
+  let curIdx = -1;
+  function buildListing() {
+    // 列表只在載入時重建；執行中高亮只動 class（見 markPc），不再每幀全表重建。
     let html = '';
     for (let i = 0; i < lines.length; i++) {
       const ln = lineMap[i];
-      const cls = ln === null ? '' : (ln === pcNow ? ' cur' : '');
       const mark = ln === null ? '   ' : String(ln).padStart(3, ' ');
-      html += `<div class="${cls}"><span class="pc">${mark}</span> ${lines[i]}</div>`;
+      html += `<div class=""><span class="pc">${mark}</span> ${lines[i]}</div>`;
     }
     el.listing.innerHTML = html;
-    const cur = el.listing.querySelector('.cur');
+    curIdx = -1;
+  }
+
+  function markPc() {
+    // Pong 等大程式列表上萬行：只動兩個 div 的 class，不重建、不全表掃描。
+    const idx = wordLine[pc] ?? -1;
+    const kids = el.listing.children;
+    if (curIdx === idx) return kids[idx] || null;
+    if (kids[curIdx]) kids[curIdx].classList.remove('cur');
+    curIdx = idx;
+    if (kids[idx]) {
+      kids[idx].classList.add('cur');
+      return kids[idx];
+    }
+    return null;
+  }
+
+  function scrollToPc() {
+    const cur = el.listing.children[curIdx];
     if (!cur) return;
     const cont = el.listing.parentElement;
     const cr = cont.getBoundingClientRect();
@@ -113,23 +133,39 @@
       [lines, lineMap, wordLine] = buildLineMap(asmSrc);
       vm.loadHack(r.hack);
       repaint();
-      renderListing(vm.pc);
+      buildListing();
+      markPc();
+      scrollToPc();
       setStatus(`組譯完成：${r.hack.trim().split('\n').length} 條指令`);
     } catch (e) {
       setStatus(`組譯錯誤：${e.message}`, 'error');
     }
   }
 
-  const KEY = VM.KEY_LEFT;
-  const held = [];
   el.runBtn.onclick = () => {
     running = !running;
     el.runBtn.textContent = running ? '暫停 ⏸' : '執行 ▶';
     setStatus(running ? '執行中' : '已暫停');
   };
-  el.stepBtn.onclick = () => { running = false; el.runBtn.textContent = '執行 ▶'; vm.step(); pc = vm.pc; repaint(); renderListing(vm.pc); };
-  el.resetBtn.onclick = () => { vm.reset(); repaint(); renderListing(vm.pc); };
+  el.stepBtn.onclick = () => { running = false; el.runBtn.textContent = '執行 ▶'; vm.step(); pc = vm.pc; repaint(); markPc(); scrollToPc(); };
+  el.resetBtn.onclick = () => { vm.reset(); pc = vm.pc; repaint(); markPc(); scrollToPc(); };
   el.loadBtn.onclick = () => load(el.ta.value);
+  EC.fillExampleSelect(el.example);
+  el.example.onchange = () => {
+    const name = el.example.value;
+    try {
+      const t0 = performance.now();
+      const { fullVm } = EC.compileJackVm(name);
+      const asmText = window.HackVm2Asm.translate(fullVm);
+      el.ta.value = asmText;
+      load(asmText);
+      const ms = Math.round(performance.now() - t0);
+      const words = asmText.split('\n').filter((l) => l.trim()).length;
+      setStatus(`範例 ${name}：Jack→VM→HackCPU 編譯完成（${ms}ms），${words} 行組語`);
+    } catch (e) {
+      setStatus(`範例 ${name} 編譯失敗：${e.message}`, 'error');
+    }
+  };
   el.ta.value = '';
   el.openBtn.onclick = () => el.file.click();
   el.file.onchange = () => {
@@ -164,22 +200,9 @@
   el.ramNext.onclick = () => { if (Number(el.ramStart.value) >= 0) el.ramStart.value = (Number(el.ramStart.value) | 0) + (Number(el.ramLen.value) | 0); readRam(); };
   readRam();
 
-  window.addEventListener('keydown', (e) => {
-    const map = { ArrowLeft: VM.KEY_LEFT, ArrowUp: VM.KEY_UP, ArrowRight: VM.KEY_RIGHT, ArrowDown: VM.KEY_DOWN };
-    const c = map[e.key];
-    if (c) {
-      e.preventDefault();
-      if (!held.includes(c)) held.push(c);
-      vm.setKey(held[held.length - 1]);
-    }
-  });
-  window.addEventListener('keyup', (e) => {
-    const c = { ArrowLeft: VM.KEY_LEFT, ArrowUp: VM.KEY_UP, ArrowRight: VM.KEY_RIGHT, ArrowDown: VM.KEY_DOWN }[e.key];
-    if (c) {
-      const k = held.indexOf(c);
-      if (k >= 0) held.splice(k, 1);
-      vm.setKey(held.length ? held[held.length - 1] : 0);
-    }
+  EC.keyBridge({
+    keymap: { ArrowLeft: VM.KEY_LEFT, ArrowUp: VM.KEY_UP, ArrowRight: VM.KEY_RIGHT, ArrowDown: VM.KEY_DOWN },
+    setKey: (c) => vm.setKey(c),
   });
 
   function tick(t) {
@@ -189,25 +212,23 @@
       vm.run(stepsPerFrame);
       pc = vm.pc;
       repaint();
-      renderListing(pc);
+      markPc();
+      scrollToPc();
     }
     requestAnimationFrame(tick);
   }
   requestAnimationFrame(tick);
 
-  if (window.opener) window.opener.postMessage({ type: 'hackjs-ready' }, '*');
-  window.addEventListener('message', (e) => {
-    const d = e.data || {};
-    if (d.type === 'hackjs-ping') {
-      if (window.opener) window.opener.postMessage({ type: 'hackjs-ready' }, '*');
-    } else if (d.type === 'hackjs-load' && typeof d.asm === 'string') {
-      console.log('[hackjs] 收到 jack.html 的組語', d.asm.length, '字元');
-      el.ta.value = d.asm;
-      load(d.asm);
+  EC.receiverSide({
+    ready: 'hackjs-ready', ping: 'hackjs-ping', load: 'hackjs-load', field: 'asm',
+    onLoad: (text) => {
+      console.log('[hackjs] 收到 jack.html 的組語', text.length, '字元');
+      el.ta.value = text;
+      load(text);
       running = true;
       el.runBtn.textContent = '暫停 ⏸';
       setStatus('已接收 Jack 編譯結果（← jack.html），可執行程式並觀察暫存器/RAM/螢幕');
-    }
+    },
   });
 
   const sample = `// 示範：R0 = R1 * R2（2 × 5 = 10）

@@ -1,26 +1,18 @@
 #!/usr/bin/env node
 // riscv_run CLI：`node cli/riscv_run.js <in>.s [--max N] [--dump A,C]`
-// 組譯 RV32 組語（經 ../../riscv/_web_tools 的 rvasm）後定步執行（rvemu），印暫存器與記憶體。
+// 組譯 RV32 組語（經 third_party/rvtools 的 rvasm）後定步執行（rvemu），印暫存器與記憶體。
 // 注意：vm2riscv 產物尾端是無窮迴圈、不 halt，故永遠「跑滿 --max 即停」，結果看 STATIC 區。
 import fs from 'node:fs';
-import { assemble } from '../../../riscv/_web_tools/lib/rvasm.js';
-import { Emulator } from '../../../riscv/_web_tools/lib/rvemu.js';
+import { assemble } from '../third_party/rvtools/rvasm.js';
+import { Emulator } from '../third_party/rvtools/rvemu.js';
 import { Vm2Rv } from '../lib/riscv/vm2riscv.js';
+import { needVal, parseRange, parseMax } from './cliutil.js';
 
 const { STATIC_BASE } = Vm2Rv;
 const DEFAULT_MAX = 200000;
 
 function usage() {
-  console.error('用法：node cli/riscv_run.js <in.s> [--max N] [--dump A,C]（A,C 可為十進位或 0x 十六進位，可重複）');
-}
-
-function parseNum(s) {
-  const v = Number(s);
-  if (!Number.isInteger(v) || v < 0) {
-    console.error(`錯誤：'${s}' 需為非負整數（可 0x 十六進位）`);
-    process.exit(1);
-  }
-  return v;
+  console.error('用法：node cli/riscv_run.js <in.s> [--max N] [--dump A,B]（A,B 可為十進位或 0x 十六進位，可重複）');
 }
 
 function hex8(v) {
@@ -35,15 +27,10 @@ function main() {
   let i = 0;
   while (i < a.length) {
     if (a[i] === '--max') {
-      if (i + 1 >= a.length) { console.error('錯誤：--max 缺少數值'); process.exit(1); }
-      max = parseNum(a[i + 1]);
-      if (max <= 0) { console.error('錯誤：--max 需為正整數'); process.exit(1); }
+      max = parseMax(needVal(a, i, '--max'));
       i += 2;
     } else if (a[i] === '--dump') {
-      if (i + 1 >= a.length) { console.error('錯誤：--dump 缺少 A,C'); process.exit(1); }
-      const toks = a[i + 1].split(',');
-      if (toks.length !== 2) { console.error(`錯誤：--dump 格式為 A,C：${a[i + 1]}`); process.exit(1); }
-      dumps.push([parseNum(toks[0]), parseNum(toks[1])]);
+      dumps.push(parseRange(needVal(a, i, '--dump')));
       i += 2;
     } else if (a[i].startsWith('-')) {
       console.error(`錯誤：未知選項 '${a[i]}'`);
@@ -88,7 +75,7 @@ function main() {
   for (const [x, y] of dumps) {
     const vs = [];
     for (let w = x; w <= y; w += 4) vs.push(emu.loadWord(w));
-    console.log(`MEM[${hex8(x)}..=${hex8(y)}]: [${vs.join(', ')}]`);
+    console.log(`RAM[${hex8(x)}..=${hex8(y)}]: [${vs.join(', ')}]`);
   }
 }
 

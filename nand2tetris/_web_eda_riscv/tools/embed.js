@@ -36,6 +36,7 @@ function bundleLibs(libs, exportsBlock) {
 const libs = [
   'lib/vm/hackemu.js',
   'lib/asm/hackasm.js',
+  'lib/vm/vmparse.js',
   'lib/asm/vm2asm.js',
   'lib/riscv/vm2riscv.js',
   'lib/jack/jack2vm.js',
@@ -48,13 +49,14 @@ const libs = [
   'lib/rt/model.js',
 ];
 
-// RISC-V 工具鏈（riscv/_web_tools 的 isa＋rvasm＋rvdis＋rvemu，四檔互無同名符號）。
+// RISC-V 工具鏈（third_party/rvtools 的 isa＋rvasm＋rvdis＋rvemu，四檔互無同名符號；
+// 上游見 riscv/_web_tools，本目錄用凍結副本）。
 // 不動對方原始碼：包成獨立 IIFE 再匯出（其 assemble 與 HackAsm.assemble 同名，直接拼接會覆蓋）。
 const rvLibs = [
-  '../../riscv/_web_tools/lib/isa.js',
-  '../../riscv/_web_tools/lib/rvasm.js',
-  '../../riscv/_web_tools/lib/rvdis.js',
-  '../../riscv/_web_tools/lib/rvemu.js',
+  'third_party/rvtools/isa.js',
+  'third_party/rvtools/rvasm.js',
+  'third_party/rvtools/rvdis.js',
+  'third_party/rvtools/rvemu.js',
 ];
 
 function stripEsm(src) {
@@ -83,7 +85,12 @@ const exportsBlock = `(function (win) {
   };
   win.HackAsm = { D_MAP, C_MAP, J_MAP, PREDEFINED, parseAsmLine, code2binary, assemble };
   win.HackVm2Asm = { translate };
-  win.HackVm2Rv = { translate: Vm2Rv.translate };
+  win.HackVm2Rv = {
+    translate: Vm2Rv.translate,
+    STACK_BASE: Vm2Rv.STACK_BASE, TEMP_BASE: Vm2Rv.TEMP_BASE,
+    UART_BUF: Vm2Rv.UART_BUF, STATIC_BASE: Vm2Rv.STATIC_BASE,
+    STATIC_STRIDE: Vm2Rv.STATIC_STRIDE, MIRROR_BASE: Vm2Rv.MIRROR_BASE,
+  };
   win.HackRv = {
     assemble: RvToolchain.assemble,
     disassemble: RvToolchain.disassemble,

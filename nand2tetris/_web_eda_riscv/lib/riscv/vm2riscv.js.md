@@ -1,11 +1,14 @@
 # lib/riscv/vm2riscv.js —— VM → RISC-V 組語翻譯器
 
 `Vm2Rv.translate(files[, { lenient }])` 吃 `[{ path, src }]`（`.vm` 文字），吐 RV32 組語
-（`.s` 文字），目標是 `riscv/_web_tools` 的 rvasm（RV32I+M）＋ rvemu。呼叫慣例對齊
+（`.s` 文字），目標是 `third_party/rvtools` 的 rvasm（RV32I+M）＋ rvemu。呼叫慣例對齊
 `lib/asm/vm2asm.js`：多檔才寫 bootstrap（`SP＝STACK_BASE`＋`call Sys.init`＋`ecall` 停機），
 `label/goto/if-goto` 多檔時加 `函式$` 前綴，`return` 編號用全域計數器。
 （包在 `Vm2Rv` IIFE 內：`tools/embed.js` 拼接時與 `vm2asm.js` 的同名符號會撞，
 故經 `window.HackVm2Rv` 匯出；Node 端 `import { Vm2Rv }`。）
+位址常數（`STACK_BASE`／`TEMP_BASE`／`UART_BUF`／`STATIC_BASE`／
+`STATIC_STRIDE`／`MIRROR_BASE`）同經 bundle 匯出，前端不得自寫一份
+（`dist/jack.js` 的 `RV_STATIC_BASE`、`dist/rvemu.js` 的 `MIRROR` 皆取自 bundle）。
 
 ## 記憶體與暫存器約定
 
@@ -16,19 +19,6 @@ Jack 的 word 位址 W（heap／SCREEN／KBD）經 this/that 存取時映射為 
 （`slli`＋`li` 相加；pointer 持有的仍是 word 值本身，故 `Memory.peek/poke`、
 `Array`、`String` 全數可用；SCREEN/KBD 寫讀只進鏡像 Ram）。
 真值沿用 Hack 慣例（true＝-1）；整數 32-bit 語意。
-
-## 記憶體與暫存器約定
-
-rvemu 是統一編址、程式從 0 載入；VM 資料區放固定數字位址（程式須小於 `TEMP_BASE`）：
-
-| 用途 | 位置 |
-|---|---|
-| VM 堆疊（s1＝SP，向上成長） | `STACK_BASE＝0x10000` 起 |
-| temp 0..7 | `TEMP_BASE＝0x7000`＋4*i |
-| static（第 k 檔變數 i） | `STATIC_BASE＝0x8000`＋k*`0x400`＋4*i（上限 256/檔） |
-| LCL/ARG/THIS/THAT | s2/s3/s4/s5（byte 位址）；t0,t1,t2 scratch |
-
-真值沿用 Hack 慣例（true＝-1）。整數為 32-bit 語意（Hack 原生 16-bit；小數值一致）。
 
 ## 兩個關鍵設計（皆因 rvasm 行為而起）
 
@@ -73,6 +63,6 @@ static／UART 比對 oracle（chain＝5、Sum＝5050、…、Seven UART＝`7`）
 `HackRv.assemble` 組譯→`HackRv.Emulator` 跑滿 20 萬步，
 印 `ra/s1/a0`＋`STATIC[0..7]`＋`UART`（OS 全量可跑；`readChar` 類除外，見上）。
 `rvasm/rvemu/rvdis/isa` 由 `tools/embed.js` 包成 `RvToolchain` IIFE
-（`window.HackRv`），勿改 `riscv/_web_tools` 原始碼。
+（`window.HackRv`），勿改 `third_party/rvtools` 凍結副本。
 `cli/riscv_run.js` 是同路徑的命令列版（`--max`／`--dump`）。
 `{ lenient: true }` 顯示模式（`cli --lenient`）僅供檢視不可執行。

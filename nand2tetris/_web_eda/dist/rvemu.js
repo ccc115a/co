@@ -1,17 +1,17 @@
 /* RISCV 模擬器 前端：純瀏覽器、零伺服器、零 node。
    引擎＝HackJack2Vm（Jack→VM）＋ HackVm2Rv（VM→RV32）＋ HackRv（rvasm 組譯＋rvemu 執行），
    全部由 dist/embed.js 提供全域物件；範例是 12 支 Jack 程式，選取即現場編成 .s。
-   記憶體常數與 lib/riscv/vm2riscv.js 同值：MIRROR＝0x20000（Jack word W → byte MIRROR＋4W）。 */
+   記憶體常數取自 bundle（window.HackVm2Rv；單一來源 lib/riscv/vm2riscv.js）：
+   MIRROR＝0x20000（Jack word W → byte MIRROR＋4W）。 */
 (() => {
   'use strict';
-  const JACK = window.HackJack2Vm, VR = window.HackVm2Rv, RV = window.HackRv;
-  const corpus = window.HACKJS_CORPUS || {};
-  if (!JACK || !VR || !RV) {
-    document.getElementById('status').textContent = 'embed.js 載入失敗（缺 HackJack2Vm/HackVm2Rv/HackRv）';
+  const JACK = window.HackJack2Vm, VR = window.HackVm2Rv, RV = window.HackRv, EC = window.EmuCommon;
+  if (!JACK || !VR || !RV || !EC) {
+    document.getElementById('status').textContent = 'embed.js／emu-common.js 載入失敗（缺 HackJack2Vm/HackVm2Rv/HackRv/EmuCommon）';
     return;
   }
 
-  const MIRROR = 0x20000;
+  const MIRROR = (VR && VR.MIRROR_BASE) ?? 0x20000; // 單一來源 lib/riscv/vm2riscv.js
   const SCREEN_WORD0 = 16384, SCREEN_WORDS = 8192, KBD_WORD = 24576;
   const KBD_MIRROR = MIRROR + KBD_WORD * 4;
   const ABI = ['zero', 'ra', 'sp', 'gp', 'tp', 't0', 't1', 't2', 's0', 's1',
@@ -21,6 +21,8 @@
   const el = {
     example: document.getElementById('example'),
     build: document.getElementById('build'),
+    openBtn: document.getElementById('open'),
+    file: document.getElementById('file'),
     load: document.getElementById('load'),
     run: document.getElementById('run'),
     step: document.getElementById('step'),
@@ -46,21 +48,7 @@
   const IMG = document.createElement('canvas').getContext('2d').createImageData(512, 256);
   const PX = IMG.data;
 
-  const OS_DIR = 'gen/os_src';
-  const PROGRAMS = [
-    { name: 'Seven', dir: '../11/jack/Seven', needsOS: true },
-    { name: 'Average', dir: '../11/jack/Average', needsOS: true },
-    { name: 'ComplexArrays', dir: '../11/jack/ComplexArrays', needsOS: true },
-    { name: 'ConvertToBin', dir: '../11/jack/ConvertToBin', needsOS: true },
-    { name: 'Square', dir: '../11/jack/Square', needsOS: true },
-    { name: 'Pong', dir: '../11/jack/Pong', needsOS: true },
-    { name: 'Sum', dir: '../11/jackNoOs/Sum', needsOS: false },
-    { name: 'Factorial', dir: '../11/jackNoOs/Factorial', needsOS: false },
-    { name: 'Fib', dir: '../11/jackNoOs/Fib', needsOS: false },
-    { name: 'GCD', dir: '../11/jackNoOs/GCD', needsOS: false },
-    { name: 'PrimeUnder100', dir: '../11/jackNoOs/PrimeUnder100', needsOS: false },
-    { name: 'chain', dir: 'gen/chain', needsOS: false },
-  ];
+  const PROGRAMS = EC.PROGRAMS;
 
   let emu = new RV.Emulator();
   let running = false;
@@ -79,30 +67,10 @@
   };
   const hex8 = (v) => '0x' + (v >>> 0).toString(16).padStart(8, '0');
 
-  function jackSources(dir) {
-    return Object.keys(corpus)
-      .filter((k) => k.startsWith(dir + '/') && k.endsWith('.jack'))
-      .sort();
-  }
-
   // 範例 Jack（含 OS 時 OS 在前）→ 嚴格翻成 .s（OS 呼叫未定義即 throw）
   function compileExample(name) {
-    const p = PROGRAMS.find((q) => q.name === name);
-    if (!p) throw new Error(`未知範例：${name}`);
-    const files = jackSources(p.dir).map((k) => ({
-      path: k.split('/').pop().replace(/\.jack$/, '.vm'),
-      src: JACK.compileJack(corpus[k]).join('\n') + '\n',
-    }));
-    if (files.length === 0) throw new Error(`語料缺 ${p.dir} 的 .jack`);
-    let vmFiles = files;
-    if (p.needsOS) {
-      const os = jackSources(OS_DIR).map((k) => ({
-        path: k.split('/').pop().replace(/\.jack$/, '.vm'),
-        src: JACK.compileJack(corpus[k]).join('\n') + '\n',
-      }));
-      vmFiles = os.concat(files);
-    }
-    return VR.translate(vmFiles);
+    const { fullVm } = EC.compileJackVm(name);
+    return VR.translate(fullVm);
   }
 
   // 上限輸入：<=0 或非數字＝無限（顯示 ∞）；正整數＝再跑這麼多步即停。
@@ -116,7 +84,7 @@
   function freshEmu() {
     emu = new RV.Emulator();
     curIdx = -1;
-    held.length = 0;
+    keys.clear();
   }
 
   function screenWordAt(w) {
@@ -258,46 +226,18 @@
   }
 
   // ---- 按鍵（寫入 KBD 鏡像；放開歸零） ----
-  const held = [];
   function setKbd(code) {
     try { emu.storeWord(KBD_MIRROR, code); } catch (_) {}
   }
-  function keyDown(code) {
-    if (!held.includes(code)) held.push(code);
-    setKbd(held[held.length - 1]);
-  }
-  function keyUp(code) {
-    const k = held.indexOf(code);
-    if (k >= 0) held.splice(k, 1);
-    setKbd(held.length ? held[held.length - 1] : 0);
-  }
-  document.querySelectorAll('button.key').forEach((b) => {
-    const code = Number(b.dataset.key);
-    b.addEventListener('pointerdown', (e) => { e.preventDefault(); keyDown(code); });
-    b.addEventListener('pointerup', () => keyUp(code));
-    b.addEventListener('pointerleave', () => keyUp(code));
-  });
   const KEYMAP = { ArrowLeft: 130, ArrowUp: 131, ArrowRight: 132, ArrowDown: 133, ' ': 32 };
-  window.addEventListener('keydown', (e) => {
-    const c = KEYMAP[e.key];
-    if (c === undefined) return;
-    e.preventDefault();
-    keyDown(c);
-  });
-  window.addEventListener('keyup', (e) => {
-    const c = KEYMAP[e.key];
-    if (c === undefined) return;
-    keyUp(c);
+  const keys = EC.keyBridge({
+    keymap: KEYMAP,
+    setKey: (code) => setKbd(code),
+    buttons: document.querySelectorAll('button.key'),
   });
 
   // ---- 接線 ----
-  el.example.innerHTML = '';
-  for (const p of PROGRAMS) {
-    const o = document.createElement('option');
-    o.value = p.name;
-    o.textContent = p.name + (p.needsOS ? '（OS）' : '');
-    el.example.appendChild(o);
-  }
+  EC.fillExampleSelect(el.example);
 
   function useExample(autoRun) {
     const name = el.example.value;
@@ -320,6 +260,14 @@
   }
 
   el.build.onclick = () => useExample(false);
+  el.openBtn.onclick = () => el.file.click();
+  el.file.onchange = () => {
+    const f = el.file.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => { el.src.value = String(rd.result); load(el.src.value); };
+    rd.readAsText(f);
+  };
   el.load.onclick = () => load(el.src.value);
   el.run.onclick = () => {
     if (words.length === 0) { setStatus('先載入程式（選範例或按「組譯並載入」）', 'error'); return; }
@@ -383,21 +331,18 @@
   readMem();
   requestAnimationFrame(tick);
 
-  // ---- 跨視窗橋接（對應 jack.html 的 rvjs-*；仿 app.js 的 hackjs-*） ----
-  if (window.opener) window.opener.postMessage({ type: 'rvjs-ready' }, '*');
-  window.addEventListener('message', (e) => {
-    const d = e.data || {};
-    if (d.type === 'rvjs-ping') {
-      if (window.opener) window.opener.postMessage({ type: 'rvjs-ready' }, '*');
-    } else if (d.type === 'rvjs-load' && typeof d.s === 'string') {
-      el.src.value = d.s;
-      load(d.s);
+  // ---- 跨視窗橋接（對應 jack.html 的 rvjs-*；接收側走共用骨架） ----
+  EC.receiverSide({
+    ready: 'rvjs-ready', ping: 'rvjs-ping', load: 'rvjs-load', field: 's',
+    onLoad: (text) => {
+      el.src.value = text;
+      load(text);
       const b = readBudget();
       maxSteps = b === Infinity ? Infinity : steps + b;
       running = true;
       el.run.textContent = '暫停 ⏸';
       setStatus('已接收 Jack 編譯結果（← jack.html 全量 .s），可執行並觀察暫存器/STATIC/螢幕');
-    }
+    },
   });
 
   // ---- 書籤：#prog=Pong（&run=1） ----

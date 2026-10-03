@@ -42,10 +42,10 @@
 <header>
   <h1>nand2tetris <span style="font-size:11px;color:var(--dim)">HACK 模擬器</span></h1>
   <select id="nav" title="切換工具">
-    <option value="index.html">HACK 模擬器</option>
-    <option value="hdl.html">HDL 模擬器</option>
     <option value="jack.html">Jack 編譯器</option>
+    <option value="index.html">HACK 模擬器</option>
     <option value="rvemu.html">RISCV 模擬器</option>
+    <option value="hdl.html">HDL 模擬器</option>
   </select>
   <script>
   // 四頁共用：頁面切換選單；jack.html ⇄ rvemu.html 互切時攜帶 #prog=
@@ -59,12 +59,13 @@
     };
   })();
   </script>
-  <button id="run">執行 ▶</button>
-  <button id="step">Step</button>
-  <button id="reset" class="danger">Reset</button>
+  <select id="example" title="內建範例（Jack 程式，選取即編成 HACK 組語）"></select>
   <button id="open">開啟 .asm…</button>
   <input type="file" id="file" accept=".asm,.hack" hidden>
   <button id="load">組譯並載入</button>
+  <button id="run">執行 ▶</button>
+  <button id="step">Step</button>
+  <button id="reset" class="danger">Reset</button>
   <label title="對數刻度：每幀執行步數">速度 <input type="range" id="speed" min="0" max="100" value="80"></label>
   <span id="fps" title="執行迴圈 FPS"></span>
   <span class="spacer"></span>
@@ -115,7 +116,8 @@
 </main>
 <script src="corpus.js?v=14"></script>
 <script src="hdl-rt.js?v=10"></script>
-<script src="embed.js?v=14"></script>
-<script src="app.js?v=10"></script>
+<script src="embed.js?v=16"></script>
+<script src="emu-common.js?v=2"></script>
+<script src="app.js?v=12"></script>
 </body>
 </html>

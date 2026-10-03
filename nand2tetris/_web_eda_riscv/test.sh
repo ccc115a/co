@@ -3,14 +3,14 @@
 set -x
 cd "$(dirname "$0")"
 node --test || true
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b || true
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
-  --test ../05/CPU.tst --test ../05/CPU-external.tst \
-  --test ../05/ComputerAdd.tst --test ../05/ComputerAdd-external.tst \
-  --test ../05/ComputerMax.tst --test ../05/ComputerMax-external.tst \
-  --test ../05/ComputerRect.tst --test ../05/ComputerRect-external.tst || true
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
-  --test ../04/mult/Mult-hw.tst --test ../04/fill/Fill-hw.tst || true
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b || true
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
+  --test third_party/courses/05/CPU.tst --test third_party/courses/05/CPU-external.tst \
+  --test third_party/courses/05/ComputerAdd.tst --test third_party/courses/05/ComputerAdd-external.tst \
+  --test third_party/courses/05/ComputerMax.tst --test third_party/courses/05/ComputerMax-external.tst \
+  --test third_party/courses/05/ComputerRect.tst --test third_party/courses/05/ComputerRect-external.tst || true
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
+  --test third_party/courses/04/mult/Mult-hw.tst --test third_party/courses/04/fill/Fill-hw.tst || true
 # v0.5：Jack → VM → ASM → HACK 全鏈路 e2e（RAM[16]=5）
 mkdir -p gen/chain/vm
 node cli/jack2vm.js gen/chain/Main.jack
@@ -18,7 +18,7 @@ node cli/jack2vm.js gen/chain/Sys.jack
 mv -f gen/chain/output/Main.vm gen/chain/output/Sys.vm gen/chain/vm/
 node cli/vm2asm.js gen/chain/chain.asm gen/chain/vm/Main.vm gen/chain/vm/Sys.vm
 node cli/hackasm.js gen/chain/chain.asm
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
   --test gen/chain/chain.tst || true
 # v0.6：hackemu headless 交叉驗證（chain.bin → RAM[16]=5）
 node cli/hackemu.js --headless gen/chain/chain.bin --max 500000 | grep "RAM\[16\] static: 5" || true
@@ -29,8 +29,8 @@ node cli/vm2asm.js gen/show.asm gen/os_src/output/*.vm gen/os/output/*.vm >/dev/
 node cli/hackasm.js gen/show >/dev/null 2>&1 || true
 node cli/hackemu.js --headless gen/show.bin --max 10000000 --dump 200,201 --dump 22784,22784 2>/dev/null | grep "RAM\[200..=201\]" || true
 # v0.7.1：Pong --keys 方向鍵分離
-node cli/jack2vm.js ../11/jack/Pong >/dev/null 2>&1 || true
-node cli/vm2asm.js gen/pong.asm gen/os_src/output/*.vm ../11/jack/Pong/output/*.vm >/dev/null 2>&1 || true
+node cli/jack2vm.js third_party/courses/11/jack/Pong >/dev/null 2>&1 || true
+node cli/vm2asm.js gen/pong.asm gen/os_src/output/*.vm third_party/courses/11/jack/Pong/output/*.vm >/dev/null 2>&1 || true
 node cli/hackasm.js gen/pong >/dev/null 2>&1 || true
 node cli/hackemu.js --headless gen/pong.bin --max 300000000 --keys gen/keys.left --img gen/pong.left.ppm >/dev/null 2>&1 || true
 node cli/hackemu.js --headless gen/pong.bin --max 300000000 --keys gen/keys.right --img gen/pong.right.ppm >/dev/null 2>&1 || true
@@ -60,10 +60,10 @@ node cli/jack2vm.js gen/sum/Sys.jack >/dev/null 2>&1 || true
 mv -f gen/sum/output/Main.vm gen/sum/output/Sys.vm gen/sum/vm/ 2>/dev/null || true
 node cli/vm2asm.js gen/sum/sum.asm gen/sum/vm/Main.vm gen/sum/vm/Sys.vm >/dev/null 2>&1 || true
 node cli/hackasm.js gen/sum/sum.asm >/dev/null 2>&1 || true
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
   --test gen/sum/sum.tst || true
-# v0.8：網頁 bundle 冒煙（embed + 語法檢查 + index 引用）
-node tools/embed.js && node --check dist/embed.js && node --check dist/app.js && grep -Eq 'src="embed.js(\\?v=[0-9a-z]+)?"' dist/index.html || true
+# v0.8：網頁 bundle 冒煙（embed + emu-common + 語法檢查 + index 引用）
+node tools/embed.js && node --check dist/embed.js && node --check dist/emu-common.js && node --check dist/app.js && node --check dist/rvemu.js && grep -Eq 'src="embed.js(\\?v=[0-9a-z]+)?"' dist/index.html || true
 # v0.9：hdl.html 瀏覽器全路徑（語料 40/40 + 頁面語法）
 node tools/gen_corpus.js && node tools/embed.js && node tools/browser_smoke.js || true
 node --check dist/corpus.js && node --check dist/hdl-rt.js && node --check dist/hdl.js || true

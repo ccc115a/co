@@ -57,7 +57,7 @@
 
 ## 完整範例二：拿 FullAdder 走一遍（真實數據）
 
-[`FullAdder.hdl`](../../02/FullAdder.hdl) 七個 part（0:Xor、1:Xor、2,3,4:And、
+[`FullAdder.hdl`](../third_party/courses/02/FullAdder.hdl) 七個 part（0:Xor、1:Xor、2,3,4:And、
 5,6:Or），全是無記憶內建，`partSeq` 全 false。
 各 wire 的寫者→讀者：`s1:0→1`、`ab:2→5`、`bc:3→5`、`ac:4→6`、`abORbc:5→6`
 （`sum`、`carry` 沒人讀，不建邊）。入度 `indeg = [0,1,0,0,0,2,2]`：

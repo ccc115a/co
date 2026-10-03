@@ -5,7 +5,7 @@
 [`cli/riscv_run.js`](../cli/riscv_run.js) 只做三件事：組譯、定步跑、印結果：
 
 ```
-node cli/riscv_run.js sum.s --max 5000 [--dump A,C]
+node cli/riscv_run.js sum.s --max 5000 [--dump A,B]
 ```
 
 ## 完整範例（真實輸出）
@@ -18,7 +18,7 @@ loaded sum.s (86 instructions), 跑滿 5000 步即停（不 halt）
 PC=0x00000060 ra=0x0000010c (268) s1/SP=0x0001c004 (114692) a0=0x00000000 (0)
 UART:
 
-MEM[0x00011000..=0x00011007]: [42, 0]
+RAM[0x00011000..=0x00011007]: [42, 0]
 ```
 
 讀法：第一行說共幾條、跑滿幾步；第二行是暫存器
@@ -29,7 +29,8 @@ MEM[0x00011000..=0x00011007]: [42, 0]
 ## 原理：組譯和執行是別人的，自己只管餵檔
 
 RV32 的組譯器（`rvasm`）和模擬器（`rvemu`，另有反組譯 `rvdis`、
-指令定義 `isa`）放在 `riscv/_web_tools/`，是**唯讀依賴**：
+指令定義 `isa`）放在 `third_party/rvtools/`（上游 `riscv/_web_tools`
+的凍結副本），是**唯讀依賴**：
 這邊一行都不改，有 bug 也只能繞（例如 40 章的 `li` 坑）。
 [`tools/embed.js`](../tools/embed.js) 把那四檔包成獨立的
 `RvToolchain` IIFE 再匯出，就是為了不和自家 `HackAsm.assemble`

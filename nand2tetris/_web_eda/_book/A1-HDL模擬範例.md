@@ -20,7 +20,7 @@ PASS ../02/FullAdder.cmp
 
 ## 例一 FullAdder：三位元加法（組合，七顆零件）
 
-輸入 [`FullAdder.hdl`](../../02/FullAdder.hdl)全文：
+輸入 [`FullAdder.hdl`](../third_party/courses/02/FullAdder.hdl)全文：
 
 ```
 CHIP FullAdder {
@@ -45,8 +45,8 @@ CHIP FullAdder {
 三顆 `And`（part 2,3,4）只吃輸入所以緊跟 part 0。`hasState: false`，
 整顆是純組合，模擬時一個 `eval` 就算完。
 
-模擬（[`FullAdder.tst`](../../02/FullAdder.tst) 把 a/b/c 八種組合各 `eval`
-一次，輸出 [`FullAdder.cmp`](../../02/FullAdder.cmp) 全文）：
+模擬（[`FullAdder.tst`](../third_party/courses/02/FullAdder.tst) 把 a/b/c 八種組合各 `eval`
+一次，輸出 [`FullAdder.cmp`](../third_party/courses/02/FullAdder.cmp) 全文）：
 
 ```
 |   a   |   b   |   c   |  sum  | carry |
@@ -110,7 +110,7 @@ set a %B11, set b %B11, set cin 1, eval, output;
 
 ## 例三 Bit：有記憶的時序（tick／tock 兩相）
 
-輸入 [`Bit.hdl`](../../03/a/Bit.hdl)（`Mux` 選「保持舊值還是吃新輸入」，
+輸入 [`Bit.hdl`](../third_party/courses/03/a/Bit.hdl)（`Mux` 選「保持舊值還是吃新輸入」，
 `DFF` 記住它；註解就是規格：`load=1` 時下周期輸出等於輸入）：
 
 ```
@@ -134,8 +134,8 @@ CHIP Bit {
 `this._p1.sample(w_mo)`——DFF 的 `latch` 記下 `mo`，但 `q`（秀出去的）
 要等 `tock` 才更新。一句話：tick 只記不秀，tock 才秀。
 
-模擬（[`Bit.tst`](../../03/a/Bit.tst) 交替 `tick,output`／`tock,output`，
-輸出 [`Bit.cmp`](../../03/a/Bit.cmp) 前 8 行，真實）：
+模擬（[`Bit.tst`](../third_party/courses/03/a/Bit.tst) 交替 `tick,output`／`tock,output`，
+輸出 [`Bit.cmp`](../third_party/courses/03/a/Bit.cmp) 前 8 行，真實）：
 
 ```
 | time | in  |load | out |

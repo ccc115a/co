@@ -10,12 +10,16 @@ const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(here, '..');
 
 const DIRS = ['../01', '../02', '../03/a', '../03/b', '../05', '../04/mult', '../04/fill', 'gen/chain', 'gen/sum', 'Riscv32i'];
+// 測資來源→語料 key 映射：檔案從 third_party/courses 讀，key 照舊寫成 ../01/...
+//（凍結 key，hdl.html 章節選單、網址 hash、測試斷言都不必改；見 third_party/courses/README.md）
+const VENDOR = 'third_party/courses';
+const srcDir = (dir) => (dir.startsWith('../') ? path.join(VENDOR, dir.slice(3)) : dir);
 const EXTS = ['.hdl', '.tst', '.cmp', '.hack'];
 const SKIP = new Set(['Keyboard.tst', 'Mult.tst', 'Fill.tst', 'FillAutomatic.tst', 'FillAutomatic.cmp']); // 互動式（需人工按鍵/螢幕）或引擎不支援的 clock 指令，batch 不可跑
 
 const corpus = {};
 const add = (dir) => {
-  const abs = path.join(root, dir);
+  const abs = path.join(root, srcDir(dir));
   if (!fs.existsSync(abs)) return;
   for (const ent of fs.readdirSync(abs, { withFileTypes: true })) {
     if (!ent.isFile()) continue;
@@ -36,7 +40,7 @@ for (const d of DIRS) add(d);
 const JACK_PROGRAMS = ['Seven', 'Average', 'ComplexArrays', 'ConvertToBin', 'Square', 'Pong']; // needsOS
 const JACK_NOOS = ['Sum', 'Factorial', 'Fib', 'GCD', 'PrimeUnder100'];
 const addJackDir = (rel) => {
-  const abs = path.join(root, rel);
+  const abs = path.join(root, srcDir(rel));
   if (!fs.existsSync(abs)) return;
   for (const ent of fs.readdirSync(abs, { withFileTypes: true })) {
     if (!ent.isFile() || !ent.name.endsWith('.jack')) continue;

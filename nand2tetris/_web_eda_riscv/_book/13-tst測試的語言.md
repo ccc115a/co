@@ -19,7 +19,7 @@ PASS ../01/And.cmp
 
 ## 完整範例
 
-輸入 [`And.tst`](../../01/And.tst) 全文（四段式：測哪顆、答案寫哪跟誰比、
+輸入 [`And.tst`](../third_party/courses/01/And.tst) 全文（四段式：測哪顆、答案寫哪跟誰比、
 表格長什麼樣、四組輸入各算一次）：
 
 ```
@@ -49,7 +49,7 @@ eval,
 output;
 ```
 
-輸出 [`And.cmp`](../../01/And.cmp) 全文（跑出來的 `.out` 必須長這樣）：
+輸出 [`And.cmp`](../third_party/courses/01/And.cmp) 全文（跑出來的 `.out` 必須長這樣）：
 
 ```
 |   a   |   b   |  out  |

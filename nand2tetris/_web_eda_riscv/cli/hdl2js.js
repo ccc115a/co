@@ -2,8 +2,8 @@
 // 再配合內建 .tst 執行器跑官方測資。
 //
 // 用法：
-//   node cli/hdl2js.js --dir ../01 --dir ../02                     # 跑 01/02 全部 test
-//   node cli/hdl2js.js --dir ../01 --dir ../02 --test ../02/ALU.tst
+//   node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02  # 跑全部 test
+//   node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --test third_party/courses/02/ALU.tst
 //
 // 產出：--keep 時在 <out>/gen 寫下 <Top>_sim.js（自足 ESM）。
 
@@ -35,11 +35,11 @@ function parseArgs(argv) {
     else if (arg === '--keep') { a.keep = true; }
     else if (arg === '--release') { /* JS 不需建置 */ }
     else if (arg === '--help' || arg === '-h') { usage(); process.exit(0); }
-    else { console.error(`未知參數：${arg}`); usage(); process.exit(2); }
+    else { console.error(`未知參數：${arg}`); usage(); process.exit(1); }
   }
   if (a.dirs.length === 0) {
     usage();
-    process.exit(2);
+    process.exit(1);
   }
   return a;
 }
@@ -142,14 +142,14 @@ function main() {
       lib = mergeLibs(lib, loadLibrary(d));
     } catch (e) {
       console.error(`載入 ${d} 失敗：${e.message}`);
-      process.exit(2);
+      process.exit(1);
     }
   }
 
   const tests = a.tests.length > 0 ? a.tests.slice() : collectTst(a.dirs);
   if (tests.length === 0) {
     console.error('找不到任何 .tst 檔案');
-    process.exit(2);
+    process.exit(1);
   }
 
   let pass = 0;

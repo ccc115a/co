@@ -1,7 +1,8 @@
 # AGENTS.md（`nand2tetris/_web_eda_riscv/` 範圍）
 
 hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 20）。
-管線：`.jack → jack2vm → .vm → vm2asm → .asm → hackasm → .hack/.bin → hackemu`，
+管線（共用 `jack2vm` 前端；第三條執行路徑是 HDL 的 `Riscv32i/`，見下）：
+`.jack → jack2vm → .vm → vm2asm → .asm → hackasm → .hack/.bin → hackemu`，
 外加 `.hdl → hdl2js → JS 模擬`；另有 VM→RV32 後端（Jack→VM→RISC-V 兩段式）。
 
 ## 指令（cwd 在本目錄）
@@ -13,18 +14,23 @@ hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 2
   `--dir` 必填可重複；`Memory.tst` 需人工按鍵，自動跳過。
 - `node cli/vm2asm.js <out>.asm <in>.vm […vm]`、**`node cli/vm2riscv.js <out>.s <in>.vm […vm]`——輸出在前**，多檔才寫 bootstrap。
 - `node cli/jack2vm.js <Name.jack|目錄>`——輸出寫在來源旁 `output/`；`node cli/hackasm.js <Name>` 讀 `.asm` 寫 `.hack`＋`.bin`。
-- `node cli/hackemu.js --headless <file.bin|.hack> [--max N] [--dump A,B] [--keys F] [--img F]`——只支援 headless。
-- `node cli/riscv_run.js <in>.s [--max N] [--dump A,C]`——組譯 RV32 `.s` 後定步執行
-  （產物不 halt，永遠跑滿即停），印 `ra/s1/a0`＋`UART`＋`MEM` 區（預設 static 區 8 bytes）。
+- `node cli/hackemu.js --headless <file.bin|.hack> [--max N] [--dump A,B] [--keys F] [--trace N] [--img F]`——只支援 headless；用法報錯 exit 1（全 CLI 統一，中文用法字串）。
+- `node cli/riscv_run.js <in>.s [--max N] [--dump A,B]`——組譯 RV32 `.s` 後定步執行
+  （產物不 halt，永遠跑滿即停），印 `ra/s1/a0`＋`UART`＋`RAM` 區（預設 static 區 8 bytes）。
   完整路徑 2：`jack2vm` → `vm2riscv` →（`rvasm` 或）`riscv_run`。
+- 步數預設對照（場景不同故不統一數值）：`jack.html` Hack/RV 執行 200 萬步｜
+  `rvemu.html` 無限（上限填 0）｜`cli/riscv_run.js` 20 萬｜`cli/hackemu.js` 10 萬。
+- 報表前綴統一用 `RAM[`（P5 決議：hackemu 沿用，`riscv_run` 由 `MEM[` 改過來；
+  位址進制保留各引擎慣例——Hack 十進位 word 號，RV 十六進位 byte 位址）。
+  CLI 共用參數解析在 `cli/cliutil.js`（用法報錯 exit 1、`A,B` 十進位/0x 皆可）。
 - 重建 `dist/`：`node tools/gen_corpus.js && node tools/embed.js`；`npm run build` 是壞的（`tools/build.js` 不存在）。`dist/` 有 commit（靠本目錄 `.gitignore` 的 `!dist/`），改 `lib/`/`cli/` 影響網頁時要重建並 commit；`gen/` 產物不 commit。
-- `Riscv32i/`（RV32I 單週期處理器，本目錄自有）：`node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 --dir Riscv32i --test Riscv32i/rv32i.tst`（60 指令綜合測資，`.cmp` 比對；另有 `sum10.tst`＝1+…+10 存 `mem[16]` 的記憶體示範）。測資程式由 `Riscv32i/*.asm` 經 `../Riscv32/asm.js` 產生（`.hack` 供 `ROM32 load`，CLI 與 web 共用；`.asm` 不進語料）；`Riscv32i/` 已收進 `tools/gen_corpus.js` 與 `dist/hdl.js` 章節選單（`06 RV32I 處理器`），改 `.hdl/.tst/.cmp/.hack` 後重建 `dist/corpus.js` 並把 `corpus.js` 的 `?v=` 在四頁一起＋1。
+- `Riscv32i/`（RV32I 單週期處理器，本目錄自有）：`node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 --dir Riscv32i --test Riscv32i/rv32i.tst`（60 指令綜合測資，`.cmp` 比對；另有 `sum10.tst`＝1+…+10 存 `mem[16]` 的記憶體示範）。測資程式由 `Riscv32i/*.asm` 經 `third_party/courses/Riscv32/asm.js` 產生（`.hack` 供 `ROM32 load`，CLI 與 web 共用；`.asm` 不進語料）；`Riscv32i/` 已收進 `tools/gen_corpus.js` 與 `dist/hdl.js` 章節選單（`06 RV32I 處理器`），改 `.hdl/.tst/.cmp/.hack` 後重建 `dist/corpus.js` 並把 `corpus.js` 的 `?v=` 在四頁一起＋1。
 
 ## vm2riscv（VM→RV32，`lib/riscv/vm2riscv.js`＋`cli/vm2riscv.js`）
 
-- 目標＝`riscv/_web_tools` 的 rvasm（RV32I+M）＋rvemu，只用子集
-  （真指令＋`li/mv/j/jr/ret/call`＋`.text/.word`，註解 `#`）；測試直接 import
-  `../../../riscv/_web_tools/lib/{rvasm,rvemu}.js`，兩目錄須同 repo 共存。
+- 目標＝`third_party/rvtools` 的 rvasm（RV32I+M）＋rvemu，只用子集
+  （真指令＋`li/mv/j/jr/ret/call`＋`.text/.word`，註解 `#`）；`riscv/_web_tools`
+  的對應檔案僅為上游來源（凍結副本見 `third_party/rvtools/README.md`，勿改）。
 - **禁符號版 `li`**（`li rd, <標籤>`）：rvasm pass1 固定佔 2 格，標籤位址＜2048 時
   pass2 只吐 1 word，留下 `0x0` 非法字。故 return 地址走 ra 壓幀
   （callee 序幕 `sw ra, -20(s2)` 回填，返回 `jalr x0, 0(t1)`），static 走固定位址。
@@ -56,7 +62,7 @@ hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 2
   （Pong 光初始化就要約 100 萬步；舊 20 萬步連首幀都畫不出來），
   印 `ra/s1/a0`＋`STATIC[0..7]`＋`UART`（OS 程式可跑；無鍵盤程式除外，見上）。
   `rvasm/rvemu/rvdis/isa` 由 `tools/embed.js` 包成 `RvToolchain` IIFE
-  （`window.HackRv`），**勿改 `riscv/_web_tools` 原始碼**（`assemble` 同名會覆蓋）。
+  （`window.HackRv`），**勿改 `third_party/rvtools` 凍結副本**（`assemble` 同名會覆蓋）。
 - `dist/rvemu.html`＋`dist/rvemu.js` 是 RISCV 互動 Emulator（仿 `index.html` 三欄）：
   12 支 Jack 範例現場編成 `.s`（OS 在前、嚴格翻譯），可執行／單步（PC 高亮，
   只動 class 不重建列表）／重設（重開全新 Emulator，畫面立刻全黑）；
@@ -66,6 +72,9 @@ hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 2
   速度滑桿 0..100 對應約 316..10 萬步/幀，預設 60（1 萬步/幀；
   Pong 每約 9 千步走一格，預設即每幀一格可玩，舊 HACK 映射 10..10^7 會讓球暴衝秒結束）；
   網址 `#prog=Pong[&run=1]`；新檔 `?v=` 從 1 起跳。
+- 兩模擬器頁 UI 對稱：範例選單共用 `EmuCommon.PROGRAMS`（同 12 支 Jack 名單，
+  `index.html` 編成 Hack、`rvemu.html` 編成 RV32）；兩頁都有開檔鈕
+  （`index.html` 吃 `.asm/.hack`，`rvemu.html` 吃 `.s`，讀進編輯區後走原載入流程）。
   改 `dist/*.js` 後把引用它的 `?v=` 版號＋1（快取用；
   `index.html`/`hdl.html` 的 `embed.js` 連帶一起加）。
 
@@ -77,5 +86,6 @@ hackjs：Nand2Tetris 全工具鏈的 JavaScript 版（零依賴 ESM，Node ≥ 2
   勿依賴 import 副作用；`export ` 前綴會被剝，寫法保持簡單）。**拼接後全域同作用域**：
   新 lib 若頂層符號與既有檔撞名（如 `translate`），須包命名空間 IIFE
   （前例：`export const Vm2Rv = (() => {...})()`，`embed.js` 匯出 `HackVm2Rv`）。
-- 跨章節語料（`../01`、`../11/jackNoOs` 等）只讀不寫；`cli/jack2vm.js` 會在來源旁產生
+- 課程測資（`01/`、`11/` 等）收容於 `third_party/courses/` 凍結副本，只讀不寫
+  （語料 key 照舊寫 `../01/...`，見該目錄 README）；`cli/jack2vm.js` 會在來源旁產生
   `output/`，手動驗證請先複製到 `/tmp` 再跑。

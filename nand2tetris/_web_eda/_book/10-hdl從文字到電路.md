@@ -9,7 +9,7 @@
 
 ## 完整範例
 
-輸入：[`Not.hdl`](../../01/Not.hdl)（最短的完整晶片，一個輸入、一顆 Nand）：
+輸入：[`Not.hdl`](../third_party/courses/01/Not.hdl)（最短的完整晶片，一個輸入、一顆 Nand）：
 
 ```
 CHIP Not {

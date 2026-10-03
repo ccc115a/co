@@ -3,15 +3,16 @@
 零依賴 ESM，Node ≥ 20。同一套 `lib/` 跑在 Node（CLI／測試）與瀏覽器
 （`dist/*.html`，`file://` 雙擊即開，免 server）。
 
-Jack 編譯器有兩條路（`jack.html` 可切，命令列都通）：
+Jack 編譯器有兩條路（`jack.html` 可切，命令列都通），共用 `jack2vm` 前端；
+另有第三條執行路徑：HDL 單週期 RV32I（`Riscv32i/`，跑在 `hdl.html`）：
 
 ```
 路徑 1（HackCPU）：.jack → jack2vm → .vm → vm2asm → .asm → hackasm → .hack/.bin → hackemu
 路徑 2（RISCV） ：.jack → jack2vm → .vm → vm2riscv → .s → rvasm → bytecode → rvemu
 ```
 
-另有 `.hdl → hdl2js → JS 模擬`。RISC-V 目標是 `riscv/_web_tools` 的
-rvasm（RV32I+M）＋rvemu，兩目錄須在同一 repo 共存。
+另有 `.hdl → hdl2js → JS 模擬`。RISC-V 目標是 `third_party/rvtools` 的
+rvasm（RV32I+M）＋rvemu（上游 `riscv/_web_tools` 的凍結副本，本目錄內自足）。
 
 ## 網頁版（最快上手）
 
@@ -32,7 +33,7 @@ jack.html#prog=Fib&backend=riscv&run=1    # RISCV 跑 Fib 並自動執行
 - 顯示分頁（`.vm/.asm/.hack`、`.vm/RISCV/bytecode`）只看使用者模組，不含 OS。
 - `▶執行`與「送模擬器」用 OS 在前的全量（HackCPU 送 `.asm` 到 HACK 模擬器，
   RISCV 送全量 `.s` 到 RISCV 模擬器，可互動玩 Pong）。
-- RISCV 執行＝嚴格翻譯→組譯→跑滿 20 萬步，印 `ra/s1/a0`＋`STATIC[0..7]`＋`UART`。
+- RISCV 執行＝嚴格翻譯→組譯→跑滿 200 萬步，印 `ra/s1/a0`＋`STATIC[0..7]`＋`UART`。
   只有無 OS 程式與 OS 全量可跑；`readChar/readInt` 類會等不到鍵盤（見限制）。
 - `rvemu.html` 是互動版：12 支 Jack 範例現場編成 `.s`，可單步（PC 高亮）、
   看 x0–x31／STATIC／UART／SCREEN 鏡像，◀▶▲▼ 按鍵寫入 KBD 鏡像（Pong 擋板會動）。
@@ -42,13 +43,13 @@ jack.html#prog=Fib&backend=riscv&run=1    # RISCV 跑 Fib 並自動執行
 路徑 1（以無 OS 的 Sum 為例，答案 5050 在 `RAM[16]`）：
 
 ```sh
-cp -r ../11/jackNoOs/Sum /tmp/Sum && node cli/jack2vm.js /tmp/Sum >/dev/null
+cp -r third_party/courses/11/jackNoOs/Sum /tmp/Sum && node cli/jack2vm.js /tmp/Sum >/dev/null
 node cli/vm2asm.js /tmp/Sum/sum.asm /tmp/Sum/output/Main.vm /tmp/Sum/output/Sys.vm
 node cli/hackasm.js /tmp/Sum/sum
 node cli/hackemu.js --headless /tmp/Sum/sum.bin --max 500000 | grep "RAM\[16\] static"
 ```
 
-路徑 2（同一個 Sum，答案在 `0x8000`，程式不 halt、跑滿即停）：
+路徑 2（同一個 Sum，答案在 `0x11000`，程式不 halt、跑滿即停）：
 
 ```sh
 node cli/vm2riscv.js /tmp/Sum/sum.s /tmp/Sum/output/Main.vm /tmp/Sum/output/Sys.vm
@@ -58,7 +59,7 @@ node cli/riscv_run.js /tmp/Sum/sum.s --max 100000
 路徑 2＋OS（Seven，答案 `7` 從 UART 印出）：
 
 ```sh
-mkdir -p /tmp/Seven && cp gen/os_src/*.jack ../11/jack/Seven/Main.jack /tmp/Seven/
+mkdir -p /tmp/Seven && cp gen/os_src/*.jack third_party/courses/11/jack/Seven/Main.jack /tmp/Seven/
 node cli/jack2vm.js /tmp/Seven >/dev/null
 node cli/vm2riscv.js /tmp/Seven/seven.s /tmp/Seven/output/*.vm
 node cli/riscv_run.js /tmp/Seven/seven.s --max 500000
@@ -67,7 +68,7 @@ node cli/riscv_run.js /tmp/Seven/seven.s --max 500000
 HDL 模擬（`--dir` 必填可重複；`Memory.tst` 需人工按鍵，自動跳過）：
 
 ```sh
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 third_party/courses/03/a third_party/courses/03/b
 ```
 
 ## CLI 一覽
@@ -80,7 +81,7 @@ node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b
 | `vm2riscv` | `<out>.s <in>.vm […vm] [--lenient]`（同上；`--lenient` 僅供檢視） |
 | `hackasm` | `<Name>`（讀 `.asm`，寫 `.hack`＋`.bin`） |
 | `hackemu` | `--headless <file> [--max N] [--dump A,B] [--keys F] [--img F]`（只支援 headless） |
-| `riscv_run` | `<in>.s [--max N] [--dump A,C]`（跑滿即停，印暫存器＋UART＋MEM） |
+| `riscv_run` | `<in>.s [--max N] [--dump A,B]`（跑滿即停，印暫存器＋UART＋RAM） |
 
 ## 測試
 

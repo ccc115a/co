@@ -1,0 +1,24 @@
+class Main {
+    static int result;
+
+    function void init() {
+        var int a, b;
+        let a = 1386;
+        let b = 3213;
+        while (~(a = b)) {
+            if (a > b) {
+                let a = a - b;
+            }
+            else {
+                let b = b - a;
+            }
+        }
+        let result = a;
+        return;
+    }
+
+    function void loop() {
+        while (true) {
+        }
+    }
+}

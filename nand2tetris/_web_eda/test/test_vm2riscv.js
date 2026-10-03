@@ -1,6 +1,6 @@
 // vm2riscv 測試（node --test）：單元（文字形狀）＋ e2e（Jack noOS 經 rvasm＋rvemu 執行驗證）
 // 執行鏈：lib/jack/jack2vm.js（Jack→VM）→ lib/riscv/vm2riscv.js（VM→RISC-V）→
-//   ../../riscv/_web_tools 的 rvasm（組譯）＋ rvemu（執行），讀 STATIC_BASE 驗結果。
+//   third_party/rvtools 的 rvasm（組譯）＋ rvemu（執行），讀 STATIC_BASE 驗結果。
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, it } from 'node:test';
@@ -8,13 +8,13 @@ import assert from 'node:assert/strict';
 
 import { compileJack } from '../lib/jack/jack2vm.js';
 import { Vm2Rv } from '../lib/riscv/vm2riscv.js';
-import { assemble } from '../../../riscv/_web_tools/lib/rvasm.js';
-import { Emulator } from '../../../riscv/_web_tools/lib/rvemu.js';
+import { assemble } from '../third_party/rvtools/rvasm.js';
+import { Emulator } from '../third_party/rvtools/rvemu.js';
 
 const { translate, STACK_BASE, TEMP_BASE, STATIC_BASE, STATIC_STRIDE, MIRROR_BASE } = Vm2Rv;
 
-const REPO = path.resolve(import.meta.dirname, '../../');
-const NOOS = path.join(REPO, '11', 'jackNoOs');
+const COURSES = path.resolve(import.meta.dirname, '../third_party/courses');
+const NOOS = path.join(COURSES, '11', 'jackNoOs');
 
 // ==================== 單元：文字形狀 ====================
 describe('vm2riscv 單元', () => {
@@ -246,6 +246,13 @@ describe('vm2riscv dist bundle（jack.html .s 分頁）', () => {
     assert.equal(HackVm2Rv.translate(files), translate(files));
   });
 
+  it('bundle 內 HackVm2Rv 常數與 lib 單一來源一致（P4）', () => {
+    const { HackVm2Rv } = loadBundle();
+    for (const k of ['STACK_BASE', 'TEMP_BASE', 'UART_BUF', 'STATIC_BASE', 'STATIC_STRIDE', 'MIRROR_BASE']) {
+      assert.equal(HackVm2Rv[k], Vm2Rv[k], `HackVm2Rv.${k}`);
+    }
+  });
+
   it('bundle 內 HackVm2Asm.translate 未被覆蓋（拼接作用域回歸）', () => {
     const { HackVm2Asm } = loadBundle();
     assert.ok(HackVm2Asm.translate([{ path: 'M.vm', src: 'push constant 7\n' }]).includes('@7'));
@@ -269,7 +276,7 @@ describe('vm2riscv dist bundle（jack.html .s 分頁）', () => {
 
   it('Seven＋OS：嚴格模式可翻譯＋組譯＋執行，UART 印出 7', () => {
     const files = osVmFiles();
-    const seven = fs.readFileSync(path.join(REPO, '11', 'jack', 'Seven', 'Main.jack'), 'utf8');
+    const seven = fs.readFileSync(path.join(COURSES, '11', 'jack', 'Seven', 'Main.jack'), 'utf8');
     files.push({ path: 'Main.vm', src: compileJack(seven).join('\n') + '\n' });
     const s = translate(files); // 嚴格模式不再 throw（含 Output 內聯、OS 全量）
     assert.ok(s.includes('# ========== File: Main.vm =========='));
@@ -321,7 +328,7 @@ describe('vm2riscv dist bundle（jack.html .s 分頁）', () => {
 
   it('Pong＋OS：嚴格模式可翻譯＋組譯（執行需鍵盤，只驗到組譯）', () => {
     const files = osVmFiles();
-    const dir = path.join(REPO, '11', 'jack', 'Pong');
+    const dir = path.join(COURSES, '11', 'jack', 'Pong');
     for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.jack')).sort()) {
       files.push({ path: f.replace(/\.jack$/, '.vm'), src: compileJack(fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\n' });
     }
@@ -331,7 +338,7 @@ describe('vm2riscv dist bundle（jack.html .s 分頁）', () => {
   });
 
   it('Pong 方向鍵回應（bat 位置隨按鍵分離，讀 SCREEN 鏡像 229..236 列）', () => {    const files = osVmFiles();
-    const dir = path.join(REPO, '11', 'jack', 'Pong');
+    const dir = path.join(COURSES, '11', 'jack', 'Pong');
     for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.jack')).sort()) {
       files.push({ path: f.replace(/\.jack$/, '.vm'), src: compileJack(fs.readFileSync(path.join(dir, f), 'utf8')).join('\n') + '\n' });
     }
@@ -369,7 +376,7 @@ describe('vm2riscv 執行路徑（bundle HackRv＋cli/riscv_run.js）', () => {
   const DIST = path.resolve(import.meta.dirname, '../dist');
 
   function sumS() {
-    const d = path.join(REPO, '11', 'jackNoOs', 'Sum');
+    const d = path.join(COURSES, '11', 'jackNoOs', 'Sum');
     const files = ['Main.jack', 'Sys.jack'].map((f, i) => ({
       path: i === 0 ? 'Main.vm' : 'Sys.vm',
       src: compileJack(fs.readFileSync(path.join(d, f), 'utf8')).join('\n') + '\n',
@@ -434,8 +441,8 @@ describe('vm2riscv 執行路徑（bundle HackRv＋cli/riscv_run.js）', () => {
 
 // ==================== 12 支 Jack 範例在 RV32 上跑成功（前端雙後端同名單） ====================
 describe('vm2riscv 全範例執行（needsOS 含 OS 全量，跑 5 萬步不崩）', () => {
-  const JACK = path.resolve(REPO, '11', 'jack');
-  const NOOS = path.join(REPO, '11', 'jackNoOs');
+  const JACK = path.resolve(COURSES, '11', 'jack');
+  const NOOS = path.join(COURSES, '11', 'jackNoOs');
   const PROGRAMS = [
     { name: 'Seven', dir: path.join(JACK, 'Seven'), needsOS: true },
     { name: 'Average', dir: path.join(JACK, 'Average'), needsOS: true },

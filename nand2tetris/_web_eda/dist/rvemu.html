@@ -47,10 +47,10 @@
 <header>
   <h1>nand2tetris <span style="font-size:11px;color:var(--dim)">RISCV 模擬器</span></h1>
   <select id="nav" title="切換工具">
-    <option value="index.html">HACK 模擬器</option>
-    <option value="hdl.html">HDL 模擬器</option>
     <option value="jack.html">Jack 編譯器</option>
+    <option value="index.html">HACK 模擬器</option>
     <option value="rvemu.html">RISCV 模擬器</option>
+    <option value="hdl.html">HDL 模擬器</option>
   </select>
   <script>
   // 四頁共用：頁面切換選單；jack.html ⇄ rvemu.html 互切時攜帶 #prog=
@@ -66,6 +66,8 @@
   </script>
   <select id="example" title="內建範例（Jack 程式，選取即編成 RISCV 組語）"></select>
   <button id="build" title="把目前範例的 Jack 重新編成 .s">重編 Jack ▸</button>
+  <button id="open">開啟 .s…</button>
+  <input type="file" id="file" accept=".s,.asm" hidden>
   <button id="load" title="組譯左方 .s 並載入">組譯並載入</button>
   <button id="run">執行 ▶</button>
   <button id="step">Step</button>
@@ -134,7 +136,8 @@
 </main>
 <script src="corpus.js?v=14"></script>
 <script src="hdl-rt.js?v=10"></script>
-<script src="embed.js?v=14"></script>
-<script src="rvemu.js?v=5"></script>
+<script src="embed.js?v=16"></script>
+<script src="emu-common.js?v=2"></script>
+<script src="rvemu.js?v=7"></script>
 </body>
 </html>

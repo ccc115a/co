@@ -5,16 +5,16 @@ cd "$(dirname "$0")"
 echo "== node --test（單元測試）=="
 node --test
 echo "== 跑 ch01 ~ ch03 全部測試 =="
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b
 echo "== 跑 ch05 全部測試（CPU 內部/外部 + 六支 Computer；Memory.tst 需人工按鍵，不自動化）=="
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
-  --test ../05/CPU.tst --test ../05/CPU-external.tst \
-  --test ../05/ComputerAdd.tst --test ../05/ComputerAdd-external.tst \
-  --test ../05/ComputerMax.tst --test ../05/ComputerMax-external.tst \
-  --test ../05/ComputerRect.tst --test ../05/ComputerRect-external.tst
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
+  --test third_party/courses/05/CPU.tst --test third_party/courses/05/CPU-external.tst \
+  --test third_party/courses/05/ComputerAdd.tst --test third_party/courses/05/ComputerAdd-external.tst \
+  --test third_party/courses/05/ComputerMax.tst --test third_party/courses/05/ComputerMax-external.tst \
+  --test third_party/courses/05/ComputerRect.tst --test third_party/courses/05/ComputerRect-external.tst
 echo "== 跑 ch04（Mult-hw / Fill-hw，跑在 Computer.hdl 上）=="
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
-  --test ../04/mult/Mult-hw.tst --test ../04/fill/Fill-hw.tst
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
+  --test third_party/courses/04/mult/Mult-hw.tst --test third_party/courses/04/fill/Fill-hw.tst
 echo "== v0.5：Jack → VM → ASM → HACK 全鏈路 e2e（跑在 Computer.hdl 上，RAM[16]=5）=="
 mkdir -p gen/chain/vm
 node cli/jack2vm.js gen/chain/Main.jack >/dev/null
@@ -22,7 +22,7 @@ node cli/jack2vm.js gen/chain/Sys.jack >/dev/null
 mv -f gen/chain/output/Main.vm gen/chain/output/Sys.vm gen/chain/vm/
 node cli/vm2asm.js gen/chain/chain.asm gen/chain/vm/Main.vm gen/chain/vm/Sys.vm >/dev/null
 node cli/hackasm.js gen/chain/chain.asm >/dev/null
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
   --test gen/chain/chain.tst
 echo "== v0.6：hackemu headless 交叉驗證（chain.bin → RAM[16]=5，與 hdl2js 一致）=="
 node cli/hackemu.js --headless gen/chain/chain.bin --max 500000 | grep -q "RAM\[16\] static: 5"
@@ -35,8 +35,8 @@ node cli/hackemu.js --headless gen/show.bin --max 10000000 --dump 200,201 --dump
 grep -q "RAM\[200..=201\]: \[1234, 777\]" gen/show.out
 grep -q "RAM\[22784..=22784\]: \[32768\]" gen/show.out
 echo "== v0.7.1：Pong --keys 方向鍵回應（bat 位置隨按鍵分離）=="
-node cli/jack2vm.js ../11/jack/Pong >/dev/null
-node cli/vm2asm.js gen/pong.asm gen/os_src/output/*.vm ../11/jack/Pong/output/*.vm >/dev/null
+node cli/jack2vm.js third_party/courses/11/jack/Pong >/dev/null
+node cli/vm2asm.js gen/pong.asm gen/os_src/output/*.vm third_party/courses/11/jack/Pong/output/*.vm >/dev/null
 node cli/hackasm.js gen/pong >/dev/null
 printf '1000000 left\n' > gen/keys.left
 printf '1000000 right\n' > gen/keys.right
@@ -69,8 +69,10 @@ grep -q "RAM\[100..=110\]: \[1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0\]" gen/m73/HeapTest
 echo "== v0.8：網頁 bundle（dist/embed.js＋app.js 語法，file:// 直開）=="
 node tools/embed.js
 node --check dist/embed.js
+node --check dist/emu-common.js
 node --check dist/app.js
-grep -Eq 'src="embed.js(\\?v=[0-9a-z]+)?"' dist/index.html && grep -Eq 'src="app.js(\\?v=[0-9a-z]+)?"' dist/index.html
+node --check dist/rvemu.js
+grep -Eq 'src="embed.js(\\?v=[0-9a-z]+)?"' dist/index.html && grep -Eq 'src="app.js(\\?v=[0-9a-z]+)?"' dist/index.html && grep -Eq 'src="emu-common.js(\\?v=[0-9a-z]+)?"' dist/index.html && grep -Eq 'src="emu-common.js(\\?v=[0-9a-z]+)?"' dist/rvemu.html
 echo "== v0.9：hdl.html 瀏覽器全路徑（語料 40/40 內建案例 + 頁面語法）=="
 node tools/gen_corpus.js
 node tools/embed.js
@@ -103,17 +105,17 @@ for (const [from, to] of [["index.html", "jack.html"], ["hdl.html", "jack.html"]
 console.log("jack 頁面引用與互相連節完整");
 '
 echo "== v2.4：RV32I 單週期處理器（Riscv32i/rv32i：.asm 可重現 .hack＋60 指令 .cmp 比對）=="
-node ../Riscv32/asm.js Riscv32i/rv32i_prog.asm
+node third_party/courses/Riscv32/asm.js Riscv32i/rv32i_prog.asm
 cmp Riscv32i/rv32i_prog.bin Riscv32i/rv32i_prog.hack
 rm -f Riscv32i/rv32i_prog.bin
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 --dir Riscv32i \
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 --dir Riscv32i \
   --test Riscv32i/rv32i.tst
 rm -f Riscv32i/rv32i.out
 echo "== v2.5：RV32I 記憶體示範（Riscv32i/sum10：1+...+10=55 存 mem[16]）=="
-node ../Riscv32/asm.js Riscv32i/sum10.asm
+node third_party/courses/Riscv32/asm.js Riscv32i/sum10.asm
 cmp Riscv32i/sum10.bin Riscv32i/sum10.hack
 rm -f Riscv32i/sum10.bin
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 --dir Riscv32i \
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 --dir Riscv32i \
   --test Riscv32i/sum10.tst
 rm -f Riscv32i/sum10.out
 echo "== v2.6：全鏈路加 1+...+10 範例（gen/sum：Jack 全鏈路可重現＋Computer 跑出 55）=="
@@ -128,7 +130,7 @@ node cli/hackasm.js gen/sum/sum.asm >/dev/null
 cmp /tmp/sum_asm.orig gen/sum/sum.asm
 cmp /tmp/sum_hack.orig gen/sum/sum.hack
 rm -f /tmp/sum_asm.orig /tmp/sum_hack.orig gen/sum/sum.bin
-node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
+node cli/hdl2js.js --dir third_party/courses/01 --dir third_party/courses/02 --dir third_party/courses/03/a --dir third_party/courses/03/b --dir third_party/courses/05 \
   --test gen/sum/sum.tst
 rm -f gen/sum/sum.out
 echo "== 全部 PASS =="
