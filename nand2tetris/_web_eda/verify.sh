@@ -116,4 +116,19 @@ rm -f Riscv32i/sum10.bin
 node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 --dir Riscv32i \
   --test Riscv32i/sum10.tst
 rm -f Riscv32i/sum10.out
+echo "== v2.6：全鏈路加 1+...+10 範例（gen/sum：Jack 全鏈路可重現＋Computer 跑出 55）=="
+mkdir -p gen/sum/vm
+cp gen/sum/sum.asm /tmp/sum_asm.orig
+cp gen/sum/sum.hack /tmp/sum_hack.orig
+node cli/jack2vm.js gen/sum/Main.jack >/dev/null
+node cli/jack2vm.js gen/sum/Sys.jack >/dev/null
+mv -f gen/sum/output/Main.vm gen/sum/output/Sys.vm gen/sum/vm/
+node cli/vm2asm.js gen/sum/sum.asm gen/sum/vm/Main.vm gen/sum/vm/Sys.vm >/dev/null
+node cli/hackasm.js gen/sum/sum.asm >/dev/null
+cmp /tmp/sum_asm.orig gen/sum/sum.asm
+cmp /tmp/sum_hack.orig gen/sum/sum.hack
+rm -f /tmp/sum_asm.orig /tmp/sum_hack.orig gen/sum/sum.bin
+node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
+  --test gen/sum/sum.tst
+rm -f gen/sum/sum.out
 echo "== 全部 PASS =="

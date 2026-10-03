@@ -53,6 +53,15 @@ for t in MathTest StringTest ScreenTest HeapTest; do
     node cli/hackasm.js gen/m73/$t >/dev/null 2>&1 || true
     node cli/hackemu.js --headless gen/m73/$t.bin --max 50000000 --dump 100,110 2>/dev/null | grep "RAM\[100..=110\]" || true
 done
+# v2.6：全鏈路 sum（1+...+10，Computer 跑出 55）
+mkdir -p gen/sum/vm
+node cli/jack2vm.js gen/sum/Main.jack >/dev/null 2>&1 || true
+node cli/jack2vm.js gen/sum/Sys.jack >/dev/null 2>&1 || true
+mv -f gen/sum/output/Main.vm gen/sum/output/Sys.vm gen/sum/vm/ 2>/dev/null || true
+node cli/vm2asm.js gen/sum/sum.asm gen/sum/vm/Main.vm gen/sum/vm/Sys.vm >/dev/null 2>&1 || true
+node cli/hackasm.js gen/sum/sum.asm >/dev/null 2>&1 || true
+node cli/hdl2js.js --dir ../01 --dir ../02 --dir ../03/a --dir ../03/b --dir ../05 \
+  --test gen/sum/sum.tst || true
 # v0.8：網頁 bundle 冒煙（embed + 語法檢查 + index 引用）
 node tools/embed.js && node --check dist/embed.js && node --check dist/app.js && grep -Eq 'src="embed.js(\\?v=[0-9a-z]+)?"' dist/index.html || true
 # v0.9：hdl.html 瀏覽器全路徑（語料 40/40 + 頁面語法）
