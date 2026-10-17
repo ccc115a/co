@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>nand2tetris — HDL 模擬器</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background: #1b2027; color: #dce1e8; }
+  header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #232b36; border-bottom: 1px solid #3a4a5e; flex-wrap: wrap; }
+  header h1 { font-size: 16px; margin: 0 14px 0 0; white-space: nowrap; }
+  a { color: #7ec3ff; text-decoration: none; }
+  select, button, textarea { background: #2a3441; color: #e6ecf4; border: 1px solid #435269; border-radius: 5px; font: inherit; }
+  select { padding: 4px 6px; }
+  button { padding: 5px 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: default; }
+  #status { margin-left: auto; font-size: 13px; }
+  main { display: grid; grid-template-columns: 46% 1fr; gap: 14px; padding: 14px; height: calc(100vh - 56px); }
+  section.col { display: flex; flex-direction: column; gap: 10px; min-height: 0; }
+  .panel { display: flex; flex-direction: column; background: #232b36; border: 1px solid #38445a; border-radius: 8px; padding: 8px; min-height: 0; }
+  h2 { font-size: 13px; margin: 0 0 6px; color: #9fb2c8; }
+  label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #9fb2c8; }
+  textarea { flex: 1; min-height: 90px; resize: none; line-height: 1.45; padding: 6px; }
+  #banner { padding: 8px 12px; border-radius: 6px; font-weight: 700; }
+  #banner.pass { background: #1d3b2a; color: #6fe39a; border: 1px solid #2e7d4c; }
+  #banner.fail { background: #46241f; color: #ff9b8a; border: 1px solid #a03a2b; }
+  #outwrap { overflow: auto; flex: 1; min-height: 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 12px; }
+  th, td { border: 1px solid #3a4a5e; padding: 3px 8px; text-align: right; white-space: pre; }
+  th { background: #2c3547; position: sticky; top: 0; }
+  td.num { color: #ffd479; }
+  td.mism { color: #ff9b8a; }
+  pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; color: #ffb3a5; flex: 1; overflow: auto; }
+  #hdlrow { flex: 4; } #tstrow { flex: 2; } #cmprow { flex: 2; }
+  .hidden { display: none; }
+  /* v4.0 電路圖檢視器 */
+  #graphOverlay { position: fixed; inset: 0; background: rgba(10,14,20,.78); z-index: 50; display: flex; flex-direction: column; }
+  #graphOverlay.hidden { display: none; }
+  #graphBar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: #232b36; border-bottom: 1px solid #3a4a5e; flex-wrap: wrap; }
+  #graphBar h1 { font-size: 14px; margin: 0; }
+  #crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; flex-wrap: wrap; }
+  #crumbs button { padding: 2px 10px; }
+  #crumbs button.cur { background: #3d6ea0; border-color: #6aa1d4; }
+  #crumbs .sep { color: #5a6b80; }
+  #graphBody { flex: 1; display: flex; min-height: 0; }
+  #graphSvgWrap { flex: 3; overflow: hidden; padding: 0; position: relative; background: #171c24; }
+  #graphPan { position: absolute; inset: 0; overflow: hidden; cursor: grab; }
+  #graphPan.dragging { cursor: grabbing; }
+  #graphSvg { display: block; transform-origin: 0 0; touch-action: none; user-select: none; }
+  #graphZoom { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+  #graphZoom button { width: 32px; height: 32px; font-size: 15px; padding: 0; }
+  #graphSide { flex: 1; min-width: 260px; max-width: 380px; overflow: auto; background: #232b36; border-left: 1px solid #3a4a5e; padding: 10px 12px; font-size: 12px; }
+  #graphSide h3 { font-size: 13px; margin: 10px 0 4px; color: #9fb2c8; }
+  #graphSide h3:first-child { margin-top: 0; }
+  #graphSide table { font-size: 12px; }
+  #graphSide pre { color: #c9d4e2; background: #1d232e; border-radius: 6px; padding: 6px; max-height: 260px; }
+  .gbox { cursor: default; }
+  .gbox.drill { cursor: pointer; }
+  .gbox.drill:hover rect.frame { stroke: #ffd479; stroke-width: 2.5; }
+  .gbox text { font-family: inherit; }
+
+</style>
+</head>
+<body>
+<header>
+  <h1>nand2tetris <span style="font-size:11px;color:#9fb2c8">HDL 模擬器</span></h1>
+  <select id="nav" title="切換工具">
+    <option value="jack.html">Jack 編譯器</option>
+    <option value="index.html">HACK 模擬器</option>
+    <option value="rvemu.html">RISCV 模擬器</option>
+    <option value="hdl.html">HDL 模擬器</option>
+  </select>
+  <script>
+  // 四頁共用：頁面切換選單；jack.html ⇄ rvemu.html 互切時攜帶 #prog=
+  (function () {
+    var sel = document.getElementById('nav');
+    sel.value = 'hdl.html';
+    sel.onchange = function () {
+      var h = location.hash || '';
+      var carry = /^#prog=/.test(h) && /^(jack\.html|rvemu\.html)$/.test(sel.value);
+      location.href = sel.value + (carry ? h : '');
+    };
+  })();
+  </script>
+  <select id="mode">
+    <option value="chapter">內建章節晶片</option>
+    <option value="custom">自訂貼上</option>
+  </select>
+  <select id="chapter"></select>
+  <select id="case"></select>
+  <label title="鍵盤鍵值（KBD 24576）：Memory.tst 的鍵盤段（`while out <> 75/89`）會自動按腳本期待的鍵，預設給 0 即可整支跑過；想持續按住某鍵再改成該鍵值">KBD 鍵值
+    <input type="number" id="kbd" value="0" min="0" max="65535" style="width:64px"></label>
+  <button id="run" title="跑完整支 .tst（codegen＋編譯，數秒）">執行</button>
+  <button id="graph" title="檢視目前 .hdl 的電路圖，可逐層點入直到 Nand／DFF">檢視電路圖</button>
+  <span class="spacer"></span>
+  <span id="status"></span>
+</header>
+<main>
+  <section class="col">
+    <h2>① 來源</h2>
+    <div class="panel" id="hdlrow"><label>.hdl<textarea id="hdl" spellcheck="false" placeholder="HackHDL 晶片原始碼"></textarea></label></div>
+    <div class="panel" id="tstrow"><label>.tst<textarea id="tst" spellcheck="false" placeholder="官方 HardwareSimulator 測試腳本"></textarea></label></div>
+    <div class="panel" id="cmprow"><label>.cmp（可留空＝只看輸出，不比對）<textarea id="cmp" spellcheck="false" placeholder="期望輸出（逐位元比對）"></textarea></label></div>
+  </section>
+  <section class="col">
+    <h2>② 執行結果</h2>
+    <div id="banner" class="hidden"></div>
+    <div class="panel" style="flex:3">
+      <h2 style="margin-bottom:4px">.out 輸出表</h2>
+      <div id="outwrap"><table id="outtab"></table></div>
+    </div>
+    <div class="panel" style="flex:2">
+      <h2 style="margin-bottom:4px">錯誤／訊息</h2>
+      <pre id="errlog"></pre>
+    </div>
+  </section>
+</main>
+<script src="corpus.js?v=14"></script>
+<script src="hdl-rt.js?v=10"></script>
+<script src="embed.js?v=17"></script>
+<script src="hdl.js?v=15"></script>
+<div id="graphOverlay" class="hidden">
+  <div id="graphBar">
+    <h1>電路圖</h1>
+    <div id="crumbs"></div>
+    <span class="spacer"></span>
+    <span id="graphHint" style="font-size:12px;color:#9fb2c8">可點入的元件有黃框提示；Nand／DFF 為最底層</span>
+    <button id="graphClose">關閉 ✕</button>
+  </div>
+  <div id="graphBody">
+    <div id="graphSvgWrap">
+      <div id="graphPan"></div>
+      <div id="graphZoom">
+        <button id="zoomIn" title="放大">＋</button>
+        <button id="zoomOut" title="縮小">－</button>
+        <button id="zoomFit" title="適配視窗">⤢</button>
+        <button id="zoomReset" title="原比例 100%">1:1</button>
+      </div>
+    </div>
+    <div id="graphSide"></div>
+  </div>
+</div>
+</body>
+</html>

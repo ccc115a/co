@@ -34,6 +34,32 @@
   pre { margin: 0; white-space: pre-wrap; word-break: break-word; font-size: 12px; color: #ffb3a5; flex: 1; overflow: auto; }
   #hdlrow { flex: 4; } #tstrow { flex: 2; } #cmprow { flex: 2; }
   .hidden { display: none; }
+  /* v4.0 電路圖檢視器 */
+  #graphOverlay { position: fixed; inset: 0; background: rgba(10,14,20,.78); z-index: 50; display: flex; flex-direction: column; }
+  #graphOverlay.hidden { display: none; }
+  #graphBar { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: #232b36; border-bottom: 1px solid #3a4a5e; flex-wrap: wrap; }
+  #graphBar h1 { font-size: 14px; margin: 0; }
+  #crumbs { display: flex; align-items: center; gap: 6px; font-size: 13px; flex-wrap: wrap; }
+  #crumbs button { padding: 2px 10px; }
+  #crumbs button.cur { background: #3d6ea0; border-color: #6aa1d4; }
+  #crumbs .sep { color: #5a6b80; }
+  #graphBody { flex: 1; display: flex; min-height: 0; }
+  #graphSvgWrap { flex: 3; overflow: hidden; padding: 0; position: relative; background: #171c24; }
+  #graphPan { position: absolute; inset: 0; overflow: hidden; cursor: grab; }
+  #graphPan.dragging { cursor: grabbing; }
+  #graphSvg { display: block; transform-origin: 0 0; touch-action: none; user-select: none; }
+  #graphZoom { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 4px; }
+  #graphZoom button { width: 32px; height: 32px; font-size: 15px; padding: 0; }
+  #graphSide { flex: 1; min-width: 260px; max-width: 380px; overflow: auto; background: #232b36; border-left: 1px solid #3a4a5e; padding: 10px 12px; font-size: 12px; }
+  #graphSide h3 { font-size: 13px; margin: 10px 0 4px; color: #9fb2c8; }
+  #graphSide h3:first-child { margin-top: 0; }
+  #graphSide table { font-size: 12px; }
+  #graphSide pre { color: #c9d4e2; background: #1d232e; border-radius: 6px; padding: 6px; max-height: 260px; }
+  .gbox { cursor: default; }
+  .gbox.drill { cursor: pointer; }
+  .gbox.drill:hover rect.frame { stroke: #ffd479; stroke-width: 2.5; }
+  .gbox text { font-family: inherit; }
+
 </style>
 </head>
 <body>
@@ -66,6 +92,7 @@
   <label title="鍵盤鍵值（KBD 24576）：Memory.tst 的鍵盤段（`while out <> 75/89`）會自動按腳本期待的鍵，預設給 0 即可整支跑過；想持續按住某鍵再改成該鍵值">KBD 鍵值
     <input type="number" id="kbd" value="0" min="0" max="65535" style="width:64px"></label>
   <button id="run" title="跑完整支 .tst（codegen＋編譯，數秒）">執行</button>
+  <button id="graph" title="檢視目前 .hdl 的電路圖，可逐層點入直到 Nand／DFF">檢視電路圖</button>
   <span class="spacer"></span>
   <span id="status"></span>
 </header>
@@ -91,7 +118,28 @@
 </main>
 <script src="corpus.js?v=14"></script>
 <script src="hdl-rt.js?v=10"></script>
-<script src="embed.js?v=16"></script>
-<script src="hdl.js?v=12"></script>
+<script src="embed.js?v=17"></script>
+<script src="hdl.js?v=15"></script>
+<div id="graphOverlay" class="hidden">
+  <div id="graphBar">
+    <h1>電路圖</h1>
+    <div id="crumbs"></div>
+    <span class="spacer"></span>
+    <span id="graphHint" style="font-size:12px;color:#9fb2c8">可點入的元件有黃框提示；Nand／DFF 為最底層</span>
+    <button id="graphClose">關閉 ✕</button>
+  </div>
+  <div id="graphBody">
+    <div id="graphSvgWrap">
+      <div id="graphPan"></div>
+      <div id="graphZoom">
+        <button id="zoomIn" title="放大">＋</button>
+        <button id="zoomOut" title="縮小">－</button>
+        <button id="zoomFit" title="適配視窗">⤢</button>
+        <button id="zoomReset" title="原比例 100%">1:1</button>
+      </div>
+    </div>
+    <div id="graphSide"></div>
+  </div>
+</div>
 </body>
 </html>

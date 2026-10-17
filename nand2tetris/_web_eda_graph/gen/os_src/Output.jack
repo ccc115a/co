@@ -1,0 +1,33 @@
+// v0.7 極簡 Output 替身（gen/，非官方）：
+// 官方 Output.jack 的字型資料初始化約 16.8K 組語字，連同 Pong 一起會超過 Hack 的
+// 32K ROM。Pong 只用 moveCursor/printString/printInt 顯示分數——這裡以空實作
+// 滿足呼叫（文字畫面不呈現），換取「整個 OS+Pong 塞得進 32K ROM」的可執行演示。
+// 完整字型版本仍以 M7.1 的 8/8 byte-compat 證明為準。
+class Output {
+
+    /** 空實作：不載入字型。 */
+    function void init() {
+        return;
+    }
+
+    function void moveCursor(int row, int col) {
+        return;
+    }
+
+    function void printChar(char c) {
+        return;
+    }
+
+    function void printString(String s) {
+        return;
+    }
+
+    function void printInt(int i) {
+        return;
+    }
+
+    function void println() {
+        return;
+    }
+
+}

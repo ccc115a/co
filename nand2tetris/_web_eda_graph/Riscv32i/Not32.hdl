@@ -1,0 +1,9 @@
+// Not32：32 位元反及（兩顆 Not16）。
+CHIP Not32 {
+    IN a[32];
+    OUT out[32];
+
+    PARTS:
+    Not16(in=a[0..15], out=out[0..15]);
+    Not16(in=a[16..31], out=out[16..31]);
+}

@@ -1,0 +1,24 @@
+class Main {
+    static int result;
+
+    function void init() {
+        var int n, a, b, t, i;
+        let n = 20;
+        let a = 0;
+        let b = 1;
+        let i = 2;
+        while (i < 21) {
+            let t = a + b;
+            let a = b;
+            let b = t;
+            let i = i + 1;
+        }
+        let result = b;
+        return;
+    }
+
+    function void loop() {
+        while (true) {
+        }
+    }
+}

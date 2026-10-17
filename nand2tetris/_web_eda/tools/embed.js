@@ -43,6 +43,7 @@ const libs = [
   'lib/hdl/ast.js',
   'lib/hdl/parser.js',
   'lib/hdl/elab.js',
+  'lib/hdl/schematic.js',
   'lib/hdl/codegen.js',
   'lib/rt/fmt.js',
   'lib/rt/tst.js',
@@ -100,6 +101,7 @@ const exportsBlock = `(function (win) {
   win.HackHdl = {
     parseHdl,
     loadLibrary, mergeLibs, mergeLibsList, elab, Builtin,
+    HdlGraph,
     generateJs, topClassExpr, pinSan,
     parseScript, run,
     TopModel,

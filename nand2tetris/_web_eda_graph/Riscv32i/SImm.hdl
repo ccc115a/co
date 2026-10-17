@@ -1,0 +1,41 @@
+// SImm：S/B 型「分割立即數」→ 32 位元符號擴展。
+// 低 5 位在 instr[11:7]、高 7 位在 instr[31:25]，
+// 拼成 12 位元有號 word 位移（與 RV 的 S/B 分割同理，word 定址故無 trailing 0）。
+CHIP SImm {
+    IN in[32];
+    OUT out[32];
+
+    PARTS:
+    Or(a=in[7],  b=false, out=out[0]);
+    Or(a=in[8],  b=false, out=out[1]);
+    Or(a=in[9],  b=false, out=out[2]);
+    Or(a=in[10], b=false, out=out[3]);
+    Or(a=in[11], b=false, out=out[4]);
+    Or(a=in[25], b=false, out=out[5]);
+    Or(a=in[26], b=false, out=out[6]);
+    Or(a=in[27], b=false, out=out[7]);
+    Or(a=in[28], b=false, out=out[8]);
+    Or(a=in[29], b=false, out=out[9]);
+    Or(a=in[30], b=false, out=out[10]);
+    Or(a=in[31], b=false, out=out[11]);
+    Mux(a=false, b=true, sel=in[31], out=out[12]);
+    Mux(a=false, b=true, sel=in[31], out=out[13]);
+    Mux(a=false, b=true, sel=in[31], out=out[14]);
+    Mux(a=false, b=true, sel=in[31], out=out[15]);
+    Mux(a=false, b=true, sel=in[31], out=out[16]);
+    Mux(a=false, b=true, sel=in[31], out=out[17]);
+    Mux(a=false, b=true, sel=in[31], out=out[18]);
+    Mux(a=false, b=true, sel=in[31], out=out[19]);
+    Mux(a=false, b=true, sel=in[31], out=out[20]);
+    Mux(a=false, b=true, sel=in[31], out=out[21]);
+    Mux(a=false, b=true, sel=in[31], out=out[22]);
+    Mux(a=false, b=true, sel=in[31], out=out[23]);
+    Mux(a=false, b=true, sel=in[31], out=out[24]);
+    Mux(a=false, b=true, sel=in[31], out=out[25]);
+    Mux(a=false, b=true, sel=in[31], out=out[26]);
+    Mux(a=false, b=true, sel=in[31], out=out[27]);
+    Mux(a=false, b=true, sel=in[31], out=out[28]);
+    Mux(a=false, b=true, sel=in[31], out=out[29]);
+    Mux(a=false, b=true, sel=in[31], out=out[30]);
+    Mux(a=false, b=true, sel=in[31], out=out[31]);
+}

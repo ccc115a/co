@@ -1,0 +1,133 @@
+// RvDec：rv32i 指令解碼器（RV32I，word 定址；程式格式與 Riscv32/RV32S 相容）。
+//
+// 立即數（同 RV32S：word 位移）：I＝instr[31:20] 有號；S/B＝{instr[31:25],instr[11:7]}；
+// J＝instr[31:12]（20 位元 word 位移）；U＝{instr[31:12],12'b0}。
+//
+// ctl[15:0]（本設計自有編碼，與 Rv32_1 不同）：
+//   0 regW（寫回暫存器）｜1 memW（SW）｜2 memR（LW）｜3 wbMem（寫回選記憶體）｜
+//   4 wbLink（寫回選 pc+1）｜5 aluA_imm（LUI：a=imm）｜6 aluA_pc（AUIPC：a=pc）｜
+//   7 aluB_imm（b=imm；R 型與分支為 0）｜8 halt｜9 branch｜10 jal｜11 jalr｜
+//   12..15 aluFn（RvAlu：0000 and｜0001 or｜0010 xor｜0011 add｜0100 sub｜
+//     0101 sll｜0110 srl｜0111 sra｜1000 slt｜1001 sltu｜1010 passA）。
+CHIP RvDec {
+    IN instr[32];
+    OUT rd[5], rs1[5], rs2[5], imm[32], ctl[16];
+
+    PARTS:
+    // ---- opcode（instr[6:0]）比對，b[0] 為 LSB ----
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=false, b[3]=false, b[4]=true, b[5]=true, b[6]=false, out=eqR);   // 0110011
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=false, b[3]=false, b[4]=true, b[5]=false, b[6]=false, out=eqI);   // 0010011
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=false, b[3]=false, b[4]=false, b[5]=false, b[6]=false, out=eqL);  // 0000011
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=false, b[3]=false, b[4]=false, b[5]=true, b[6]=false, out=eqS);   // 0100011
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=false, b[3]=false, b[4]=false, b[5]=true, b[6]=true, out=eqB);    // 1100011
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=true, b[3]=true, b[4]=false, b[5]=true, b[6]=true, out=eqJ);     // 1101111
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=true, b[3]=false, b[4]=false, b[5]=true, b[6]=true, out=eqJR);   // 1100111
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=true, b[3]=false, b[4]=true, b[5]=true, b[6]=false, out=eqU);    // 0110111
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=true, b[3]=false, b[4]=true, b[5]=false, b[6]=false, out=eqAU);  // 0010111
+    Cmp7(a=instr[0..6], b[0]=true, b[1]=true, b[2]=true, b[3]=true, b[4]=true, b[5]=true, b[6]=true, out=eqH);      // 1111111
+
+    // ---- 暫存器欄位 ----
+    Or(a=instr[7],  b=false, out=rd[0]);
+    Or(a=instr[8],  b=false, out=rd[1]);
+    Or(a=instr[9],  b=false, out=rd[2]);
+    Or(a=instr[10], b=false, out=rd[3]);
+    Or(a=instr[11], b=false, out=rd[4]);
+    Or(a=instr[15], b=false, out=rs1[0]);
+    Or(a=instr[16], b=false, out=rs1[1]);
+    Or(a=instr[17], b=false, out=rs1[2]);
+    Or(a=instr[18], b=false, out=rs1[3]);
+    Or(a=instr[19], b=false, out=rs1[4]);
+    Or(a=instr[20], b=false, out=rs2[0]);
+    Or(a=instr[21], b=false, out=rs2[1]);
+    Or(a=instr[22], b=false, out=rs2[2]);
+    Or(a=instr[23], b=false, out=rs2[3]);
+    Or(a=instr[24], b=false, out=rs2[4]);
+
+    // ---- 立即數 ----
+    Se12(in=instr[20..31], out=immI);
+    SImm(in=instr, out=immSB);
+    Se20(in=instr[12..31], out=immJ);
+    Ui32(in=instr[12..31], out=immU);
+    Or(a=eqS, b=eqB, out=sb);
+    Or(a=sb, b=eqU, out=sbU);
+    Or(a=sbU, b=eqAU, out=sel0);
+    Or(a=eqJ, b=eqU, out=s1a);
+    Or(a=s1a, b=eqAU, out=sel1);
+    Mux4Way32(a=immI, b=immSB, c=immJ, d=immU, sel[0]=sel0, sel[1]=sel1, out=imm);
+
+    // ---- funct3（instr[14:12]）全比對 ----
+    Comp3(a=instr[12..14], b[0]=false, b[1]=false, b[2]=false, out=f0);
+    Comp3(a=instr[12..14], b[0]=true,  b[1]=false, b[2]=false, out=f1);
+    Comp3(a=instr[12..14], b[0]=false, b[1]=true,  b[2]=false, out=f2);
+    Comp3(a=instr[12..14], b[0]=true,  b[1]=true,  b[2]=false, out=f3);
+    Comp3(a=instr[12..14], b[0]=false, b[1]=false, b[2]=true,  out=f4);
+    Comp3(a=instr[12..14], b[0]=true,  b[1]=false, b[2]=true,  out=f5);
+    Comp3(a=instr[12..14], b[0]=false, b[1]=true,  b[2]=true,  out=f6);
+    Comp3(a=instr[12..14], b[0]=true,  b[1]=true,  b[2]=true,  out=f7);
+    Or(a=instr[30], b=false, out=f7b);
+
+    // ---- ALU 操作分類 ----
+    Or(a=eqR, b=eqI, out=isRI);
+    And(a=isRI, b=f0, out=ri0);
+    Or(a=eqL, b=eqS, out=ls);
+    Or(a=eqAU, b=eqJR, out=aujr);
+    Or(a=ls, b=aujr, out=lsaj);
+    Or(a=ri0, b=lsaj, out=addBase);
+    And(a=eqR, b=f0, out=r0);
+    And(a=r0, b=f7b, out=isSub);
+    Not(in=isSub, out=nsub);
+    And(a=addBase, b=nsub, out=isAdd);
+    And(a=isRI, b=f7, out=isAnd);
+    And(a=isRI, b=f6, out=isOr);
+    And(a=isRI, b=f4, out=isXor);
+    And(a=isRI, b=f1, out=isSLL);
+    And(a=isRI, b=f5, out=ri5);
+    Not(in=f7b, out=nf7b);
+    And(a=ri5, b=nf7b, out=isSRL);
+    And(a=ri5, b=f7b, out=isSRA);
+    And(a=isRI, b=f2, out=isSLT);
+    And(a=isRI, b=f3, out=isSLTU);
+    Or(a=eqU, b=false, out=isPassA);
+
+    // ---- aluFn[3:0]（xor 的 fn0＝0、sll 的 fn1＝0，不可混入）----
+    Or(a=isOr, b=isAdd, out=g00);
+    Or(a=g00, b=isSLL, out=g01);
+    Or(a=g01, b=isSRA, out=g02);
+    Or(a=g02, b=isSLTU, out=fn0);
+    Or(a=isXor, b=isAdd, out=g10);
+    Or(a=g10, b=isSRL, out=g11);
+    Or(a=g11, b=isSRA, out=g12);
+    Or(a=g12, b=isPassA, out=fn1);
+    Or(a=isSub, b=isSLL, out=g20);
+    Or(a=g20, b=isSRL, out=g21);
+    Or(a=g21, b=isSRA, out=fn2);
+    Or(a=isSLT, b=isSLTU, out=g30);
+    Or(a=g30, b=isPassA, out=fn3);
+
+    // ---- ctl 裝配 ----
+    Or(a=eqR, b=eqI, out=w0);
+    Or(a=w0, b=eqL, out=w1);
+    Or(a=w1, b=eqJ, out=w2);
+    Or(a=w2, b=eqJR, out=w3);
+    Or(a=w3, b=eqU, out=w4);
+    Or(a=w4, b=eqAU, out=regW);
+    Or(a=eqJ, b=eqJR, out=wbLink);
+    Or(a=eqR, b=eqB, out=rbUse);
+    Not(in=rbUse, out=aluBimm);
+    Or(a=regW, b=false, out=ctl[0]);
+    Or(a=eqS, b=false, out=ctl[1]);
+    Or(a=eqL, b=false, out=ctl[2]);
+    Or(a=eqL, b=false, out=ctl[3]);
+    Or(a=wbLink, b=false, out=ctl[4]);
+    Or(a=eqU, b=false, out=ctl[5]);
+    Or(a=eqAU, b=false, out=ctl[6]);
+    Or(a=aluBimm, b=false, out=ctl[7]);
+    Or(a=eqH, b=false, out=ctl[8]);
+    Or(a=eqB, b=false, out=ctl[9]);
+    Or(a=eqJ, b=false, out=ctl[10]);
+    Or(a=eqJR, b=false, out=ctl[11]);
+    Or(a=fn0, b=false, out=ctl[12]);
+    Or(a=fn1, b=false, out=ctl[13]);
+    Or(a=fn2, b=false, out=ctl[14]);
+    Or(a=fn3, b=false, out=ctl[15]);
+}
