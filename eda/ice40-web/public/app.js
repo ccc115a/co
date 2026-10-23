@@ -8,7 +8,28 @@ const CORE = ['design.v', 'tb.v', 'design.pcf'];
 const EXTRA_OK = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,39}\.(v|sv|vh|hex|mem|txt)$/;
 let files = Object.fromEntries(CORE.map(f => [f, '']));
 let cur = 'design.v', layout = null, wave = null, rep = null, netSel = null;
-const ed = $('ed');
+const isHdl = f => /\.(s?v|vh)$/.test(f);
+const edText = $('ed');            // plain textarea: used until CodeMirror has loaded, and kept as the fallback if it cannot
+let impl = null;                   // CodeMirror wrapper (vendor/editor.js) once loaded
+const errs = {};                   // file -> [{ line, message }] shown as markers in the editor
+const ed = {
+  get value() { return impl ? impl.getText() : edText.value; },
+  set value(v) { if (impl) impl.setDoc(v, isHdl(cur) ? 'verilog' : 'plain'); else edText.value = v; },
+  focus() { impl ? impl.focus() : edText.focus(); },
+  selectLine(n) {
+    if (impl) return impl.selectLine(n);
+    const lines = edText.value.split('\n'), start = lines.slice(0, n - 1).join('\n').length + (n > 1 ? 1 : 0);
+    edText.focus(); edText.setSelectionRange(start, start + (lines[n - 1] || '').length); edText.scrollTop = Math.max(0, (n - 4) * 19.5);
+  },
+};
+const applyErrors = () => impl?.setErrors(errs[cur] || []);
+async function upgradeEditor() {
+  try {
+    const m = await import('./vendor/editor.js'), text = edText.value;
+    impl = m.createEditor($('edwrap'), { onChange: t => { files[cur] = t; }, onRun: () => run() });
+    edText.hidden = true; impl.setDoc(text, isHdl(cur) ? 'verilog' : 'plain'); applyErrors();
+  } catch (e) { /* no CodeMirror bundle or no module support: the textarea keeps working */ }
+}
 function renderFileTabs() {
   const box = $('filetabs'); box.innerHTML = '';
   for (const f of Object.keys(files)) {
@@ -16,7 +37,7 @@ function renderFileTabs() {
     b.onclick = () => selectFile(f);
     if (!CORE.includes(f)) {
       const x = document.createElement('i'); x.textContent = '\u00d7'; x.title = 'Delete file'; x.style.cursor = 'pointer';
-      x.onclick = e => { e.stopPropagation(); if (!confirm(`Delete ${f}?`)) return; delete files[f]; if (cur === f) { cur = 'design.v'; ed.value = files[cur]; } renderFileTabs(); };
+      x.onclick = e => { e.stopPropagation(); if (!confirm(`Delete ${f}?`)) return; delete files[f]; if (cur === f) { cur = 'design.v'; ed.value = files[cur]; applyErrors(); } renderFileTabs(); };
       b.append(x);
     }
     box.append(b);
@@ -30,15 +51,10 @@ function renderFileTabs() {
   };
   box.append(add);
 }
-function selectFile(f) { files[cur] = ed.value; cur = f; ed.value = files[f]; renderFileTabs(); }
-ed.addEventListener('input', () => files[cur] = ed.value);
-ed.addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); } if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') run(); });
-function jumpTo(file, line) {
-  if (!(file in files)) return; selectFile(file);
-  const lines = ed.value.split('\n'); const start = lines.slice(0, line - 1).join('\n').length + (line > 1 ? 1 : 0);
-  ed.focus(); ed.setSelectionRange(start, start + (lines[line - 1] || '').length);
-  ed.scrollTop = Math.max(0, (line - 4) * 19.5);
-}
+function selectFile(f) { files[cur] = ed.value; cur = f; ed.value = files[f]; renderFileTabs(); applyErrors(); }
+edText.addEventListener('input', () => files[cur] = edText.value);
+edText.addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); } if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') run(); });
+function jumpTo(file, line) { if (!(file in files)) return; selectFile(file); ed.selectLine(line); }
 function fillPackages() { $('package').innerHTML = PACKAGES[$('device').value].map(p => `<option>${p}</option>`).join(''); }
 $('device').innerHTML = Object.keys(PACKAGES).map(d => `<option>${d}</option>`).join('');
 $('device').onchange = fillPackages;
@@ -50,7 +66,8 @@ async function loadExample(id) {
   const got = {};
   for (const f of ex.files) { const r = await fetch(`examples/${ex.id}/${f}`); if (!r.ok) throw new Error(`cannot load ${ex.id}/${f}`); got[f] = await r.text(); }
   files = Object.fromEntries([...CORE.map(f => [f, got[f] ?? '']), ...Object.entries(got).filter(([f]) => !CORE.includes(f))]);
-  cur = 'design.v'; ed.value = files[cur];
+  for (const k in errs) delete errs[k];
+  cur = 'design.v'; ed.value = files[cur]; applyErrors();
   $('device').value = ex.device; fillPackages(); $('package').value = ex.package; $('freq').value = ex.freq; $('top').value = ex.top;
   $('stSynth').checked = ex.steps.includes('pnr') || ex.steps.includes('synth'); $('stSim').checked = ex.steps.includes('sim');
   renderFileTabs();
@@ -65,12 +82,13 @@ async function initExamples() {
 $('example').onchange = () => loadExample($('example').value).catch(e => logLine('ERROR: ' + e.message));
 
 // ------------------------------------------------------------------ result tabs
-const TABS = [['log', 'Log'], ['report', 'Report'], ['layout', 'Layout'], ['wave', 'Waveform']];
+const TABS = [['log', 'Log'], ['report', 'Report'], ['schem', 'Schematic'], ['layout', 'Layout'], ['wave', 'Waveform']];
 let tab = 'log';
 function showTab(t) {
   tab = t;
   for (const [k] of TABS) $('p-' + k).classList.toggle('on', k === t);
-  renderResTabs(); requestAnimationFrame(() => { layView.resize(); waveView.resize(); });
+  renderResTabs(); if (t === 'schem' && schemDirty) drawSchem();
+  requestAnimationFrame(() => { layView.resize(); waveView.resize(); if (t === 'schem') fitSchem(); });
 }
 let errCount = 0;
 function renderResTabs() {
@@ -88,7 +106,7 @@ function logLine(text, cls = '') {
   const d = document.createElement('div'); d.textContent = text;
   if (!cls) cls = /error/i.test(text) ? 'er' : /warning/i.test(text) ? 'wa' : '';
   if (cls === 'er' && !text.startsWith('ERROR: ')) { /* keep count of real errors only */ }
-  if (cls === 'er') { errCount++; const loc = errorLocation(text); if (loc) { d.classList.add('go'); d.title = 'Jump to source'; d.onclick = () => jumpTo(loc.file, loc.line); } }
+  if (cls === 'er') { errCount++; const loc = errorLocation(text); if (loc) { d.classList.add('go'); d.title = 'Jump to source'; d.onclick = () => jumpTo(loc.file, loc.line); (errs[loc.file] ||= []).push({ line: loc.line, message: text.replace(/^.*?error:?\s*/i, '') || text }); if (loc.file === cur) applyErrors(); } }
   d.className += ' ' + cls; d.dataset.k = cls || 'n'; if ($('errsOnly').checked && !cls) d.hidden = true;
   logEl.append(d); if (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 80) logEl.scrollTop = logEl.scrollHeight;
 }
@@ -100,7 +118,7 @@ class View {
     this.c = canvas; this.draw = draw; this.k = 1; this.tx = 0; this.ty = 0; this.ctx = canvas.getContext('2d'); this.dpr = 1;
     new ResizeObserver(() => this.resize()).observe(canvas);
     let drag = null;
-    canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY }; });
+    canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture?.(e.pointerId); drag = { x: e.clientX, y: e.clientY }; });
     canvas.addEventListener('pointerup', () => drag = null);
     canvas.addEventListener('pointermove', e => {
       if (drag) { this.tx += e.clientX - drag.x; this.ty += e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; this.redraw(); }
@@ -116,56 +134,140 @@ class View {
 }
 
 // ------------------------------------------------------------------ layout viewer
-let cellIdx = new Map(), bounds = { maxX: 0, maxY: 0 };
+let cellIdx = new Map(), cellByName = new Map(), bounds = { maxX: 0, maxY: 0 }, heatMax = 1;
+let cellSel = null, focus = null;      // focus = { cells } set when a critical-path row is clicked
 const sx = (v, x) => x * v.k + v.tx, sy = (v, y) => (bounds.maxY - y) * v.k + v.ty;
 const typeColor = t => t === 'ICESTORM_LC' ? css('--trace') : t === 'SB_IO' ? css('--ok') : css('--warn');
+// Where a cell is drawn inside its tile (screen px). Used for both drawing and click hit-testing.
+function cellRect(v, c) {
+  const k = v.k, s = Math.max(1.5, k * .13), m = /^lc(\d)$/.exec(c.bel), io = /^io(\d)$/.exec(c.bel);
+  if (m) { const n = +m[1]; return [sx(v, c.x + .12 + (n % 2) * .42), sy(v, c.y - .1 - (n >> 1) * .22), s * 2.4, s * 1.5]; }
+  if (io) return [sx(v, c.x + .15 + +io[1] * .4), sy(v, c.y - .3), s * 2.4, s * 2.4];
+  return [sx(v, c.x + .2), sy(v, c.y - .2), k * .6, k * .6];
+}
 const layView = new View($('cv-layout'), (g, v) => {
   if (!layout) { g.fillStyle = css('--muted'); g.fillText('Run the flow to see placement and routing.', 16, 24); return; }
-  const k = v.k, ink = css('--ink'), line = css('--line');
+  const k = v.k, ink = css('--ink'), line = css('--line'), hot = css('--hot'), W = v.w, H = v.h;
+  const vis = (x, y, w, h) => x + w > -20 && y + h > -20 && x < W + 20 && y < H + 20;
+  if ($('showHeat').checked) { g.fillStyle = hot; for (const [x, y, n] of layout.heat) { g.globalAlpha = .06 + .6 * n / heatMax; g.fillRect(sx(v, x), sy(v, y), k, k); } g.globalAlpha = 1; }
   if (k > 7) { g.strokeStyle = line; g.lineWidth = 1; g.beginPath(); for (let x = 0; x <= bounds.maxX + 1; x++) { g.moveTo(sx(v, x), sy(v, -1)); g.lineTo(sx(v, x), sy(v, bounds.maxY)); } for (let y = 0; y <= bounds.maxY + 1; y++) { g.moveTo(sx(v, 0), sy(v, y - 1)); g.lineTo(sx(v, bounds.maxX + 1), sy(v, y - 1)); } g.stroke(); }
-  const q = $('netq').value.trim().toLowerCase();
+  if (k > 55) { g.font = `${Math.min(11, k * .12)}px ${css('--mono')}`; g.fillStyle = css('--muted'); g.textAlign = 'left'; g.textBaseline = 'top';
+    for (let x = 0; x <= bounds.maxX; x++) for (let y = 0; y <= bounds.maxY; y++) { const px = sx(v, x), py = sy(v, y); if (vis(px, py, k, k)) g.fillText(`X${x} Y${y}`, px + 2, py + 1); } }
   const drawNet = (n, style, w) => { g.strokeStyle = style; g.lineWidth = w; g.beginPath(); for (const e of n.edges) { g.moveTo(sx(v, e[0] + .5), sy(v, e[1] - .5)); g.lineTo(sx(v, e[2] + .5), sy(v, e[3] - .5)); } g.stroke(); };
   if ($('showNets').checked) {
-    g.globalAlpha = netSel ? .12 : .35; for (const n of layout.nets) if (!rep?.criticalNets.has(n.name)) drawNet(n, css('--trace'), 1); g.globalAlpha = 1;
-    for (const n of layout.nets) if (rep?.criticalNets.has(n.name)) drawNet(n, css('--hot'), 2);
-    if (netSel) drawNet(netSel, ink, 3);
+    const hi = new Set(cellSel ? cellSel.conn.map(c => c[1]) : []), dim = netSel || cellSel;
+    g.globalAlpha = dim ? .12 : .35; for (const n of layout.nets) if (!rep?.criticalNets.has(n.name) && !hi.has(n.name)) drawNet(n, css('--trace'), 1); g.globalAlpha = 1;
+    for (const n of layout.nets) if (rep?.criticalNets.has(n.name)) drawNet(n, hot, 2);
+    for (const n of layout.nets) if (hi.has(n.name)) drawNet(n, ink, 2.5);
+    if (netSel) drawNet(netSel, ink, 3.5);
   }
-  const s = Math.max(1.5, k * .13);
+  g.font = `${Math.min(10, k * .075)}px ${css('--mono')}`; g.textAlign = 'center'; g.textBaseline = 'middle';
   for (const c of layout.cells) {
-    g.fillStyle = typeColor(c.type);
-    const m = /^lc(\d)$/.exec(c.bel), io = /^io(\d)$/.exec(c.bel);
-    if (m) { const n = +m[1]; g.fillRect(sx(v, c.x + .12 + (n % 2) * .42), sy(v, c.y - .1 - (n >> 1) * .22) - 0, s * 2.4, s * 1.5); }
-    else if (io) g.fillRect(sx(v, c.x + .15 + +io[1] * .4), sy(v, c.y - .3), s * 2.4, s * 2.4);
-    else g.fillRect(sx(v, c.x + .2), sy(v, c.y - .2), k * .6, k * .6);
+    const [x, y, w, h] = cellRect(v, c); if (!vis(x, y, w, h)) continue;
+    g.fillStyle = typeColor(c.type); g.fillRect(x, y, w, h);
+    if (k > 110 && w > 16) { g.fillStyle = '#fff'; g.fillText(c.bel, x + w / 2, y + h / 2); }
   }
+  const ring = (c, style, lw, pad) => { const [x, y, w, h] = cellRect(v, c); g.strokeStyle = style; g.lineWidth = lw; g.strokeRect(x - pad, y - pad, w + 2 * pad, h + 2 * pad); };
+  for (const c of focus?.cells || []) ring(c, hot, 2.5, 3);
+  if (cellSel) ring(cellSel, ink, 2, 2);
 });
 layView.fit = () => { if (!layout) return; const p = 1.5; layView.k = Math.max(2, Math.min(layView.w / (bounds.maxX + p), layView.h / (bounds.maxY + p))); layView.tx = (layView.w - (bounds.maxX + 1) * layView.k) / 2; layView.ty = (layView.h - (bounds.maxY + 1) * layView.k) / 2; layView.redraw(); };
 $('cv-layout').addEventListener('wheel', e => { e.preventDefault(); const [mx, my] = layView.local(e), f = e.deltaY < 0 ? 1.18 : 1 / 1.18; layView.tx = mx - (mx - layView.tx) * f; layView.ty = my - (my - layView.ty) * f; layView.k *= f; layView.redraw(); }, { passive: false });
+const tileAt = (v, mx, my) => [Math.floor((mx - v.tx) / v.k), bounds.maxY - Math.floor((my - v.ty) / v.k)];
 layView.onhover = e => {
   const tip = $('tip'); if (!e || !layout) { tip.style.display = 'none'; return; }
-  const [mx, my] = layView.local(e), tx = Math.floor((mx - layView.tx) / layView.k), ty = bounds.maxY - Math.floor((my - layView.ty) / layView.k);
-  const cs = cellIdx.get(tx + ',' + ty);
+  const [mx, my] = layView.local(e), [tx, ty] = tileAt(layView, mx, my), cs = cellIdx.get(tx + ',' + ty);
   if (!cs) { tip.style.display = 'none'; return; }
-  tip.textContent = `tile X${tx} Y${ty}\n` + cs.slice(0, 12).map(c => `${c.bel}  ${c.name}`).join('\n') + (cs.length > 12 ? `\n… +${cs.length - 12}` : '');
+  tip.textContent = `tile X${tx} Y${ty}\n` + cs.slice(0, 12).map(c => `${c.bel}  ${c.name}`).join('\n') + (cs.length > 12 ? `\n\u2026 +${cs.length - 12}` : '');
   tip.style.display = 'block'; tip.style.left = Math.min(mx + 14, layView.w - 200) + 'px'; tip.style.top = (my + 14) + 'px';
 };
+// A click (not a drag) selects the cell under the pointer, or clears the selection on empty space.
+{ let down = null; const c = $('cv-layout');
+  c.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+  c.addEventListener('pointerup', e => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4 || !layout) { down = null; return; } down = null;
+    const [mx, my] = layView.local(e), [tx, ty] = tileAt(layView, mx, my), cs = cellIdx.get(tx + ',' + ty) || [];
+    let best = null, bd = 14;
+    for (const cell of cs) { const [x, y, w, h] = cellRect(layView, cell), d = Math.hypot(Math.max(x - mx, 0, mx - (x + w)), Math.max(y - my, 0, my - (y + h))); if (d < bd) { bd = d; best = cell; } }
+    best ? selectCell(best) : clearSelection();
+  });
+}
+function selectCell(c) { cellSel = c; netSel = null; focus = null; refreshSelection(); }
+function clearSelection() { cellSel = null; netSel = null; focus = null; refreshSelection(); }
+function refreshSelection() { renderCellInfo(); renderNetList(); layView.redraw(); }
+function renderCellInfo() {
+  const box = $('cellinfo'); box.replaceChildren();
+  if (!layout) return;
+  if (!cellSel) { box.textContent = 'Click a cell to see its connections.'; return; }
+  const c = cellSel, h = document.createElement('div'); h.className = 'ct'; h.textContent = c.name; h.title = c.name;
+  const sub = document.createElement('div'); sub.className = 'cs'; sub.textContent = `${c.type.replace(/^ICESTORM_/, '')} at X${c.x} Y${c.y} ${c.bel}` + (c.init ? `, LUT ${c.init}` : '');
+  box.append(h, sub);
+  for (const [port, net] of c.conn) {
+    const r = document.createElement('div'); r.className = 'cn'; r.textContent = `${port}  ${net}`; r.title = net;
+    const routed = layout.nets.find(n => n.name === net && n.edges.length); if (routed) { r.classList.add('lk'); r.onclick = () => { netSel = routed; focus = null; refreshSelection(); }; }
+    box.append(r);
+  }
+}
 function renderNetList() {
   const q = $('netq').value.trim().toLowerCase(), box = $('nets'); box.innerHTML = '';
   if (!layout) return;
-  const list = layout.nets.filter(n => n.edges.length && n.name.toLowerCase().includes(q)).sort((a, b) => b.edges.length - a.edges.length).slice(0, 400);
+  const mine = new Set(cellSel ? cellSel.conn.map(c => c[1]) : []);
+  const list = layout.nets.filter(n => n.edges.length && n.name.toLowerCase().includes(q)).sort((a, b) => (mine.has(b.name) - mine.has(a.name)) || b.hops - a.hops).slice(0, 400);
   for (const n of list) {
-    const d = document.createElement('div'); d.textContent = n.name; d.title = `${n.name} (${n.edges.length} segments)`; d.role = 'option';
-    if (rep?.criticalNets.has(n.name)) d.className = 'crit'; if (netSel === n) d.classList.add('sel');
-    d.onclick = () => { netSel = netSel === n ? null : n; renderNetList(); layView.redraw(); }; box.append(d);
+    const d = document.createElement('div'); d.textContent = n.name; d.title = `${n.name}: ${n.hops} routing hops, ${n.edges.length} between tiles`; d.role = 'option';
+    if (rep?.criticalNets.has(n.name)) d.className = 'crit'; if (mine.has(n.name)) d.classList.add('mine'); if (netSel === n) d.classList.add('sel');
+    d.onclick = () => { netSel = netSel === n ? null : n; focus = null; refreshSelection(); }; box.append(d);
   }
 }
-$('netq').oninput = () => { renderNetList(); layView.redraw(); }; $('showNets').onchange = () => layView.redraw(); $('fit1').onclick = () => layView.fit();
-function setLayout(l) {
-  layout = l; netSel = null; cellIdx = new Map(); for (const c of l.cells) { const k = c.x + ',' + c.y; (cellIdx.get(k) || cellIdx.set(k, []).get(k)).push(c); }
-  bounds = layoutBounds(l); const lc = l.cells.filter(c => c.type === 'ICESTORM_LC').length;
-  $('layinfo').textContent = `${l.cells.length} cells (${lc} LC), ${l.nets.filter(n => n.edges.length).length} routed nets; wheel to zoom, drag to pan; pink = critical path`;
-  renderNetList(); requestAnimationFrame(() => { layView.resize(); layView.fit(); });
+// Report > critical path row: jump here with the net highlighted and both end cells ringed.
+function focusCritical(p) {
+  if (!layout) return;
+  netSel = layout.nets.find(n => n.name === p.net) || null; cellSel = null;
+  focus = { cells: [p.fromCell, p.toCell].map(n => cellByName.get(n)).filter(Boolean) };
+  showTab('layout'); refreshSelection();
 }
+$('netq').oninput = () => renderNetList(); $('showNets').onchange = () => layView.redraw(); $('showHeat').onchange = () => layView.redraw(); $('fit1').onclick = () => layView.fit();
+function setLayout(l) {
+  layout = l; netSel = null; cellSel = null; focus = null; cellIdx = new Map(); cellByName = new Map();
+  for (const c of l.cells) { const k = c.x + ',' + c.y; (cellIdx.get(k) || cellIdx.set(k, []).get(k)).push(c); cellByName.set(c.name, c); }
+  bounds = layoutBounds(l); heatMax = Math.max(1, ...l.heat.map(h => h[2])); const lc = l.cells.filter(c => c.type === 'ICESTORM_LC').length;
+  $('layinfo').textContent = `${l.cells.length} cells (${lc} LC), ${l.nets.filter(n => n.edges.length).length} routed nets. Click a cell, wheel to zoom, drag to pan. Pink = critical path.`;
+  renderCellInfo(); renderNetList(); requestAnimationFrame(() => { layView.resize(); layView.fit(); });
+}
+
+// ------------------------------------------------------------------ schematic (RTL, from Yosys prep, drawn by netlistsvg)
+let rtl = null, schemDirty = false, schemRender = null, schemTok = 0, schemSvg = '';
+const sv = { k: 1, tx: 0, ty: 0, w: 0, h: 0 }, schemBox = $('schem'), schemImg = $('schem-img');
+const applySchem = () => { schemImg.style.transform = `translate(${sv.tx}px, ${sv.ty}px) scale(${sv.k})`; };
+function fitSchem() { const r = schemBox.getBoundingClientRect(); if (!sv.w || !r.width) return; sv.k = Math.min(r.width / sv.w, r.height / sv.h, 2) * .95; sv.tx = (r.width - sv.w * sv.k) / 2; sv.ty = (r.height - sv.h * sv.k) / 2; applySchem(); }
+schemBox.addEventListener('wheel', e => { e.preventDefault(); const r = schemBox.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, f = e.deltaY < 0 ? 1.18 : 1 / 1.18; sv.tx = mx - (mx - sv.tx) * f; sv.ty = my - (my - sv.ty) * f; sv.k *= f; applySchem(); }, { passive: false });
+{ let d = null; schemBox.addEventListener('pointerdown', e => { d = [e.clientX, e.clientY]; schemBox.setPointerCapture?.(e.pointerId); });
+  schemBox.addEventListener('pointermove', e => { if (!d) return; sv.tx += e.clientX - d[0]; sv.ty += e.clientY - d[1]; d = [e.clientX, e.clientY]; applySchem(); });
+  schemBox.addEventListener('pointerup', () => d = null); }
+function setRtl(text) {
+  rtl = null; schemSvg = '';
+  try { rtl = text ? JSON.parse(text) : null; } catch { rtl = null; }
+  const sel = $('schemMod'); sel.replaceChildren();
+  if (rtl) for (const n of Object.keys(rtl.modules).sort((a, b) => (!!rtl.modules[b].attributes?.top - !!rtl.modules[a].attributes?.top) || a.localeCompare(b)))
+    sel.append(Object.assign(document.createElement('option'), { value: n, textContent: n }));
+  schemDirty = true; if (tab === 'schem') drawSchem();
+}
+async function drawSchem() {
+  schemDirty = false; const msg = $('schem-msg'), my = ++schemTok;
+  if (!rtl) { msg.textContent = 'Run synthesis to see the schematic.'; schemImg.hidden = true; $('schemSave').hidden = true; return; }
+  const name = $('schemMod').value, mod = rtl.modules[name], n = Object.keys(mod.cells).length;
+  if (n > 800) { msg.textContent = `${name} has ${n} cells, too many to draw here. Choose a smaller module.`; schemImg.hidden = true; return; }
+  msg.textContent = `Drawing ${name} (${n} cells)\u2026`;
+  try {
+    schemRender ||= (await import('./vendor/schematic.js')).renderSchematic;
+    const svg = await schemRender({ modules: { [name]: mod } }); if (my !== schemTok) return;
+    schemSvg = svg; schemImg.onload = () => { sv.w = schemImg.naturalWidth; sv.h = schemImg.naturalHeight; schemImg.style.width = sv.w + 'px'; schemImg.style.height = sv.h + 'px'; fitSchem(); };
+    schemImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); schemImg.hidden = false; $('schemSave').hidden = false;
+    msg.textContent = `${name}: ${n} cells. Wheel to zoom, drag to pan. Pick another module to look inside an instance.`;
+  } catch (e) { if (my === schemTok) { msg.textContent = 'Could not draw the schematic: ' + (e.message || e); schemImg.hidden = true; } }
+}
+$('schemMod').onchange = drawSchem; $('fit3').onclick = fitSchem;
+$('schemSave').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([schemSvg], { type: 'image/svg+xml' })); a.download = `${$('schemMod').value}.svg`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
 
 // ------------------------------------------------------------------ waveform viewer
 const NAMEW = 190, ROWH = 26, RULER = 24;
@@ -236,26 +338,29 @@ function renderReport(r) {
   else tbl(['Clock', 'Achieved', 'Target', ''], r.fmax.map(f => [f.clock, f.achieved.toFixed(2) + ' MHz', f.constraint + ' MHz', Object.assign(document.createElement('span'), { className: f.pass ? 'pass' : 'fail', textContent: f.pass ? 'PASS' : 'FAIL' })]));
   h('Utilisation');
   tbl(['Resource', 'Used', 'Available', ''], r.util.map(u => { const m = document.createElement('div'); m.className = 'meter'; m.innerHTML = `<b style="width:${Math.min(100, 100 * u.used / u.available)}%"></b>`; return [u.name, u.used, u.available, m]; }));
-  if (r.path.length) { h('Critical path'); tbl(['Type', 'Delay', 'From', 'To'], r.path.map(p => [p.type, (p.delay ?? 0).toFixed(2) + ' ns', p.from, p.to])); }
+  if (r.path.length) { h('Critical path'); tbl(['Type', 'Delay', 'From', 'To'], r.path.map(p => [p.type, (p.delay ?? 0).toFixed(2) + ' ns', p.from, p.to]));
+    [...el.querySelectorAll('table')].at(-1).querySelectorAll('tr:not(:first-child)').forEach((tr, i) => { tr.style.cursor = 'pointer'; tr.title = 'Show in layout'; tr.onclick = () => focusCritical(r.path[i]); }); }
 }
 
 // ------------------------------------------------------------------ run
-let running = false;
+let running = false, ctl = null;
+const cancel = () => ctl?.abort();
 async function run() {
   if (running) return; files[cur] = ed.value;
   const steps = [...($('stSynth').checked ? ['synth', 'pnr'] : []), ...($('stSim').checked ? ['sim'] : [])];
   if (!steps.length) { $('status').className = 'bad'; $('status').textContent = 'enable synthesis or simulation'; return; }
   running = true;
-  layout = null; rep = null; wave = null; netSel = null;   // never show results of an earlier run next to this one
+  layout = null; rep = null; wave = null; netSel = null; cellSel = null; focus = null; setRtl(null); renderCellInfo();
+  for (const k in errs) delete errs[k]; applyErrors();   // never show results of an earlier run next to this one
   $('report').innerHTML = '<div class="empty">Run the flow to see timing and utilisation.</div>'; $('layinfo').textContent = 'No layout yet'; renderNetList(); filterSigs(); layView.redraw();
-  const btn = $('run'), st = $('status'); btn.disabled = true; st.className = ''; st.textContent = 'starting…';
+  const btn = $('run'), st = $('status'); btn.textContent = 'Cancel'; btn.classList.add('cancel'); st.className = ''; st.textContent = 'starting…'; ctl = new AbortController();
   logEl.textContent = ''; errCount = 0; renderResTabs(); showTab('log'); $('dl').hidden = true;
   const t0 = performance.now(), tick = setInterval(() => st.textContent = `${stage || 'running'} · ${((performance.now() - t0) / 1000).toFixed(1)}s`, 200); let stage = '';
   const extras = Object.fromEntries(Object.entries(files).filter(([f]) => !CORE.includes(f)));
   const body = { design: files['design.v'], tb: files['tb.v'], pcf: files['design.pcf'], files: extras, steps, top: $('top').value, device: $('device').value, package: $('package').value, freq: +$('freq').value };
-  let result = null, error = null;
+  let result = null, error = null, cancelled = false;
   try {
-    const r = await fetch('/api/flow', { method: 'POST', body: JSON.stringify(body) });
+    const r = await fetch('/api/flow', { method: 'POST', body: JSON.stringify(body), signal: ctl.signal });
     if (!r.ok) throw new Error(`server returned ${r.status}`);
     const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
     for (;;) {
@@ -268,20 +373,23 @@ async function run() {
         else if (ev.type === 'result') { result = ev; if (ev.error) error = ev.error; }
       }
     }
-  } catch (e) { error = e.message; }
-  clearInterval(tick); running = false; btn.disabled = false;
-  if (error) { logLine('ERROR: ' + error); }
+  } catch (e) { if (e.name === 'AbortError') cancelled = true; else error = e.message; }
+  clearInterval(tick); running = false; btn.textContent = 'Run flow'; btn.classList.remove('cancel'); ctl = null;
   const total = ((performance.now() - t0) / 1000).toFixed(1);
+  if (cancelled) { logLine('Cancelled.', 'wa'); st.className = ''; st.textContent = `cancelled \u00b7 ${total}s`; renderResTabs(); return; }
+  if (error) { logLine('ERROR: ' + error); }
   if (!result || !result.ok) { st.className = 'bad'; st.textContent = `failed${result?.failed ? ' at ' + result.failed : ''} · ${total}s`; renderResTabs(); return; }
   const R = result.result; st.className = 'ok'; st.textContent = `done · ${total}s`;
   if (R.report) { rep = summarizeReport(R.report); renderReport(rep); }
+  setRtl(R.rtl || null);
   if (R.layout) setLayout(R.layout);
   if (R.vcd) setWave(R.vcd); else { wave = null; filterSigs(); }
   if (R.bin) { const a = $('dl'); if (a.href) URL.revokeObjectURL(a.href); a.href = URL.createObjectURL(new Blob([Uint8Array.from(atob(R.bin), c => c.charCodeAt(0))])); a.download = `${R.top}.bin`; a.hidden = false; }
   renderResTabs(); showTab(R.layout ? 'layout' : R.vcd ? 'wave' : 'log');
 }
-$('run').onclick = run;
+$('run').onclick = () => running ? cancel() : run();
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && running) cancel(); });
 
 renderFileTabs(); renderResTabs(); showTab('log');
-initExamples();
+initExamples(); upgradeEditor();
 window.__app = { run, get files() { return files; } }; // handy for debugging and tests

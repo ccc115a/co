@@ -15,6 +15,7 @@ ck('busToHex', busToHex('1010') === '0xa' && busToHex('10xz') === '10xz' && busT
 ck('errorLocation', errorLocation('alu.sv:7: ERROR: x')?.file === 'alu.sv' && errorLocation('design.v:3: ERROR: syntax error')?.line === 3 && !errorLocation('design.v:3: Warning: x') && !errorLocation('hello'));
 ck('summarize handles empty report', summarizeReport({}).fmax.length === 0 && summarizeReport(undefined).path.length === 0);
 const s = summarizeReport({ fmax: { c: { achieved: 10, constraint: 12 } }, critical_paths: [{ path: [{ type: 'routing', delay: 1, net: 'n1', from: { cell: 'a', port: 'O' }, to: { cell: 'b', port: 'I' } }] }] });
+ck('critical path rows carry raw cell names', s.path[0].fromCell === 'a' && s.path[0].toCell === 'b');
 ck('fmax fail flagged, critical net collected', s.fmax[0].pass === false && s.criticalNets.has('n1'));
 const routed = JSON.stringify({ modules: { top: { cells: { u: { type: 'ICESTORM_LC', attributes: { NEXTPNR_BEL: 'X5/Y27/lc3' } }, w: { type: 'X', attributes: {} } },
   netnames: { a: { attributes: { ROUTING: 'X5/Y27/w;;1;X4/Y27/l;X4/Y27/4.27.lutff_7:out.->.5.27.local_g1_7.;1;X5/Y27/m;X5/Y27/5.27.a.->.5.27.b.;1' } }, b: { attributes: {} } } } } });

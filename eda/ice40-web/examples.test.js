@@ -11,7 +11,7 @@ let fail = 0; const ck = (n, c, x = '') => { console.log(c ? 'PASS' : 'FAIL', n,
 const EXPECT = {
   'blinky': ({ res, log }) => res.ok && /c=\d+/.test(log) && !!res.result.layout,
   'lfsr': ({ res, log }) => res.ok && /q=[0-9a-f]{2}/.test(log),
-  'mcu0-fpga': ({ res, log }) => res.ok && /SUM = 55 \(expect 55\) -> PASS/.test(log) && !!res.result.bin && res.result.report.fmax && Object.values(res.result.report.fmax)[0].achieved >= 12,
+  'mcu0-fpga': ({ res, log }) => res.ok && /SUM = 55, LED = 55 \(expect 55\) -> PASS/.test(log) && !!res.result.bin && res.result.report.utilization.ICESTORM_RAM.used === 1 && res.result.report.utilization.ICESTORM_LC.used < 300 && Object.values(res.result.report.fmax)[0].achieved >= 12,
   'mcu0m-sim': ({ res, log }) => res.ok && /1750ns PC=000c IR=1016, SW=8000, A=\s+55/.test(log) && /1990ns PC=0012 IR=2012, SW=4000, A=\s+10/.test(log) && !res.result.layout && !!res.result.vcd,
   'traffic': ({ res, log }) => res.ok && /R=1 Y=0 G=0/.test(log) && /R=0 Y=0 G=1/.test(log) && /R=0 Y=1 G=0/.test(log) && !!res.result.bin,
   'uart': ({ res, log }) => res.ok && /received 0x41 'A' -> PASS/.test(log) && !!res.result.bin,

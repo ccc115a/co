@@ -1,31 +1,67 @@
-// MCU0: same instruction set as the MCU0m article, rewritten to be synthesizable (registered, one instruction per enabled clock).
-// The program is mcu0m.hex (edit that tab to change it). LEDs show the low byte of SUM: 1,3,6,10,15,21,28,36,45,55.
-// Differences from the article: 32-byte memory (addresses wrap), CMP uses a signed compare. Pins are placeholders for UP5K/sg48.
-module mcu0(input clk, input ce, output [7:0] out, output reg [15:0] PC = 0);
-  localparam [3:0] LD=0, ADD=1, JMP=2, ST=3, CMP=4, JEQ=5;
-  reg [7:0] m [0:31];
-  reg [15:0] A = 0;
-  reg N = 0, Z = 0;
-  initial $readmemh("mcu0m.hex", m);
-  wire [15:0] IR = {m[PC[4:0]], m[PC[4:0] + 5'd1]};
-  wire [11:0] C  = IR[11:0];
-  wire [15:0] M  = {m[C[4:0]], m[C[4:0] + 5'd1]};
-  assign out = m[5'h15];
+// MCU0 on iCE40 block RAM. Same instruction set as the MCU0m article (LD ADD JMP ST CMP JEQ),
+// but the 512-byte memory has a synchronous read port, so Yosys maps it onto one SB_RAM40_4K
+// instead of hundreds of flip-flops and multiplexers. The price is a small state machine:
+//   FETCH: read the instruction word   EXEC: decode, start the data read, jumps and stores finish here
+//   WB:    data arrives, update A and the flags (LD, ADD, CMP only)
+// Memory is word-addressed (256 x 16): byte address C selects word C[8:1], so keep code and data at even addresses.
+// Program: mcu0.hex. LEDs: a store to byte address 0x14 (the SUM variable) is copied to the LEDs.
+module mcu0 (input clk, input ce, output reg [7:0] out = 0, output reg [15:0] PC = 0);
+  localparam [3:0] LD = 0, ADD = 1, JMP = 2, ST = 3, CMP = 4, JEQ = 5;
+  localparam [1:0] FETCH = 0, EXEC = 1, WB = 2;
+
+  reg [15:0] mem [0:255];
+  initial $readmemh("mcu0.hex", mem);
+  reg [15:0] rdata;
+  reg  [7:0] raddr, waddr;
+  reg [15:0] wdata, A = 0;
+  reg        we, N = 0, Z = 0;
+  reg  [1:0] state = FETCH;
+  reg  [3:0] op;
+  wire [11:0] C = rdata[11:0];
+
+  always @* begin
+    raddr = (state == EXEC) ? rdata[8:1] : PC[8:1];   // EXEC: fetch the operand of the instruction in rdata
+    waddr = rdata[8:1];
+    wdata = A;
+    we    = ce && state == EXEC && rdata[15:12] == ST;
+  end
+
+  // Memory port: a write, and a read that only happens on enabled steps so rdata holds still between them.
+  always @(posedge clk) begin
+    if (we) mem[waddr] <= wdata;
+    if (ce) rdata <= mem[raddr];
+  end
+
   always @(posedge clk) if (ce) begin
-    PC <= PC + 16'd2;
-    case (IR[15:12])
-      LD:  A <= M;
-      ADD: A <= A + M;
-      JMP: PC <= {4'b0, C};
-      ST:  begin m[C[4:0]] <= A[15:8]; m[C[4:0] + 5'd1] <= A[7:0]; end
-      CMP: begin N <= $signed(A) < $signed(M); Z <= (A == M); end
-      JEQ: if (Z) PC <= {4'b0, C};
+    case (state)
+      FETCH: state <= EXEC;
+      EXEC: begin
+        PC <= PC + 16'd2; op <= rdata[15:12]; state <= FETCH;
+        case (rdata[15:12])
+          LD, ADD, CMP: state <= WB;
+          JMP:          PC <= {4'b0, C};
+          JEQ:          if (Z) PC <= {4'b0, C};
+          default: ;                                   // ST is handled by the memory port
+        endcase
+      end
+      WB: begin
+        state <= FETCH;
+        case (op)
+          LD:  A <= rdata;
+          ADD: A <= A + rdata;
+          CMP: begin N <= $signed(A) < $signed(rdata); Z <= (A == rdata); end
+          default: ;
+        endcase
+      end
+      default: state <= FETCH;
     endcase
+    if (we && waddr == 8'd10) out <= wdata[7:0];
   end
 endmodule
+
 module top(input clk, output [7:0] led);
   reg [19:0] div = 0;
   always @(posedge clk) div <= div + 1;
-  wire ce = &div;
+  wire ce = &div;                                      // one CPU step every 2^20 clocks (about 11 per second at 12 MHz)
   mcu0 cpu(.clk(clk), .ce(ce), .out(led), .PC());
 endmodule

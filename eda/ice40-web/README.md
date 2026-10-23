@@ -24,7 +24,7 @@ memory isolation. That is fine for your own machine; do not expose it to other p
 | Example | What it shows |
 |---|---|
 | Blinky counter | the smallest FPGA design |
-| **MCU0 CPU on FPGA** | 16-bit accumulator CPU, synthesizable; LEDs count the running sum 1,3,6,10,15,21,28,36,45,55 (about 1100 LCs on UP5K) |
+| **MCU0 CPU on FPGA** | 16-bit accumulator CPU on one block RAM (173 LCs, about 49 MHz on UP5K); LEDs count the running sum 1,3,6,10,15,21,28,36,45,55. Checked in RTL, gate-level, and with a sparse clock enable |
 | **MCU0m CPU, from the article** | the article's behavioural CPU, unchanged; simulation only; its output matches the article line for line |
 | Traffic-light FSM | parameterised state machine, fast simulation clock |
 | UART transmitter | 8N1 TX with a testbench that decodes the bits |
@@ -38,6 +38,19 @@ Besides design.v, tb.v and design.pcf you can add up to 8 files with the + tab (
 `.v/.sv` files are compiled together with the design; `.hex` files are visible to `$readmemh` in both Yosys and Icarus.
 The "Synthesis + P&R" and "Simulation" checkboxes choose which stages run; simulation-only skips Yosys entirely.
 
+## What you get
+- **Editor**: CodeMirror with Verilog highlighting, line numbers and inline error markers (click a red log line to jump to it). Falls back to a plain textarea if the bundle cannot load. Ctrl/Cmd+Enter runs.
+- **Run / Cancel**: the Run button becomes Cancel while a job runs (Esc also cancels). The server kills the tool and its helper processes within about 100 ms.
+- **Report**: fmax vs target, utilisation, critical path. Click a critical-path row to see it in the Layout.
+- **Schematic**: RTL block diagram from Yosys `prep`, drawn by netlistsvg. A module selector lets you look inside instances; Save SVG.
+- **Layout**: pan/zoom placement and routing. Click a cell for its type, BEL, LUT init and connected nets; click a net to highlight it; "congestion" shades tiles by routing hops; zooming in shows tile coordinates and LC numbers. Pink = critical path.
+- **Waveform**: VCD viewer (scroll, Ctrl+wheel zoom, hover values). Download the .bin.
+
+## Front-end bundles (public/vendor/)
+`editor.js` (CodeMirror 6) and `schematic.js` (netlistsvg + ELK) are prebuilt and shipped, so running needs no npm.
+To rebuild after changing `build/*-entry.js`: `cd build && npm install && npm run build`.
+Third-party licenses: CodeMirror and netlistsvg are MIT; elkjs is EPL-1.0.
+
 ## Security model — read before exposing to the internet
 Each tool runs under `unshare -n` (no network), `prlimit` (4 GB address space, CPU, file size, 64 procs),
 a wall-clock kill (synth 60 s, P&R 120 s, sim 30 s), in a throw-away temp dir. Names/devices/packages are whitelisted
@@ -48,5 +61,7 @@ non-root user, and put a rate limiter in front. Verilator is deliberately not ex
 ## Known limits
 - Tool versions are Ubuntu's (Yosys 0.33, nextpnr 0.6). Newer = OSS CAD Suite.
 - `--routed-svg` is not used (83 MB for a tiny design); the viewer draws from `--write` JSON instead.
-- Only inter-tile hops are drawn; intra-tile routing is omitted.
-- No persistence or sharing yet; the MCU0 FPGA example uses flip-flops for its 32-byte memory, so it is larger than a BRAM-based design would be.
+- The layout draws inter-tile hops only (intra-tile hops appear in the congestion shading, not as lines). Tile types (RAM, DSP) are not shaded, because nextpnr's JSON does not carry them.
+- The schematic shows one module at a time and refuses modules over 800 cells (the layout step runs in the page and would freeze it).
+- Cancel needs a connection that really closes: behind a buffering proxy it may be delayed.
+- No persistence or sharing yet.

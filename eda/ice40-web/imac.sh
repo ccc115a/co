@@ -12,6 +12,7 @@ command -v node >/dev/null || { echo "Node.js >= 20 is required. Install it with
 # A terminal running under Rosetta reports x86_64 even on Apple Silicon, so ask the hardware.
 if [ "$(sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" = 1 ]; then ARCH=darwin-arm64; else ARCH=darwin-x64; fi
 
+
 for t in yosys nextpnr-ice40 icepack iverilog vvp; do command -v "$t" >/dev/null || { echo "Missing $t in oss-cad-suite/bin (delete ./oss-cad-suite and retry)."; exit 1; }; done
 echo "yosys:    $(yosys -V 2>&1 | head -1)"
 echo "nextpnr:  $(nextpnr-ice40 --version 2>&1 | head -1)"

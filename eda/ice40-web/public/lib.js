@@ -40,7 +40,7 @@ export function valueAt(s, t) {
 export function summarizeReport(rep) {
   const fmax = Object.entries(rep?.fmax || {}).map(([clock, v]) => ({ clock, achieved: v.achieved, constraint: v.constraint, pass: v.achieved >= v.constraint }));
   const util = Object.entries(rep?.utilization || {}).filter(([, v]) => v.available > 0).map(([name, v]) => ({ name: name.replace(/^ICESTORM_/, ''), used: v.used, available: v.available }));
-  const path = (rep?.critical_paths?.[0]?.path || []).map(p => ({ type: p.type, delay: p.delay, from: p.from ? `${p.from.cell}.${p.from.port}` : '', to: p.to ? `${p.to.cell}.${p.to.port}` : '', net: p.net }));
+  const path = (rep?.critical_paths?.[0]?.path || []).map(p => ({ type: p.type, delay: p.delay, from: p.from ? `${p.from.cell}.${p.from.port}` : '', to: p.to ? `${p.to.cell}.${p.to.port}` : '', fromCell: p.from?.cell, toCell: p.to?.cell, net: p.net }));
   return { fmax, util, path, criticalNets: new Set(path.map(p => p.net).filter(Boolean)) };
 }
 

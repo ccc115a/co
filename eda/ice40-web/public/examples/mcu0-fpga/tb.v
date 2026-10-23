@@ -5,8 +5,8 @@ module tb;
   always #5 clk = ~clk;
   initial begin
     $dumpfile("wave.vcd"); $dumpvars(0, tb);
-    #2000;
-    $display("SUM = %0d (expect 55) -> %s", {dut.m[20], dut.m[21]}, {dut.m[20], dut.m[21]} == 16'd55 ? "PASS" : "FAIL");
+    #5000;
+    $display("SUM = %0d, LED = %0d (expect 55) -> %s", dut.mem[10], out, (dut.mem[10] == 55 && out == 55) ? "PASS" : "FAIL");
     $finish;
   end
 endmodule
