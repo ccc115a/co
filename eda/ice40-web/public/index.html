@@ -54,6 +54,8 @@ table{border-collapse:collapse;width:100%;max-width:640px;font-variant-numeric:t
   <label>Clock <input id="freq" type="number" min="1" max="500" value="12"> MHz</label>
   <label>Top <input id="top" type="text" value="top" size="8" spellcheck="false"></label>
   <label>Example <select id="example"></select></label>
+  <label><input type="checkbox" id="stSynth" checked> Synthesis + P&amp;R</label>
+  <label><input type="checkbox" id="stSim" checked> Simulation</label>
   <button id="run">Run flow</button>
   <a id="dl" download="design.bin" hidden><button type="button">Download .bin</button></a>
   <span id="status" role="status" aria-live="polite">idle</span>

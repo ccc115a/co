@@ -3,80 +3,66 @@ const $ = id => document.getElementById(id);
 const PACKAGES = { up5k: ['sg48', 'uwg30'], hx8k: ['ct256', 'bg121', 'cb132', 'cm225', 'cm121', 'cm81'], hx1k: ['tq144', 'vq100', 'cb132', 'cb121', 'cb81', 'cm121', 'cm81', 'cm49', 'cm36', 'qn84'], lp8k: ['ct256', 'bg121', 'cb132', 'cm225', 'cm121', 'cm81'], lp1k: ['tq144', 'vq100', 'cb132', 'cb121', 'cb81', 'cm121', 'cm81', 'cm49', 'cm36', 'qn84'] };
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-// ------------------------------------------------------------------ examples
-const BLINK_TB = `\`timescale 1ns/1ps
-module tb;
-  reg clk = 0; wire [3:0] led;
-  top dut(.clk(clk), .led(led));
-  always #5 clk = ~clk;
-  initial begin
-    $dumpfile("wave.vcd"); $dumpvars(0, tb);
-    #2000 $display("c=%0d", dut.c);
-    $finish;
-  end
-endmodule
-`;
-const EXAMPLES = {
-  'Blinky counter': { device: 'up5k', package: 'sg48', freq: 12, top: 'top',
-    design: `module top(input clk, output [3:0] led);
-  reg [25:0] c = 0;
-  always @(posedge clk) c <= c + 1;
-  assign led = c[25:22];
-endmodule
-`, tb: BLINK_TB, pcf: `set_io clk 35\nset_io led[0] 39\nset_io led[1] 40\nset_io led[2] 41\nset_io led[3] 42\n` },
-  '8-bit LFSR': { device: 'up5k', package: 'sg48', freq: 24, top: 'top',
-    design: `module top(input clk, input rst, output reg [7:0] q);
-  // x^8 + x^6 + x^5 + x^4 + 1, maximal length
-  wire fb = q[7] ^ q[5] ^ q[4] ^ q[3];
-  always @(posedge clk) q <= rst ? 8'h01 : {q[6:0], fb};
-endmodule
-`, tb: `\`timescale 1ns/1ps
-module tb;
-  reg clk = 0, rst = 1; wire [7:0] q;
-  top dut(.clk(clk), .rst(rst), .q(q));
-  always #5 clk = ~clk;
-  initial begin
-    $dumpfile("wave.vcd"); $dumpvars(0, tb);
-    #22 rst = 0;
-    #2600 $display("q=%h", q);
-    $finish;
-  end
-endmodule
-`, pcf: `set_io clk 35\nset_io rst 47\nset_io q[0] 36\nset_io q[1] 37\nset_io q[2] 38\nset_io q[3] 42\nset_io q[4] 43\nset_io q[5] 44\nset_io q[6] 45\nset_io q[7] 46\n` },
-  'Syntax error demo': { device: 'up5k', package: 'sg48', freq: 12, top: 'top',
-    design: `module top(input a, input b, output y);\n  assign y = a & ;\nendmodule\n`, tb: '', pcf: '' },
-};
-
-// ------------------------------------------------------------------ state + editor
-const files = { 'design.v': '', 'tb.v': '', 'design.pcf': '' };
-let cur = 'design.v', lastRun = null, layout = null, wave = null, rep = null, netSel = null;
+// ------------------------------------------------------------------ project files + editor
+const CORE = ['design.v', 'tb.v', 'design.pcf'];
+const EXTRA_OK = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,39}\.(v|sv|vh|hex|mem|txt)$/;
+let files = Object.fromEntries(CORE.map(f => [f, '']));
+let cur = 'design.v', layout = null, wave = null, rep = null, netSel = null;
 const ed = $('ed');
 function renderFileTabs() {
-  $('filetabs').innerHTML = '';
+  const box = $('filetabs'); box.innerHTML = '';
   for (const f of Object.keys(files)) {
     const b = document.createElement('button'); b.role = 'tab'; b.textContent = f; b.setAttribute('aria-selected', f === cur);
-    b.onclick = () => { files[cur] = ed.value; cur = f; ed.value = files[f]; renderFileTabs(); };
-    $('filetabs').append(b);
+    b.onclick = () => selectFile(f);
+    if (!CORE.includes(f)) {
+      const x = document.createElement('i'); x.textContent = '\u00d7'; x.title = 'Delete file'; x.style.cursor = 'pointer';
+      x.onclick = e => { e.stopPropagation(); if (!confirm(`Delete ${f}?`)) return; delete files[f]; if (cur === f) { cur = 'design.v'; ed.value = files[cur]; } renderFileTabs(); };
+      b.append(x);
+    }
+    box.append(b);
   }
+  const add = document.createElement('button'); add.role = 'tab'; add.textContent = '+'; add.title = 'Add a file (.v .sv .vh .hex .mem .txt)';
+  add.onclick = () => {
+    const n = prompt('File name (for example rom.hex or alu.v):'); if (!n) return;
+    if (!EXTRA_OK.test(n) || CORE.includes(n)) { alert('Use letters, digits . _ - and an extension of .v .sv .vh .hex .mem or .txt'); return; }
+    if (!(n in files) && Object.keys(files).length - CORE.length >= 8) { alert('At most 8 extra files'); return; }
+    if (!(n in files)) files[n] = ''; selectFile(n);
+  };
+  box.append(add);
 }
+function selectFile(f) { files[cur] = ed.value; cur = f; ed.value = files[f]; renderFileTabs(); }
 ed.addEventListener('input', () => files[cur] = ed.value);
 ed.addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); } if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') run(); });
 function jumpTo(file, line) {
-  files[cur] = ed.value; cur = file; ed.value = files[file]; renderFileTabs();
+  if (!(file in files)) return; selectFile(file);
   const lines = ed.value.split('\n'); const start = lines.slice(0, line - 1).join('\n').length + (line > 1 ? 1 : 0);
   ed.focus(); ed.setSelectionRange(start, start + (lines[line - 1] || '').length);
   ed.scrollTop = Math.max(0, (line - 4) * 19.5);
 }
-function loadExample(name) {
-  const x = EXAMPLES[name]; files['design.v'] = x.design; files['tb.v'] = x.tb; files['design.pcf'] = x.pcf;
-  $('device').value = x.device; fillPackages(); $('package').value = x.package; $('freq').value = x.freq; $('top').value = x.top;
-  ed.value = files[cur];
-}
 function fillPackages() { $('package').innerHTML = PACKAGES[$('device').value].map(p => `<option>${p}</option>`).join(''); }
 $('device').innerHTML = Object.keys(PACKAGES).map(d => `<option>${d}</option>`).join('');
 $('device').onchange = fillPackages;
-$('example').innerHTML = Object.keys(EXAMPLES).map(n => `<option>${n}</option>`).join('');
-$('example').onchange = () => { loadExample($('example').value); renderFileTabs(); };
+
+// Examples live on the server in examples/<id>/ with an index.json describing settings and files.
+let EX = [];
+async function loadExample(id) {
+  const ex = EX.find(e => e.id === id); if (!ex) return;
+  const got = {};
+  for (const f of ex.files) { const r = await fetch(`examples/${ex.id}/${f}`); if (!r.ok) throw new Error(`cannot load ${ex.id}/${f}`); got[f] = await r.text(); }
+  files = Object.fromEntries([...CORE.map(f => [f, got[f] ?? '']), ...Object.entries(got).filter(([f]) => !CORE.includes(f))]);
+  cur = 'design.v'; ed.value = files[cur];
+  $('device').value = ex.device; fillPackages(); $('package').value = ex.package; $('freq').value = ex.freq; $('top').value = ex.top;
+  $('stSynth').checked = ex.steps.includes('pnr') || ex.steps.includes('synth'); $('stSim').checked = ex.steps.includes('sim');
+  renderFileTabs();
+}
+async function initExamples() {
+  try {
+    EX = await (await fetch('examples/index.json')).json();
+    $('example').replaceChildren(...EX.map(e => Object.assign(document.createElement('option'), { value: e.id, textContent: e.name })));
+    await loadExample(EX[0].id);
+  } catch (e) { logLine('ERROR: could not load examples: ' + e.message); }
+}
+$('example').onchange = () => loadExample($('example').value).catch(e => logLine('ERROR: ' + e.message));
 
 // ------------------------------------------------------------------ result tabs
 const TABS = [['log', 'Log'], ['report', 'Report'], ['layout', 'Layout'], ['wave', 'Waveform']];
@@ -256,11 +242,17 @@ function renderReport(r) {
 // ------------------------------------------------------------------ run
 let running = false;
 async function run() {
-  if (running) return; running = true; files[cur] = ed.value;
+  if (running) return; files[cur] = ed.value;
+  const steps = [...($('stSynth').checked ? ['synth', 'pnr'] : []), ...($('stSim').checked ? ['sim'] : [])];
+  if (!steps.length) { $('status').className = 'bad'; $('status').textContent = 'enable synthesis or simulation'; return; }
+  running = true;
+  layout = null; rep = null; wave = null; netSel = null;   // never show results of an earlier run next to this one
+  $('report').innerHTML = '<div class="empty">Run the flow to see timing and utilisation.</div>'; $('layinfo').textContent = 'No layout yet'; renderNetList(); filterSigs(); layView.redraw();
   const btn = $('run'), st = $('status'); btn.disabled = true; st.className = ''; st.textContent = 'starting…';
   logEl.textContent = ''; errCount = 0; renderResTabs(); showTab('log'); $('dl').hidden = true;
   const t0 = performance.now(), tick = setInterval(() => st.textContent = `${stage || 'running'} · ${((performance.now() - t0) / 1000).toFixed(1)}s`, 200); let stage = '';
-  const body = { design: files['design.v'], tb: files['tb.v'], pcf: files['design.pcf'], top: $('top').value, device: $('device').value, package: $('package').value, freq: +$('freq').value };
+  const extras = Object.fromEntries(Object.entries(files).filter(([f]) => !CORE.includes(f)));
+  const body = { design: files['design.v'], tb: files['tb.v'], pcf: files['design.pcf'], files: extras, steps, top: $('top').value, device: $('device').value, package: $('package').value, freq: +$('freq').value };
   let result = null, error = null;
   try {
     const r = await fetch('/api/flow', { method: 'POST', body: JSON.stringify(body) });
@@ -290,5 +282,6 @@ async function run() {
 }
 $('run').onclick = run;
 
-loadExample('Blinky counter'); renderFileTabs(); renderResTabs(); showTab('log');
-window.__app = { run, files }; // handy for debugging and tests
+renderFileTabs(); renderResTabs(); showTab('log');
+initExamples();
+window.__app = { run, get files() { return files; } }; // handy for debugging and tests

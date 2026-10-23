@@ -12,7 +12,7 @@ ck('hierarchical name', v.signals.some(s => s.name === 'tb.dut.clk'));
 const led = v.signals.find(s => s.name === 'tb.led');
 ck('valueAt', valueAt(led, 9999) === '0000' && valueAt(led, 10000) === '1010' && valueAt(led, -1) === 'x');
 ck('busToHex', busToHex('1010') === '0xa' && busToHex('10xz') === '10xz' && busToHex('0000') === '0x0');
-ck('errorLocation', errorLocation('design.v:3: ERROR: syntax error')?.line === 3 && !errorLocation('design.v:3: Warning: x') && !errorLocation('hello'));
+ck('errorLocation', errorLocation('alu.sv:7: ERROR: x')?.file === 'alu.sv' && errorLocation('design.v:3: ERROR: syntax error')?.line === 3 && !errorLocation('design.v:3: Warning: x') && !errorLocation('hello'));
 ck('summarize handles empty report', summarizeReport({}).fmax.length === 0 && summarizeReport(undefined).path.length === 0);
 const s = summarizeReport({ fmax: { c: { achieved: 10, constraint: 12 } }, critical_paths: [{ path: [{ type: 'routing', delay: 1, net: 'n1', from: { cell: 'a', port: 'O' }, to: { cell: 'b', port: 'I' } }] }] });
 ck('fmax fail flagged, critical net collected', s.fmax[0].pass === false && s.criticalNets.has('n1'));

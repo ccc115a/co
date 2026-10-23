@@ -53,6 +53,6 @@ export function layoutBounds(layout) {
 
 // "design.v:12: ERROR: ..." or "ERROR: design.v:12: ..." -> {file, line}
 export function errorLocation(line) {
-  const m = /(design\.v|tb\.v):(\d+)/.exec(line);
+  const m = /([A-Za-z0-9_][A-Za-z0-9_.-]*\.(?:v|sv|vh)):(\d+)/.exec(line);
   return m && /error/i.test(line) ? { file: m[1], line: +m[2] } : null;
 }

@@ -20,6 +20,10 @@ const LIMITS = { synth: 60, pnr: 120, sim: 30 };           // seconds, wall-cloc
 const DEVICES = new Set(['up5k', 'hx8k', 'hx1k', 'lp8k', 'lp1k']);
 const IDENT = /^[A-Za-z_][A-Za-z0-9_$]{0,63}$/;
 const PKG = /^[a-z0-9]{2,8}$/;
+// Extra project files (HDL modules, includes, memory images). Fixed extension list, no paths, no reserved names.
+const EXTRA_NAME = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,39}\.(v|sv|vh|hex|mem|txt)$/;
+const RESERVED = new Set(['design.v', 'tb.v', 'design.pcf']);
+const MAX_EXTRA = 8;
 
 // ---- tiny semaphore so a burst of requests can't exhaust the box ----
 let running = 0; const waiters = [];
@@ -90,17 +94,28 @@ async function flow(req, body, emit) {
     if (!DEVICES.has(device)) throw new Error('unknown device');
     if (!PKG.test(pkg)) throw new Error('invalid package');
     if (typeof design !== 'string' || !design.trim()) throw new Error('design is empty');
+    const extra = Object.entries(body.files && typeof body.files === 'object' ? body.files : {});
+    if (extra.length > MAX_EXTRA) throw new Error(`at most ${MAX_EXTRA} extra files`);
+    for (const [n, c] of extra) if (!EXTRA_NAME.test(n) || RESERVED.has(n) || typeof c !== 'string') throw new Error(`invalid extra file name: ${String(n).slice(0, 40)}`);
+    const hdl = extra.map(([n]) => n).filter(n => /\.s?v$/.test(n));
+    const explicit = Array.isArray(body.steps), steps = explicit ? body.steps : ['synth', 'pnr'];
+    const wantPnr = steps.includes('pnr'), wantSynth = wantPnr || steps.includes('synth');
+    const wantSim = explicit ? steps.includes('sim') : typeof tb === 'string' && tb.trim() !== '';   // no steps given: simulate only if a testbench exists
+    if (!wantSynth && !wantSim) throw new Error('nothing to do: enable synthesis or simulation');
     await fs.writeFile(path.join(dir, 'design.v'), design);
+    for (const [n, c] of extra) await fs.writeFile(path.join(dir, n), c);
     const result = { top, device, package: pkg };
     const stage = (s) => emit({ type: 'stage', stage: s });
 
-    stage('synth');
-    let rc = await run(job, 'synth', 'yosys', ['-p', `read_verilog -sv design.v; synth_ice40 -top ${top} -json out.json; stat`]);
-    result.synthOk = rc === 0;
-    if (rc !== 0) return emit({ type: 'result', ok: false, failed: 'synth', result });
-    emit({ type: 'artifact', name: 'netlist', size: (await fs.stat(path.join(dir, 'out.json'))).size });
+    let rc = 0;
+    if (wantSynth) {
+      stage('synth');
+      rc = await run(job, 'synth', 'yosys', ['-p', `read_verilog -sv -I. design.v ${hdl.join(' ')}; synth_ice40 -top ${top} -json out.json; stat`]);
+      result.synthOk = rc === 0;
+      if (rc !== 0) return emit({ type: 'result', ok: false, failed: 'synth', result });
+    }
 
-    if (body.steps?.includes('pnr') !== false) {
+    if (wantPnr) {
       stage('pnr');
       if (pcf) await fs.writeFile(path.join(dir, 'design.pcf'), pcf);
       const args = [`--${device}`, '--package', pkg, '--json', 'out.json', '--asc', 'out.asc', '--freq', String(freq), '--seed', String(seed),
@@ -115,10 +130,11 @@ async function flow(req, body, emit) {
       if (bin) result.bin = bin.toString('base64');
     }
 
-    if (typeof tb === 'string' && tb.trim()) {
+    if (wantSim) {
+      if (typeof tb !== 'string' || !tb.trim()) throw new Error('simulation needs a testbench (tb.v)');
       stage('sim');
       await fs.writeFile(path.join(dir, 'tb.v'), tb);
-      rc = await run(job, 'sim', 'iverilog', ['-g2012', '-o', 'sim.vvp', 'tb.v', 'design.v']);
+      rc = await run(job, 'sim', 'iverilog', ['-g2012', '-I.', '-o', 'sim.vvp', 'tb.v', 'design.v', ...hdl]);
       if (rc === 0) rc = await run(job, 'sim', 'vvp', ['-n', 'sim.vvp']);   // -n: $stop ends the run instead of prompting
       result.simOk = rc === 0;
       const vcd = await read(job, 'wave.vcd', 'utf8');
@@ -133,7 +149,8 @@ async function flow(req, body, emit) {
   }
 }
 
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css' };
+const TEXT = 'text/plain; charset=utf-8';
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.v': TEXT, '.hex': TEXT, '.pcf': TEXT };
 http.createServer(async (req, res) => {
   try {
     if (req.method === 'POST' && req.url === '/api/flow') {
