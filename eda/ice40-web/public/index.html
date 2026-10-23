@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iCE40 Web Flow</title>
+<style>
+:root{--bg:#eef1f0;--panel:#fff;--ink:#16212b;--muted:#5d6a76;--line:#cdd5db;--trace:#1d5fd0;--hot:#c8286f;--ok:#1f7a4d;--bad:#b3261e;--warn:#9a6700;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#10161b;--panel:#18212a;--ink:#e3e9ee;--muted:#8d9aa6;--line:#2c3945;--trace:#6ea0ff;--hot:#ff6aa6;--ok:#58c58d;--bad:#ff7b72;--warn:#e3b341}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);display:grid;grid-template-rows:auto 1fr}
+header{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:15px;margin:0 8px 0 0;font-weight:650;letter-spacing:.01em}
+label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+select,input,button,textarea{font:inherit;color:inherit}
+select,input[type=number],input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+input[type=number]{width:70px}
+button{border:1px solid var(--line);background:var(--panel);border-radius:5px;padding:4px 12px;cursor:pointer}
+button:hover{border-color:var(--trace)}button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,[role=tab]:focus-visible{outline:2px solid var(--trace);outline-offset:1px}
+#run{background:var(--trace);border-color:var(--trace);color:#fff;font-weight:600;padding:4px 18px}#run:disabled{opacity:.55;cursor:progress}
+#status{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}#status.bad{color:var(--bad)}#status.ok{color:var(--ok)}
+main{display:grid;grid-template-columns:minmax(300px,40%) 1fr;min-height:0}
+@media (max-width:860px){main{grid-template-columns:1fr;grid-template-rows:minmax(240px,40%) 1fr}}
+section{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel)}
+section+section{border-left:1px solid var(--line)}
+@media (max-width:860px){section+section{border-left:0;border-top:1px solid var(--line)}}
+.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--bg);overflow-x:auto}
+[role=tab]{border:0;border-radius:0;background:none;padding:7px 14px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+[role=tab][aria-selected=true]{color:var(--ink);border-bottom-color:var(--trace);background:var(--panel)}
+[role=tab] i{font-style:normal;color:var(--bad);margin-left:5px}
+textarea#ed{flex:1;resize:none;border:0;padding:10px 12px;background:var(--panel);font:13px/1.5 var(--mono);tab-size:2;white-space:pre;overflow:auto}
+.pane{flex:1;min-height:0;display:none;position:relative}.pane.on{display:flex;flex-direction:column}
+#log{flex:1;overflow:auto;margin:0;padding:8px 12px;font:12px/1.45 var(--mono);white-space:pre-wrap;word-break:break-word}
+#log .st{color:var(--trace);font-weight:600;margin-top:6px}#log .er{color:var(--bad)}#log .wa{color:var(--warn)}#log .go{cursor:pointer;text-decoration:underline}
+.bar{display:flex;gap:12px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line);color:var(--muted);flex-wrap:wrap}
+canvas{flex:1;width:100%;min-height:0;display:block;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+.split{flex:1;display:grid;grid-template-columns:1fr 210px;min-height:0}
+@media (max-width:640px){.split{grid-template-columns:1fr}}
+#nets{overflow:auto;border-left:1px solid var(--line);font:12px var(--mono)}
+#nets div{padding:2px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#nets div:hover{background:var(--bg)}#nets .sel{background:var(--trace);color:#fff}#nets .crit{color:var(--hot)}
+#tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font:11px var(--mono);padding:3px 7px;border-radius:4px;display:none;max-width:320px;white-space:pre-wrap}
+.rep{overflow:auto;padding:12px 16px}.rep h3{font-size:13px;margin:14px 0 6px}.rep h3:first-child{margin-top:0}
+table{border-collapse:collapse;width:100%;max-width:640px;font-variant-numeric:tabular-nums}td,th{padding:3px 10px 3px 0;text-align:left;border-bottom:1px solid var(--line);font-weight:400}th{color:var(--muted)}
+.meter{height:8px;background:var(--bg);border-radius:4px;min-width:90px;overflow:hidden}.meter b{display:block;height:100%;background:var(--trace)}
+.pass{color:var(--ok)}.fail{color:var(--bad)}.empty{padding:24px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){#run{transition:opacity .15s}}
+</style>
+</head>
+<body>
+<header>
+  <h1>iCE40 Web Flow</h1>
+  <label>Device <select id="device"></select></label>
+  <label>Package <select id="package"></select></label>
+  <label>Clock <input id="freq" type="number" min="1" max="500" value="12"> MHz</label>
+  <label>Top <input id="top" type="text" value="top" size="8" spellcheck="false"></label>
+  <label>Example <select id="example"></select></label>
+  <button id="run">Run flow</button>
+  <a id="dl" download="design.bin" hidden><button type="button">Download .bin</button></a>
+  <span id="status" role="status" aria-live="polite">idle</span>
+</header>
+<main>
+  <section aria-label="Sources">
+    <div class="tabs" role="tablist" id="filetabs"></div>
+    <textarea id="ed" spellcheck="false" aria-label="Source editor"></textarea>
+  </section>
+  <section aria-label="Results">
+    <div class="tabs" role="tablist" id="restabs"></div>
+    <div class="pane on" id="p-log"><div class="bar"><label><input type="checkbox" id="errsOnly"> errors and warnings only</label></div><pre id="log" aria-live="off"></pre></div>
+    <div class="pane" id="p-report"><div class="rep" id="report"><div class="empty">Run the flow to see timing and utilisation.</div></div></div>
+    <div class="pane" id="p-layout">
+      <div class="bar"><span id="layinfo">No layout yet</span><label>Find net <input id="netq" type="text" size="14"></label><label><input type="checkbox" id="showNets" checked> routes</label><button id="fit1">Fit</button></div>
+      <div class="split"><div style="position:relative;min-height:0;display:flex"><canvas id="cv-layout" aria-label="Placement and routing view"></canvas><div id="tip"></div></div><div id="nets" role="listbox" aria-label="Nets"></div></div>
+    </div>
+    <div class="pane" id="p-wave">
+      <div class="bar"><span id="waveinfo">Add a testbench (tb.v) that calls $dumpfile("wave.vcd") and $dumpvars.</span><label>Filter <input id="sigq" type="text" size="12"></label><button id="fit2">Fit</button></div>
+      <canvas id="cv-wave" aria-label="Waveform"></canvas>
+    </div>
+  </section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

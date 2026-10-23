@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>WebEDA — 純前端 Verilog EDA（YoWASP WebAssembly）</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <h1>WebEDA <span class="sub">純前端 Verilog EDA · YoWASP (yosys + nextpnr-ice40) WebAssembly</span></h1>
+  <div class="toolbar">
+    <select id="sample" title="範例">
+      <option value="counter.v">counter.v（計數器）</option>
+      <option value="alu4.v">alu4.v（四位元 ALU）</option>
+      <option value="seg7.v">seg7.v（七段顯示器）</option>
+      <option value="ramtest.v">ramtest.v（RAM 讀寫）</option>
+    </select>
+    <label>top <input id="top-name" value="counter" size="10"></label>
+    <button data-step="elaborate">① 解析</button>
+    <button data-step="synth">② 合成</button>
+    <button data-step="simulate">③ 模擬</button>
+    <button data-step="pnr">④ 佈局繞線</button>
+    <button data-step="pack">⑤ 位元流</button>
+    <button data-step="download_vcd">下載 VCD</button>
+  </div>
+</header>
+
+<main>
+  <section class="left">
+    <h2>Verilog 原始碼</h2>
+    <textarea id="editor" spellcheck="false"></textarea>
+
+    <h2>模擬設定</h2>
+    <div class="sim-config">
+      <div class="cfg-line">
+        <label>步數 <input id="steps" type="number" value="200" min="1" max="100000"></label>
+        <label><input id="init-ff-zero" type="checkbox" checked> 正反器初值為 0</label>
+        <label><input id="show-internal" type="checkbox" checked> 顯示內部訊號</label>
+      </div>
+      <div id="stim-rows" class="stim-rows"><div class="muted">（按「① 解析」後列出輸入埠）</div></div>
+    </div>
+
+    <h2>目標裝置（iCE40）</h2>
+    <div class="cfg-line">
+      <label>元件
+        <select id="device">
+          <option value="hx1k" selected>iCE40-HX1K</option>
+          <option value="lp1k">iCE40-LP1K</option>
+          <option value="hx8k">iCE40-HX8K</option>
+        </select>
+      </label>
+      <label>封裝 <select id="package"><option>tq144</option></select></label>
+      <label>頻率 <input id="freq" type="number" value="12" min="1" style="width:5em"> MHz</label>
+    </div>
+    <h2>腳位限制檔 PCF（選填）</h2>
+    <textarea id="pcf" spellcheck="false" rows="3" placeholder="# set_io clk 21&#10;set_io count[0] 1"></textarea>
+  </section>
+
+  <section class="right">
+    <nav class="tabs">
+      <button class="tab active" data-tab="log" id="tab-log">日誌</button>
+      <button class="tab" data-tab="wave" id="tab-wave">波形</button>
+      <button class="tab" data-tab="stats" id="tab-stats">統計</button>
+      <button class="tab" data-tab="files" id="tab-files">產物</button>
+    </nav>
+    <div id="pane-log" class="pane"><pre id="log" class="log"></pre></div>
+    <div id="pane-wave" class="pane hidden">
+      <div class="wave-hint">滾輪縮放 · 拖曳平移 · 游標讀值</div>
+      <canvas id="wave-canvas"></canvas>
+    </div>
+    <div id="pane-stats" class="pane"><div id="stats-body"></div></div>
+    <div id="pane-files" class="pane"><div id="files-body"></div></div>
+  </section>
+</main>
+
+<footer id="status">準備就緒。首次執行各步驟時會下載 WebAssembly 引擎（yosys 約 80MB，nextpnr 約 20MB），之後由瀏覽器快取。</footer>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

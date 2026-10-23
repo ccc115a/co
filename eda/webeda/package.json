@@ -1,0 +1,16 @@
+{
+  "name": "webeda",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "純前端 Verilog EDA 工具（YoWASP yosys + nextpnr-ice40，WebAssembly 版）",
+  "scripts": {
+    "start": "node server.js",
+    "vendorize": "node tools/vendorize.js",
+    "test": "node --experimental-wasm-exnref --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@yowasp/nextpnr-ice40": "^0.11.96",
+    "@yowasp/yosys": "0.70.1258"
+  }
+}
