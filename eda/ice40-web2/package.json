@@ -1,0 +1,13 @@
+{
+  "name": "ice40-web",
+  "version": "0.1.0",
+  "description": "Web-based iCE40 FPGA flow: Yosys + nextpnr-ice40 + icepack + Icarus Verilog",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node unit.test.js && node asm.test.js && node test.js && node examples.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
