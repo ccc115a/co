@@ -26,9 +26,88 @@
     artifact: document.getElementById('artifact'),
   };
 
-  const BACKENDS = ['hackcpu', 'riscv'];
+  // 後端描述表（P2：doRun／showStage／送模擬器都查這張表，不再寫 if/else 硬分叉；
+  // 寫法沿用既有 BRIDGES 的資料驅動風格。compile(userVm, fullVm) 丟出即整單失敗，
+  // 回傳 { fields（併入 lastRun）, statusLine }；字串與舊分支逐字相同。）
+  const BACKENDS = {
+    hackcpu: {
+      tag: 'HackCPU',
+      stages: [{ id: 'vm', label: '.vm' }, { id: 'asm', label: '.asm' }, { id: 'hack', label: '.hack' }, { id: 'run', label: '▶執行' }],
+      keys: ['vm', 'asm', 'hack', 'run'],
+      checkField: 'hack',
+      sendField: 'fullAsm',
+      emuButton: '在 HACK 模擬器跑 ▸',
+      emuTitle: '把編譯結果送到「HACK 模擬器」（新視窗），可互動玩 Pong 並觀察暫存器/RAM/螢幕',
+      bridge: {
+        win: 'hackjs-emu', home: 'index.html', ready: 'hackjs-ready', ping: 'hackjs-ping',
+        pack: (t) => ({ type: 'hackjs-load', asm: t }),
+        sent: (n) => `已送出 ${n} 字元組語到 HACK 模擬器（新視窗可玩可觀察）`,
+      },
+      compile(userVm, fullVm) {
+        const asm = translate(userVm);
+        const { hack, bin } = assemble(asm);
+        if (bin.length === 0) throw new Error('組譯結果為空');
+        const fullAsm = translate(fullVm);
+        const fullHack = assemble(fullAsm).hack;
+        const ramLines = fullHack.split('\n').filter((l) => l.trim()).length;
+        const runOut = runSim(fullHack, 2000000);
+        return {
+          fields: { vm: vmText(userVm), asm, hack, run: runOut, fullAsm },
+          statusLine: `完成（HackCPU）：${userVm.length} 個 .vm、${ramLines} words ROM`,
+        };
+      },
+    },
+    riscv: {
+      tag: 'RISCV',
+      needsRv: true,
+      stages: [{ id: 'vm', label: '.vm' }, { id: 's', label: 'RISCV' }, { id: 'bc', label: 'bytecode' }, { id: 'run', label: '▶執行' }],
+      keys: ['vm', 's', 'bytecode', 'run'],
+      checkField: 'fullS',
+      sendField: 'fullS',
+      emuButton: '在 RISCV 模擬器跑 ▸',
+      emuTitle: '把全量 RISCV 組語送到「RISCV 模擬器」（新視窗），可互動玩 Pong 並觀察暫存器/STATIC/螢幕',
+      bridge: {
+        win: 'rvemu-win', home: 'rvemu.html', ready: 'rvjs-ready', ping: 'rvjs-ping',
+        pack: (t) => ({ type: 'rvjs-load', s: t }),
+        sent: (n) => `已送出 ${n} 字元 RISCV 組語到 RISCV 模擬器（新視窗可玩可觀察）`,
+      },
+      compile(userVm, fullVm) {
+        // 顯示用（RISCV／bytecode 分頁）：只含使用者模組，不含 OS。
+        // RISCV 分頁是 lenient 預覽（OS 呼叫列外部表頭）；bytecode 需模組可獨立組譯，
+        // 含 OS 呼叫的模組只顯示原因。執行用全量（OS 在前、嚴格翻譯）。
+        let sText;
+        try {
+          sText = translateVm2Rv(userVm, { lenient: true });
+        } catch (err) {
+          sText = `（RISC-V 後端無法轉換：${err.message}）\n`;
+        }
+        let bytecode;
+        try {
+          const strictS = translateVm2Rv(userVm); // 嚴格：未定義即 throw
+          const uw = rvAssemble(strictS, { origin: 0 }).words;
+          if (uw.length === 0) throw new Error('組譯結果為空');
+          bytecode = rvDis(uw, 0).join('\n');
+        } catch (err) {
+          bytecode = `（此模組需 OS 全量才可組譯為 bytecode：${err.message}\n  ▶執行仍使用 OS 全量執行）\n`;
+        }
+        let execS;
+        try {
+          execS = translateVm2Rv(fullVm);
+        } catch (err) {
+          throw new Error(`RISC-V 後端無法執行此程式：${err.message}`);
+        }
+        const { words } = rvAssemble(execS, { origin: 0 });
+        if (words.length === 0) throw new Error('組譯結果為空');
+        const runOut = runRv(words, RV_STEPS, fullVm.length === 1);
+        return {
+          fields: { vm: vmText(userVm), s: sText, bytecode, run: runOut, fullS: execS },
+          statusLine: `完成（RISCV）：${userVm.length} 個 .vm、${words.length} words RV32`,
+        };
+      },
+    },
+  };
   const RV_STEPS = 2000000;
-  const RV_STATIC_BASE = 0x11000; // 與 lib/riscv/vm2riscv.js 的 STATIC_BASE 同值（第 0 檔 static 區）
+  const RV_STATIC_BASE = (window.HackVm2Rv && window.HackVm2Rv.STATIC_BASE) ?? 0x11000; // 單一來源 lib/riscv/vm2riscv.js（第 0 檔 static 區）
 
   const { compileJack } = window.HackJack2Vm;
   const { translate } = window.HackVm2Asm;
@@ -55,10 +134,6 @@
     { name: 'PrimeUnder100', dir: '../11/jackNoOs/PrimeUnder100', needsOS: false },
     { name: 'chain', dir: 'gen/chain', needsOS: false },
   ];
-  const STAGES_HACK = [{ id: 'vm', label: '.vm' }, { id: 'asm', label: '.asm' }, { id: 'hack', label: '.hack' }, { id: 'run', label: '▶執行' }];
-  const STAGES_RV = [{ id: 'vm', label: '.vm' }, { id: 's', label: 'RISCV' }, { id: 'bc', label: 'bytecode' }, { id: 'run', label: '▶執行' }];
-  const KEYS_HACK = ['vm', 'asm', 'hack', 'run'];
-  const KEYS_RV = ['vm', 's', 'bytecode', 'run'];
 
   let fileState = { names: [], active: 0 };      // 自訂模式的檔案 tab
   let lastRun = { backend: 'hackcpu', vm: '', asm: '', hack: '', s: '', bytecode: '', run: '', fullAsm: '', fullS: '' };
@@ -103,7 +178,9 @@
   }
 
   function getCustomSrc(i) {
-    const key = 'custom/' + fileState.names[i];
+    // i 可為索引（tab 處）或檔名（doRun 處）；舊寫法只吃索引，
+    // doRun 誤傳檔名會讀到 'custom/undefined' 而永遠編譯空字串。
+    const key = 'custom/' + (typeof i === 'number' ? fileState.names[i] : i);
     return window.HACKJS_FS.read(key) ?? '';
   }
 
@@ -209,8 +286,9 @@
     setStatus('編譯＋執行中…');
     try {
       const backend = el.backend.value;
-      if (!translateVm2Rv || !rvAssemble || !rvDis || !RvEmu) {
-        if (backend === 'riscv') throw new Error('此 embed.js 未含 RISC-V 工具鏈，請重新整理頁面');
+      const be = BACKENDS[backend] || BACKENDS.hackcpu;
+      if (be.needsRv && (!translateVm2Rv || !rvAssemble || !rvDis || !RvEmu)) {
+        throw new Error('此 embed.js 未含 RISC-V 工具鏈，請重新整理頁面');
       }
       let files;
       let prog = currentProg();
@@ -222,55 +300,11 @@
       }
       const t0 = performance.now();
       const userVm = userVmOf(files);
-      let statusLine;
-      if (backend === 'riscv') {
-        // 顯示用（RISCV／bytecode 分頁）：只含使用者模組，不含 OS。
-        // RISCV 分頁是 lenient 預覽（OS 呼叫列外部表頭）；bytecode 需模組可獨立組譯，
-        // 含 OS 呼叫的模組只顯示原因。執行用全量（OS 在前、嚴格翻譯）。
-        let sText;
-        try {
-          sText = translateVm2Rv(userVm, { lenient: true });
-        } catch (err) {
-          sText = `（RISC-V 後端無法轉換：${err.message}）\n`;
-        }
-        let bytecode;
-        try {
-          const strictS = translateVm2Rv(userVm); // 嚴格：未定義即 throw
-          const uw = rvAssemble(strictS, { origin: 0 }).words;
-          if (uw.length === 0) throw new Error('組譯結果為空');
-          bytecode = rvDis(uw, 0).join('\n');
-        } catch (err) {
-          bytecode = `（此模組需 OS 全量才可組譯為 bytecode：${err.message}\n  ▶執行仍使用 OS 全量執行）\n`;
-        }
-        const fullVm = fullVmOf(userVm);
-        let execS;
-        try {
-          execS = translateVm2Rv(fullVm);
-        } catch (err) {
-          throw new Error(`RISC-V 後端無法執行此程式：${err.message}`);
-        }
-        const { words } = rvAssemble(execS, { origin: 0 });
-        if (words.length === 0) throw new Error('組譯結果為空');
-        const runOut = runRv(words, RV_STEPS, fullVm.length === 1);
-        lastRun = { backend, vm: vmText(userVm), s: sText, bytecode, run: runOut, fullS: execS };
-        statusLine = `完成（RISCV）：${userVm.length} 個 .vm、${words.length} words RV32`;
-      } else {
-        const fullVm = fullVmOf(userVm);
-        const asm = translate(userVm);
-        const { hack, bin } = assemble(asm);
-        if (bin.length === 0) throw new Error('組譯結果為空');
-        const fullAsm = translate(fullVm);
-        const fullHack = assemble(fullAsm).hack;
-        const ramLines = fullHack.split('\n').filter((l) => l.trim()).length;
-        let warn = '';
-        if (ramLines > 32767) warn = `⚠ 注意：ROM ${ramLines} words 超過硬體 32K 上限（@x 只有 15 位址位元），模擬器可跑、實機不可載入。`;
-        const maxSteps = 2000000;
-        const runOut = runSim(fullHack, maxSteps);
-        lastRun = { backend, vm: vmText(userVm), asm, hack, run: runOut, fullAsm };
-        statusLine = `完成（HackCPU）：${userVm.length} 個 .vm、${ramLines} words ROM`;
-      }
+      const fullVm = fullVmOf(userVm);
+      const r = be.compile(userVm, fullVm);
+      lastRun = { backend, ...r.fields };
       const ms = Math.round(performance.now() - t0);
-      setStatus(`${statusLine}、${ms}ms`);
+      setStatus(`${r.statusLine}、${ms}ms`);
       el.errlog.textContent = '✓ 編譯＋執行成功\n';
       showStage(0);
     } catch (err) {
@@ -282,15 +316,13 @@
   }
 
   function showStage(i) {
-    const isRv = lastRun.backend === 'riscv';
-    const defs = isRv ? STAGES_RV : STAGES_HACK;
-    const keys = isRv ? KEYS_RV : KEYS_HACK;
+    const beLast = BACKENDS[lastRun.backend] || BACKENDS.hackcpu;
+    const beCur = BACKENDS[el.backend.value] || BACKENDS.hackcpu;
     if (el.backend.value !== lastRun.backend) {
       // 切換後端後尚未執行：顯示空頁＋提示
       el.artifact.value = '';
       el.stagetabs.innerHTML = '';
-      const cur = el.backend.value === 'riscv' ? STAGES_RV : STAGES_HACK;
-      cur.forEach((s, j) => {
+      beCur.stages.forEach((s, j) => {
         const b = document.createElement('button');
         b.textContent = s.label;
         b.className = j === i ? 'on' : '';
@@ -300,9 +332,9 @@
       el.info.textContent = '（已切換後端，請按「編譯＋執行」）';
       return;
     }
-    el.artifact.value = lastRun[keys[i]] ?? '';
+    el.artifact.value = lastRun[beLast.keys[i]] ?? '';
     el.stagetabs.innerHTML = '';
-    defs.forEach((s, j) => {
+    beLast.stages.forEach((s, j) => {
       const b = document.createElement('button');
       b.textContent = s.label;
       b.className = j === i ? 'on' : '';
@@ -313,7 +345,7 @@
   }
 
   function validBackend(b) {
-    return BACKENDS.includes(b) ? b : 'hackcpu';
+    return BACKENDS[b] ? b : 'hackcpu';
   }
 
   function mirrorHash() {
@@ -323,12 +355,10 @@
   }
 
   function syncEmu() {
-    const rv = el.backend.value === 'riscv';
+    const be = BACKENDS[el.backend.value] || BACKENDS.hackcpu;
     el.emu.disabled = false;
-    el.emu.textContent = rv ? '在 RISCV 模擬器跑 ▸' : '在 HACK 模擬器跑 ▸';
-    el.emu.title = rv
-      ? '把全量 RISCV 組語送到「RISCV 模擬器」（新視窗），可互動玩 Pong 並觀察暫存器/STATIC/螢幕'
-      : '把編譯結果送到「HACK 模擬器」（新視窗），可互動玩 Pong 並觀察暫存器/RAM/螢幕';
+    el.emu.textContent = be.emuButton;
+    el.emu.title = be.emuTitle;
   }
 
   el.mode.onchange = applyMode;
@@ -343,23 +373,13 @@
   };
   el.run.onclick = doRun;
 
-  // 送模擬器橋接（雙後端共用一台狀態機）：HackCPU 走 hackjs-* 到 index.html，
-  // RISCV 走 rvjs-* 到 rvemu.html（送全量 .s）。
-  const BRIDGES = {
-    hackcpu: {
-      win: 'hackjs-emu', home: 'index.html', ready: 'hackjs-ready', ping: 'hackjs-ping',
-      pack: (t) => ({ type: 'hackjs-load', asm: t }),
-      sent: (n) => `已送出 ${n} 字元組語到 HACK 模擬器（新視窗可玩可觀察）`,
-    },
-    riscv: {
-      win: 'rvemu-win', home: 'rvemu.html', ready: 'rvjs-ready', ping: 'rvjs-ping',
-      pack: (t) => ({ type: 'rvjs-load', s: t }),
-      sent: (n) => `已送出 ${n} 字元 RISCV 組語到 RISCV 模擬器（新視窗可玩可觀察）`,
-    },
-  };
+  // 送模擬器橋接（雙後端共用一台狀態機，橋定義在 BACKENDS 表內）。
+  function bridgeOf(name) {
+    return (BACKENDS[name] || BACKENDS.hackcpu).bridge;
+  }
   const emuState = { win: null, ready: false, pending: null, pingT: null, tries: 0, bridgeName: 'hackcpu' };
   function emuReply() {
-    const b = BRIDGES[emuState.bridgeName];
+    const b = bridgeOf(emuState.bridgeName);
     if (emuState.pending !== null && emuState.ready && emuState.win && !emuState.win.closed && b) {
       emuState.win.postMessage(b.pack(emuState.pending), '*');
       setStatus(b.sent(emuState.pending.length));
@@ -371,7 +391,7 @@
     if (emuState.pingT) { clearInterval(emuState.pingT); emuState.pingT = null; }
     emuState.tries = 0;
     emuState.pingT = setInterval(() => {
-      const b = BRIDGES[emuState.bridgeName];
+      const b = bridgeOf(emuState.bridgeName);
       if (emuState.pending === null || emuState.ready || !emuState.win || emuState.win.closed || !b) {
         clearInterval(emuState.pingT); emuState.pingT = null; return;
       }
@@ -390,20 +410,20 @@
   }
   window.addEventListener('message', (e) => {
     const d = e.data || {};
-    const b = BRIDGES[emuState.bridgeName];
+    const b = bridgeOf(emuState.bridgeName);
     if (b && d.type === b.ready && emuState.win && !emuState.win.closed) {
       emuState.ready = true;
       emuReply();
     }
   });
   el.emu.onclick = () => {
-    const rv = el.backend.value === 'riscv';
-    const want = rv ? 'riscv' : 'hackcpu';
-    if (lastRun.backend !== el.backend.value || (rv ? !lastRun.fullS : !lastRun.hack)) doRun();
-    const text = rv ? lastRun.fullS : lastRun.fullAsm;
+    const want = BACKENDS[el.backend.value] ? el.backend.value : 'hackcpu';
+    const be = BACKENDS[want];
+    if (lastRun.backend !== el.backend.value || !lastRun[be.checkField]) doRun();
+    const text = lastRun[be.sendField];
     if (!text) return;
     if (!emuState.win || emuState.win.closed || emuState.bridgeName !== want) {
-      emuState.win = window.open(rv ? 'rvemu.html' : 'index.html', rv ? 'rvemu-win' : 'hackjs-emu');
+      emuState.win = window.open(be.bridge.home, be.bridge.win);
       emuState.ready = false;
       emuState.bridgeName = want;
     }

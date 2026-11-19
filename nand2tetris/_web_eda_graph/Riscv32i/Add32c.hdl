@@ -1,0 +1,9 @@
+// Add32c：32 位元 ripple-carry 加法器（由兩顆 Add16c 串接）。
+CHIP Add32c {
+    IN a[32], b[32], cin;
+    OUT out[32], cout;
+
+    PARTS:
+    Add16c(a=a[0..15], b=b[0..15], cin=cin, out=out[0..15], cout=c16);
+    Add16c(a=a[16..31], b=b[16..31], cin=c16, out=out[16..31], cout=cout);
+}

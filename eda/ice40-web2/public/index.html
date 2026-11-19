@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>iCE40 Web Flow</title>
+<style>
+:root{--bg:#eef1f0;--panel:#fff;--ink:#16212b;--muted:#5d6a76;--line:#cdd5db;--trace:#1d5fd0;--hot:#c8286f;--ok:#1f7a4d;--bad:#b3261e;--warn:#9a6700;--tok-kw:#7a3e9d;--tok-str:#a31515;--tok-num:#0b6e4f;--tok-cmt:#6b7785;--tok-meta:#9a6700;--tok-type:#0a5d9c;--mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;--sans:system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#10161b;--panel:#18212a;--ink:#e3e9ee;--muted:#8d9aa6;--line:#2c3945;--trace:#6ea0ff;--hot:#ff6aa6;--ok:#58c58d;--bad:#ff7b72;--warn:#e3b341;--tok-kw:#c99bf0;--tok-str:#ff9b8e;--tok-num:#7fd9b0;--tok-cmt:#8d9aa6;--tok-meta:#e3b341;--tok-type:#7cc4ff}}
+*{box-sizing:border-box}html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--sans);display:grid;grid-template-rows:auto auto 1fr}
+header{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:8px 14px;background:var(--panel);border-bottom:1px solid var(--line)}
+h1{font-size:15px;margin:0 8px 0 0;font-weight:650;letter-spacing:.01em}
+label{display:flex;gap:6px;align-items:center;color:var(--muted)}
+select,input,button,textarea{font:inherit;color:inherit}
+select,input[type=number],input[type=text]{background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:3px 6px}
+input[type=number]{width:70px}
+button{border:1px solid var(--line);background:var(--panel);border-radius:5px;padding:4px 12px;cursor:pointer}
+button:hover{border-color:var(--trace)}button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,[role=tab]:focus-visible{outline:2px solid var(--trace);outline-offset:1px}
+#run{background:var(--trace);border-color:var(--trace);color:#fff;font-weight:600;padding:4px 18px}#run.cancel{background:var(--bad);border-color:var(--bad)}
+#status{margin-left:auto;color:var(--muted);font-variant-numeric:tabular-nums}#status.bad{color:var(--bad)}#status.ok{color:var(--ok)}
+.opts{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center;padding:5px 14px;background:var(--bg);border-bottom:1px solid var(--line)}.opts .sep{width:1px;align-self:stretch;background:var(--line)}.opts input:disabled,.opts select:disabled{opacity:.5}.opts label[title]{cursor:help}
+.badge{display:inline-block;padding:1px 10px;border-radius:10px;font-weight:600;color:#fff;background:var(--muted)}.badge.PASS{background:var(--ok)}.badge.FAIL,.badge.ERROR{background:var(--bad)}.badge.UNKNOWN{background:var(--warn)}
+.fl{margin:4px 0;padding:4px 8px;border-left:3px solid var(--bad);cursor:pointer}.fl:hover{background:var(--bg)}.fl.ok{border-color:var(--ok);cursor:default}
+main{display:grid;grid-template-columns:minmax(300px,40%) 1fr;min-height:0}
+@media (max-width:860px){main{grid-template-columns:1fr;grid-template-rows:minmax(240px,40%) 1fr}}
+section{display:flex;flex-direction:column;min-height:0;min-width:0;background:var(--panel)}
+section+section{border-left:1px solid var(--line)}
+@media (max-width:860px){section+section{border-left:0;border-top:1px solid var(--line)}}
+.tabs{display:flex;border-bottom:1px solid var(--line);background:var(--bg);overflow-x:auto}
+[role=tab]{border:0;border-radius:0;background:none;padding:7px 14px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+[role=tab][aria-selected=true]{color:var(--ink);border-bottom-color:var(--trace);background:var(--panel)}
+[role=tab] i{font-style:normal;color:var(--bad);margin-left:5px}
+#edwrap{flex:1;min-height:0;display:flex;flex-direction:column}#edwrap .cm-editor{flex:1;min-height:0}
+textarea#ed{flex:1;resize:none;border:0;padding:10px 12px;background:var(--panel);font:13px/1.5 var(--mono);tab-size:2;white-space:pre;overflow:auto}
+.pane{flex:1;min-height:0;display:none;position:relative}.pane.on{display:flex;flex-direction:column}
+#log{flex:1;overflow:auto;margin:0;padding:8px 12px;font:12px/1.45 var(--mono);white-space:pre-wrap;word-break:break-word}
+#log .st{color:var(--trace);font-weight:600;margin-top:6px}#log .er{color:var(--bad)}#log .wa{color:var(--warn)}#log .go{cursor:pointer;text-decoration:underline}
+.bar{display:flex;gap:12px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--line);color:var(--muted);flex-wrap:wrap}
+canvas{flex:1;width:100%;min-height:0;display:block;touch-action:none;cursor:grab}canvas:active{cursor:grabbing}
+.split{flex:1;display:grid;grid-template-columns:1fr 250px;min-height:0}
+@media (max-width:640px){.split{grid-template-columns:1fr}}
+#side{display:flex;flex-direction:column;min-height:0;border-left:1px solid var(--line);font:12px var(--mono)}
+#cellinfo{padding:6px 8px;border-bottom:1px solid var(--line);max-height:45%;overflow:auto;color:var(--muted)}#cellinfo .ct{color:var(--ink);font-weight:600;overflow-wrap:anywhere}#cellinfo .cs{margin:2px 0 4px}#cellinfo .cn{overflow-wrap:anywhere;padding:1px 0;color:var(--ink)}#cellinfo .lk{cursor:pointer;text-decoration:underline dotted}#cellinfo .lk:hover{color:var(--trace)}
+#nets{overflow:auto;flex:1;min-height:0}
+#nets div{padding:2px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#nets div:hover{background:var(--bg)}#nets .mine{font-weight:600;color:var(--ink)}#nets .sel{background:var(--trace);color:#fff}#nets .crit{color:var(--hot)}
+#schem{position:relative;flex:1;min-height:0;overflow:hidden;cursor:grab;touch-action:none}#schem:active{cursor:grabbing}
+#schem-img{position:absolute;left:0;top:0;transform-origin:0 0;max-width:none;user-select:none;-webkit-user-drag:none;background:#fff;border-radius:4px}
+@media (prefers-color-scheme:dark){#schem-img{filter:invert(1) hue-rotate(180deg)}}
+#tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--bg);font:11px var(--mono);padding:3px 7px;border-radius:4px;display:none;max-width:320px;white-space:pre-wrap}
+.rep{overflow:auto;padding:12px 16px}.rep h3{font-size:13px;margin:14px 0 6px}.rep h3:first-child{margin-top:0}
+table{border-collapse:collapse;width:100%;max-width:640px;font-variant-numeric:tabular-nums}td,th{padding:3px 10px 3px 0;text-align:left;border-bottom:1px solid var(--line);font-weight:400}th{color:var(--muted)}
+.meter{height:8px;background:var(--bg);border-radius:4px;min-width:90px;overflow:hidden}.meter b{display:block;height:100%;background:var(--trace)}
+.pass{color:var(--ok)}.fail{color:var(--bad)}.empty{padding:24px;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){#run{transition:opacity .15s}}
+</style>
+</head>
+<body>
+<header>
+  <h1>iCE40 Web Flow</h1>
+  <label>Device <select id="device"></select></label>
+  <label>Package <select id="package"></select></label>
+  <label>Clock <input id="freq" type="number" min="1" max="500" value="12"> MHz</label>
+  <label>Top <input id="top" type="text" value="top" size="8" spellcheck="false"></label>
+  <label>Example <select id="example"></select></label>
+  <label><input type="checkbox" id="stSynth" checked> Synthesis + P&amp;R</label>
+  <label><input type="checkbox" id="stSim" checked> Simulation</label>
+  <button id="run">Run flow</button>
+  <a id="dl" download="design.bin" hidden><button type="button">Download .bin</button></a>
+  <span id="status" role="status" aria-live="polite">idle</span>
+</header>
+<div class="opts" id="opts">
+  <label title="Prove properties written as assert() inside `ifdef FORMAL"><input type="checkbox" id="stFormal"> Formal</label>
+  <label>mode <select id="fMode"><option>bmc</option><option>prove</option><option>cover</option></select></label>
+  <label>depth <input id="fDepth" type="number" min="1" max="500" value="20"></label>
+  <label>module <input id="fTop" type="text" size="8" placeholder="same as Top" spellcheck="false"></label>
+  <span class="sep"></span>
+  <label id="fastL" title="Place and route once with a placeholder memory image; later runs only swap in the new program with icebram"><input type="checkbox" id="useFast"> Fast reprogram</label>
+  <label>image <select id="bramFile"></select></label>
+  <label>shape <select id="bramShape"><option value="16x256">16 x 256</option><option value="8x512">8 x 512</option><option value="4x1024">4 x 1024</option><option value="2x2048">2 x 2048</option></select></label>
+  <button id="asmBtn" hidden title="Assemble every .asm file and show the listing">Assemble</button>
+</div>
+<main>
+  <section aria-label="Sources">
+    <div class="tabs" role="tablist" id="filetabs"></div>
+    <div id="edwrap"><textarea id="ed" spellcheck="false" aria-label="Source editor"></textarea></div>
+  </section>
+  <section aria-label="Results">
+    <div class="tabs" role="tablist" id="restabs"></div>
+    <div class="pane on" id="p-log"><div class="bar"><label><input type="checkbox" id="errsOnly"> errors and warnings only</label></div><pre id="log" aria-live="off"></pre></div>
+    <div class="pane" id="p-report"><div class="rep" id="report"><div class="empty">Run the flow to see timing and utilisation.</div></div></div>
+    <div class="pane" id="p-schem">
+      <div class="bar"><span id="schem-msg">Run synthesis to see the schematic.</span><label>Module <select id="schemMod"></select></label><button id="fit3">Fit</button><button id="schemSave" hidden>Save SVG</button></div>
+      <div id="schem"><img id="schem-img" alt="RTL schematic" hidden></div>
+    </div>
+    <div class="pane" id="p-layout">
+      <div class="bar"><span id="layinfo">No layout yet</span><label>Find net <input id="netq" type="text" size="14"></label><label><input type="checkbox" id="showNets" checked> routes</label><label><input type="checkbox" id="showHeat"> congestion</label><button id="fit1">Fit</button></div>
+      <div class="split"><div style="position:relative;min-height:0;display:flex"><canvas id="cv-layout" aria-label="Placement and routing view"></canvas><div id="tip"></div></div><div id="side"><div id="cellinfo" aria-live="polite"></div><div id="nets" role="listbox" aria-label="Nets"></div></div></div>
+    </div>
+    <div class="pane" id="p-formal"><div class="rep" id="formalrep"><div class="empty">Tick Formal, then Run. Properties are written as assert() and cover() inside `ifdef FORMAL.</div></div></div>
+    <div class="pane" id="p-wave">
+      <div class="bar"><span id="waveinfo">Add a testbench (tb.v) that calls $dumpfile("wave.vcd") and $dumpvars.</span><label id="waveSrcL" hidden>Source <select id="waveSrc"></select></label><label>Filter <input id="sigq" type="text" size="12"></label><button id="fit2">Fit</button></div>
+      <canvas id="cv-wave" aria-label="Waveform"></canvas>
+    </div>
+  </section>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

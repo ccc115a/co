@@ -1,0 +1,7 @@
+class Sys {
+    function void init() {
+        do Main.init();
+        do Main.loop();
+        return;
+    }
+}

@@ -1,0 +1,155 @@
+[
+  {
+    "id": "blinky",
+    "name": "Blinky counter",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 12,
+    "top": "top",
+    "steps": [
+      "synth",
+      "pnr",
+      "sim"
+    ],
+    "files": [
+      "design.v",
+      "tb.v",
+      "design.pcf"
+    ]
+  },
+  {
+    "id": "mcu0-fpga",
+    "name": "MCU0 CPU on FPGA (assembly, block RAM, formal)",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 12,
+    "top": "top",
+    "steps": [
+      "synth",
+      "pnr",
+      "sim",
+      "formal"
+    ],
+    "files": [
+      "design.v",
+      "tb.v",
+      "design.pcf",
+      "mcu0.asm"
+    ],
+    "bram": {
+      "file": "mcu0.hex",
+      "width": 16,
+      "depth": 256
+    },
+    "formal": {
+      "mode": "bmc",
+      "depth": 250,
+      "top": "mcu0"
+    }
+  },
+  {
+    "id": "mcu0m-sim",
+    "name": "MCU0m CPU, from the article (simulation)",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 12,
+    "top": "cpu",
+    "steps": [
+      "sim"
+    ],
+    "files": [
+      "design.v",
+      "tb.v",
+      "design.pcf",
+      "mcu0m.hex"
+    ]
+  },
+  {
+    "id": "bcd-formal",
+    "name": "Formal verification: BCD counter with a bug",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 12,
+    "top": "bcd",
+    "steps": [
+      "synth",
+      "formal"
+    ],
+    "files": [
+      "design.v"
+    ],
+    "formal": {
+      "mode": "bmc",
+      "depth": 20
+    }
+  },
+  {
+    "id": "traffic",
+    "name": "Traffic-light FSM",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 12,
+    "top": "top",
+    "steps": [
+      "synth",
+      "pnr",
+      "sim"
+    ],
+    "files": [
+      "design.v",
+      "tb.v",
+      "design.pcf"
+    ]
+  },
+  {
+    "id": "uart",
+    "name": "UART transmitter (8N1)",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 12,
+    "top": "top",
+    "steps": [
+      "synth",
+      "pnr",
+      "sim"
+    ],
+    "files": [
+      "design.v",
+      "tb.v",
+      "design.pcf"
+    ]
+  },
+  {
+    "id": "lfsr",
+    "name": "8-bit LFSR",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 24,
+    "top": "top",
+    "steps": [
+      "synth",
+      "pnr",
+      "sim"
+    ],
+    "files": [
+      "design.v",
+      "tb.v",
+      "design.pcf"
+    ]
+  },
+  {
+    "id": "syntax-error",
+    "name": "Syntax error demo",
+    "device": "up5k",
+    "package": "sg48",
+    "freq": 12,
+    "top": "top",
+    "steps": [
+      "synth",
+      "pnr"
+    ],
+    "files": [
+      "design.v"
+    ]
+  }
+]

@@ -29,11 +29,12 @@ globalThis.HACKJS_FS = {
 };
 
 const REPO = path.resolve(import.meta.dirname, '../../');
-const CH01 = path.join(REPO, '01');
-const CH02 = path.join(REPO, '02');
-const CH03A = path.join(REPO, '03', 'a');
-const CH03B = path.join(REPO, '03', 'b');
-const CH05 = path.join(REPO, '05');
+const COURSES = path.resolve(import.meta.dirname, '../third_party/courses');
+const CH01 = path.join(COURSES, '01');
+const CH02 = path.join(COURSES, '02');
+const CH03A = path.join(COURSES, '03', 'a');
+const CH03B = path.join(COURSES, '03', 'b');
+const CH05 = path.join(COURSES, '05');
 
 // ==================== ast ====================
 describe('ast', () => {
@@ -376,7 +377,7 @@ describe('model', () => {
 
 // ==================== CLI: ch01+02+03 (29/29) ====================
 describe('CLI hdl2js ch01+02+03 29/29', () => {
-  const CH03B = path.join(REPO, '03', 'b');
+  const CH03B = path.join(COURSES, '03', 'b');
   const lib = mergeLibsList([loadLibrary(CH01), loadLibrary(CH02), loadLibrary(CH03A), loadLibrary(CH03B)]);
 
   function collectTst(dir) {
@@ -439,21 +440,21 @@ const CHAIN_SYS = `class Sys {
 
 describe('工具鏈 v0.5', () => {
   it('hackasm: add.asm → 06/add.bin byte 相同', () => {
-    const ch06 = path.join(REPO, '06');
+    const ch06 = path.join(COURSES, '06');
     const { bin } = assemble(fs.readFileSync(path.join(ch06, 'add.asm'), 'utf8'));
     const ref = fs.readFileSync(path.join(ch06, 'add.bin'));
     assert.deepEqual(Buffer.from(bin), ref);
   });
 
   it('hackasm: sum.asm → 06/sum.bin byte 相同', () => {
-    const ch06 = path.join(REPO, '06');
+    const ch06 = path.join(COURSES, '06');
     const { bin } = assemble(fs.readFileSync(path.join(ch06, 'sum.asm'), 'utf8'));
     const ref = fs.readFileSync(path.join(ch06, 'sum.bin'));
     assert.deepEqual(Buffer.from(bin), ref);
   });
 
   it('vm2asm: test1.vm → 與 C oracle 位元相同（含 // 註解行與檔案 header）', () => {
-    const ch08 = path.join(REPO, '08');
+    const ch08 = path.join(COURSES, '08');
     const asm = vm2asm([{ path: 'test1.vm', src: fs.readFileSync(path.join(ch08, 'test1.vm'), 'utf8') }]);
     const expected = '\n// ========== File: test1.vm ==========\n'
       + '// push constant 7\n@7\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n'
@@ -474,7 +475,7 @@ describe('工具鏈 v0.5', () => {
   });
 
   it('vm2asm: 多檔自動加 bootstrap（8 支目錄案例）', () => {
-    const ch08 = path.join(REPO, '08');
+    const ch08 = path.join(COURSES, '08');
     const cases = [
       'FunctionCalls/FibonacciElement/Main.vm', 'FunctionCalls/FibonacciElement/Sys.vm',
       'FunctionCalls/NestedCall/Sys.vm', 'FunctionCalls/SimpleFunction/SimpleFunction.vm',

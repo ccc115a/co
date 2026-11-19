@@ -1,0 +1,29 @@
+function Main.init 1
+push constant 0
+pop static 0
+push constant 1
+pop local 0
+label WHILE_EXP0
+push local 0
+push constant 11
+lt
+not
+if-goto WHILE_END1
+push static 0
+push local 0
+add
+pop static 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP0
+label WHILE_END1
+function Main.loop 0
+label WHILE_EXP2
+push constant 0
+not
+not
+if-goto WHILE_END3
+goto WHILE_EXP2
+label WHILE_END3

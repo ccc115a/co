@@ -1,0 +1,31 @@
+class Main {
+    static int result;
+
+    function int mult(int a, int b) {
+        var int acc, i;
+        let acc = 0;
+        let i = 0;
+        while (i < b) {
+            let acc = acc + a;
+            let i = i + 1;
+        }
+        return acc;
+    }
+
+    function void init() {
+        var int n, f;
+        let n = 5;
+        let f = 1;
+        while (0 < n) {
+            let f = Main.mult(f, n);
+            let n = n - 1;
+        }
+        let result = f;
+        return;
+    }
+
+    function void loop() {
+        while (true) {
+        }
+    }
+}

@@ -2,25 +2,15 @@
 // 每行 VM 前加 `// ` 註解、多檔才寫 bootstrap、return label 用全域計數器。
 // 多檔（bootstrap）模式下，`label/goto/if-goto` 標記加 `函式$` 前綴避免跨檔相撞
 // （跟上牌 _eda/vm2asm 一樣；C 版原樣輸出所以組不了多檔 OS）。
+// 行解析走共用 lib/vm/vmparse.js（與 vm2riscv 同一份）。
+
+import { trim, removeComment, splitArgs, fileBase } from '../vm/vmparse.js';
 
 let label_count = 0;
 let return_count = 0;
 let current_file = '';
 let scope = false;
 let cur_func = '';
-
-function trim(s) {
-  let a = 0;
-  let b = s.length;
-  while (a < b && /\s/.test(s[a])) a += 1;
-  while (b > a && /\s/.test(s[b - 1])) b -= 1;
-  return s.slice(a, b);
-}
-
-function removeComment(line) {
-  const i = line.indexOf('//');
-  return i >= 0 ? line.slice(0, i) : line;
-}
 
 function writeArithmetic(out, command) {
   switch (command) {
@@ -155,11 +145,6 @@ function writeBootstrap(out) {
   writeCall(out, 'Sys.init', 0);
 }
 
-function basename(fn) {
-  const s = fn.replace(/\\/g, '/');
-  return s.slice(s.lastIndexOf('/') + 1);
-}
-
 function processCommand(out, cmd, a1, a2) {
   if (['add', 'sub', 'neg', 'eq', 'gt', 'lt', 'and', 'or', 'not'].includes(cmd)) {
     writeArithmetic(out, cmd);
@@ -186,7 +171,7 @@ function processCommand(out, cmd, a1, a2) {
 }
 
 function translateFile(out, filename, src) {
-  const base = basename(filename);
+  const base = fileBase(filename);
   let dot = base.lastIndexOf('.');
   if (dot < 0) dot = base.length;
   current_file = base.slice(0, dot);
@@ -197,11 +182,8 @@ function translateFile(out, filename, src) {
     const trimmed = trim(line);
     if (trimmed.length > 0) {
       out.push(`// ${trimmed}`);
-      const parts = trimmed.split(/\s+/);
-      const cmd = parts[0];
-      const a1 = parts[1] ?? '';
-      const a2 = Number.isInteger(Number(parts[2])) && parts[2] !== undefined ? Number(parts[2]) : parts[2] ?? '';
-      if (!Number.isInteger(a2) && parts[2] !== undefined) throw new Error(`參數 2 應為整數：${trimmed}`);
+      const { cmd, a1, a2, hasA2 } = splitArgs(trimmed);
+      if (!Number.isInteger(a2) && hasA2) throw new Error(`參數 2 應為整數：${trimmed}`);
       processCommand(out, cmd, a1, a2);
     }
   }

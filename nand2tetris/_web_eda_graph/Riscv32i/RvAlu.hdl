@@ -1,0 +1,64 @@
+// RvAlu：RV32I 整數 ALU。
+// fn[3:0]：0000 and｜0001 or｜0010 xor｜0011 add｜0100 sub｜0101 sll｜
+//          0110 srl｜0111 sra｜1000 slt｜1001 sltu｜1010 passA（LUI 用）。
+// slt/sltu 回傳 0/1（32 位元）；其餘 RV32S 的 Alu32r 語意（sub 經 a+(~b)+1）。
+CHIP RvAlu {
+    IN a[32], b[32], fn[4];
+    OUT y[32];
+
+    PARTS:
+    // ---- NOT fn bits ----
+    Not(in=fn[0], out=nfn0);
+    Not(in=fn[1], out=nfn1);
+    Not(in=fn[2], out=nfn2);
+    Not(in=fn[3], out=nfn3);
+
+    // ---- sub 選擇（fn==0100；slt/sltu 也借同一條減法取借位，addy 屆時無用）----
+    And(a=fn[2], b=nfn1, out=t01);
+    And(a=t01, b=nfn0, out=t02);
+    And(a=t02, b=nfn3, out=tSub);
+    And(a=fn[3], b=nfn2, out=u3a);
+    And(a=u3a, b=nfn1, out=u3b);
+    And(a=u3b, b=nfn0, out=isSLT);
+    And(a=u3b, b=fn[0], out=isSLTU);
+    Or(a=tSub, b=isSLT, out=tSe);
+    Or(a=tSe, b=isSLTU, out=subsel);
+    Not32(a=b, out=nb);
+    Mux32(a=b, b=nb, sel=subsel, out=b2);
+    Add32c(a=a, b=b2, cin=subsel, out=addy, cout=cout);
+
+    // ---- 邏輯 ----
+    And32(a=a, b=b, out=andy);
+    Or32(a=a, b=b, out=ory);
+    Xor32(a=a, b=b, out=xory);
+    Mux4Way32(a=andy, b=ory, c=xory, d=addy, sel[0]=fn[0], sel[1]=fn[1], out=m1);
+    Mux32(a=m1, b=addy, sel=subsel, out=m2);
+
+    // ---- 移位（fn==0101/0110/0111）：right=fn[1]，arith=fn[1]&fn[0] ----
+    And(a=fn[1], b=fn[0], out=arith);
+    RvSh32(a=a, sh=b[0..4], right=fn[1], arith=arith, y=shy);
+    Or(a=fn[1], b=fn[0], out=o10);
+    And(a=fn[2], b=o10, out=tsh);
+    And(a=tsh, b=nfn3, out=isShift);
+
+    // ---- slt/sltu：ltU＝~borrow；ltS＝符號不同取 a31，否則取 ltU ----
+    Not(in=cout, out=ltU);
+    Xor(a=a[31], b=b[31], out=sgnDiff);
+    Not(in=sgnDiff, out=sameSgn);
+    And(a=sameSgn, b=ltU, out=cS1);
+    And(a=sgnDiff, b=a[31], out=cS2);
+    Or(a=cS1, b=cS2, out=ltS);
+    Zero32i(out=zero);
+    One32(out=one);
+    Mux32(a=zero, b=one, sel=ltS, out=sltV);
+    Mux32(a=zero, b=one, sel=ltU, out=sltuV);
+    And(a=fn[3], b=nfn2, out=tpa);
+    And(a=tpa, b=fn[1], out=tpb);
+    And(a=tpb, b=nfn0, out=isPassA);
+
+    // ---- 結果選擇 ----
+    Mux32(a=m2, b=shy, sel=isShift, out=r1);
+    Mux32(a=r1, b=sltV, sel=isSLT, out=r2);
+    Mux32(a=r2, b=sltuV, sel=isSLTU, out=r3);
+    Mux32(a=r3, b=a, sel=isPassA, out=y);
+}

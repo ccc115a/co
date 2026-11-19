@@ -1,0 +1,1 @@
+請用 YoWASP (Yosys Open WebAssembly Synthesis Project) 為基礎，用 Node.js 寫一個純前端的程式，可以把對給定的 Verilog 程式，進行模擬，佈局，.... 等各種 EDA 功能，都用 Web 的方式提供給使用者使用

@@ -1,0 +1,11 @@
+function Main.init 0
+push constant 5
+pop static 0
+function Main.loop 0
+label WHILE_EXP0
+push constant 0
+not
+not
+if-goto WHILE_END1
+goto WHILE_EXP0
+label WHILE_END1

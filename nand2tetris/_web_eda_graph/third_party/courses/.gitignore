@@ -1,0 +1,3 @@
+# 跑測試長出來的產物（.out、jack2vm 的 output/），不進版控
+*.out
+output/

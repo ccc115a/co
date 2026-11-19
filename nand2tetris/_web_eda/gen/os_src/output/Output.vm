@@ -1,0 +1,18 @@
+function Output.init 0
+push constant 0
+return
+function Output.moveCursor 0
+push constant 0
+return
+function Output.printChar 0
+push constant 0
+return
+function Output.printString 0
+push constant 0
+return
+function Output.printInt 0
+push constant 0
+return
+function Output.println 0
+push constant 0
+return

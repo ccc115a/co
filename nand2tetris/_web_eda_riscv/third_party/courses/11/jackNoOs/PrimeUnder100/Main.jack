@@ -1,0 +1,44 @@
+class Main {
+    static int result;
+
+    function int mod(int a, int d) {
+        var int r;
+        let r = a;
+        while (r > d) {
+            let r = r - d;
+        }
+        if (r = d) {
+            let r = 0;
+        }
+        return r;
+    }
+
+    function void init() {
+        var int n, d, p;
+        let n = 99;
+        let p = 0;
+        while (p = 0) {
+            let p = 1;
+            let d = 2;
+            while (d < n) {
+                if (Main.mod(n, d) = 0) {
+                    let p = 0;
+                    let d = n;
+                }
+                else {
+                    let d = d + 1;
+                }
+            }
+            if (p = 0) {
+                let n = n - 1;
+            }
+        }
+        let result = n;
+        return;
+    }
+
+    function void loop() {
+        while (true) {
+        }
+    }
+}

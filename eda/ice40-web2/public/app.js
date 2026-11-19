@@ -1,0 +1,467 @@
+import { assemble, listingText } from './mcu0asm.js';
+import { parseVCD, busToHex, valueAt, summarizeReport, layoutBounds, errorLocation } from './lib.js';
+const $ = id => document.getElementById(id);
+const PACKAGES = { up5k: ['sg48', 'uwg30'], hx8k: ['ct256', 'bg121', 'cb132', 'cm225', 'cm121', 'cm81'], hx1k: ['tq144', 'vq100', 'cb132', 'cb121', 'cb81', 'cm121', 'cm81', 'cm49', 'cm36', 'qn84'], lp8k: ['ct256', 'bg121', 'cb132', 'cm225', 'cm121', 'cm81'], lp1k: ['tq144', 'vq100', 'cb132', 'cb121', 'cb81', 'cm121', 'cm81', 'cm49', 'cm36', 'qn84'] };
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+// ------------------------------------------------------------------ project files + editor
+const CORE = ['design.v', 'tb.v', 'design.pcf'];
+const EXTRA_OK = /^[A-Za-z0-9_][A-Za-z0-9_.-]{0,39}\.(v|sv|vh|hex|mem|txt|asm)$/;
+let files = Object.fromEntries(CORE.map(f => [f, '']));
+let cur = 'design.v', layout = null, wave = null, rep = null, netSel = null;
+const isHdl = f => /\.(s?v|vh)$/.test(f);
+const edText = $('ed');            // plain textarea: used until CodeMirror has loaded, and kept as the fallback if it cannot
+let impl = null;                   // CodeMirror wrapper (vendor/editor.js) once loaded
+const errs = {};                   // file -> [{ line, message }] shown as markers in the editor
+const ed = {
+  get value() { return impl ? impl.getText() : edText.value; },
+  set value(v) { if (impl) impl.setDoc(v, isHdl(cur) ? 'verilog' : 'plain'); else edText.value = v; },
+  focus() { impl ? impl.focus() : edText.focus(); },
+  selectLine(n) {
+    if (impl) return impl.selectLine(n);
+    const lines = edText.value.split('\n'), start = lines.slice(0, n - 1).join('\n').length + (n > 1 ? 1 : 0);
+    edText.focus(); edText.setSelectionRange(start, start + (lines[n - 1] || '').length); edText.scrollTop = Math.max(0, (n - 4) * 19.5);
+  },
+};
+const applyErrors = () => impl?.setErrors(errs[cur] || []);
+async function upgradeEditor() {
+  try {
+    const m = await import('./vendor/editor.js'), text = edText.value;
+    impl = m.createEditor($('edwrap'), { onChange: t => { files[cur] = t; }, onRun: () => run() });
+    edText.hidden = true; impl.setDoc(text, isHdl(cur) ? 'verilog' : 'plain'); applyErrors();
+  } catch (e) { /* no CodeMirror bundle or no module support: the textarea keeps working */ }
+}
+function renderFileTabs() {
+  refreshBramFiles();
+  const box = $('filetabs'); box.innerHTML = '';
+  for (const f of Object.keys(files)) {
+    const b = document.createElement('button'); b.role = 'tab'; b.textContent = f; b.setAttribute('aria-selected', f === cur);
+    b.onclick = () => selectFile(f);
+    if (!CORE.includes(f)) {
+      const x = document.createElement('i'); x.textContent = '\u00d7'; x.title = 'Delete file'; x.style.cursor = 'pointer';
+      x.onclick = e => { e.stopPropagation(); if (!confirm(`Delete ${f}?`)) return; delete files[f]; if (cur === f) { cur = 'design.v'; ed.value = files[cur]; applyErrors(); } renderFileTabs(); };
+      b.append(x);
+    }
+    box.append(b);
+  }
+  const add = document.createElement('button'); add.role = 'tab'; add.textContent = '+'; add.title = 'Add a file (.v .sv .vh .hex .mem .txt)';
+  add.onclick = () => {
+    const n = prompt('File name (for example rom.hex or alu.v):'); if (!n) return;
+    if (!EXTRA_OK.test(n) || CORE.includes(n)) { alert('Use letters, digits . _ - and an extension of .v .sv .vh .hex .mem or .txt'); return; }
+    if (!(n in files) && Object.keys(files).length - CORE.length >= 8) { alert('At most 8 extra files'); return; }
+    if (!(n in files)) files[n] = ''; selectFile(n);
+  };
+  box.append(add);
+}
+function selectFile(f) { files[cur] = ed.value; cur = f; ed.value = files[f]; renderFileTabs(); applyErrors(); }
+edText.addEventListener('input', () => files[cur] = edText.value);
+edText.addEventListener('keydown', e => { if (e.key === 'Tab') { e.preventDefault(); document.execCommand('insertText', false, '  '); } if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') run(); });
+function jumpTo(file, line) { if (!(file in files)) return; selectFile(file); ed.selectLine(line); }
+// Optional tools on the server decide which options are offered.
+let caps = { sby: true, icebram: true };
+fetch('/api/capabilities').then(r => r.json()).then(c => {
+  caps = c;
+  for (const [id, ok, why] of [['stFormal', c.sby, 'SymbiYosys (sby) is not installed on the server: run bash linux.sh --oss or bash imac.sh'], ['useFast', c.icebram, 'icebram is not installed on the server']])
+    if (!ok) { $(id).disabled = true; $(id).checked = false; $(id).parentElement.title = why; }
+}).catch(() => {});
+// Memory images that can be swapped by icebram: every .hex/.mem file, plus the .hex an .asm file produces.
+function refreshBramFiles() {
+  const keep = $('bramFile').value, names = new Set();
+  for (const f of Object.keys(files)) { if (/\.(hex|mem)$/.test(f)) names.add(f); if (f.endsWith('.asm')) names.add(f.slice(0, -4) + '.hex'); }
+  $('bramFile').replaceChildren(...[...names].map(n => Object.assign(document.createElement('option'), { value: n, textContent: n })));
+  if (names.has(keep)) $('bramFile').value = keep;
+  $('asmBtn').hidden = !Object.keys(files).some(f => f.endsWith('.asm'));
+}
+function fillPackages() { $('package').innerHTML = PACKAGES[$('device').value].map(p => `<option>${p}</option>`).join(''); }
+$('device').innerHTML = Object.keys(PACKAGES).map(d => `<option>${d}</option>`).join('');
+$('device').onchange = fillPackages;
+
+// Examples live on the server in examples/<id>/ with an index.json describing settings and files.
+let EX = [];
+async function loadExample(id) {
+  const ex = EX.find(e => e.id === id); if (!ex) return;
+  const got = {};
+  for (const f of ex.files) { const r = await fetch(`examples/${ex.id}/${f}`); if (!r.ok) throw new Error(`cannot load ${ex.id}/${f}`); got[f] = await r.text(); }
+  files = Object.fromEntries([...CORE.map(f => [f, got[f] ?? '']), ...Object.entries(got).filter(([f]) => !CORE.includes(f))]);
+  for (const k in errs) delete errs[k];
+  cur = 'design.v'; ed.value = files[cur]; applyErrors();
+  $('device').value = ex.device; fillPackages(); $('package').value = ex.package; $('freq').value = ex.freq; $('top').value = ex.top;
+  $('stSynth').checked = ex.steps.includes('pnr') || ex.steps.includes('synth'); $('stSim').checked = ex.steps.includes('sim');
+  $('stFormal').checked = ex.steps.includes('formal') && caps.sby; $('fMode').value = ex.formal?.mode || 'bmc'; $('fDepth').value = ex.formal?.depth || 20; $('fTop').value = ex.formal?.top || '';
+  renderFileTabs(); $('useFast').checked = !!ex.bram && caps.icebram;
+  if (ex.bram) { $('bramFile').value = ex.bram.file; $('bramShape').value = `${ex.bram.width}x${ex.bram.depth}`; }
+}
+async function initExamples() {
+  try {
+    EX = await (await fetch('examples/index.json')).json();
+    $('example').replaceChildren(...EX.map(e => Object.assign(document.createElement('option'), { value: e.id, textContent: e.name })));
+    await loadExample(EX[0].id);
+  } catch (e) { logLine('ERROR: could not load examples: ' + e.message); }
+}
+$('example').onchange = () => loadExample($('example').value).catch(e => logLine('ERROR: ' + e.message));
+
+// ------------------------------------------------------------------ assembler (same module the server uses)
+$('asmBtn').onclick = () => {
+  files[cur] = ed.value; logEl.textContent = ''; errCount = 0; for (const k in errs) delete errs[k];
+  let bad = 0, words = 0;
+  for (const n of Object.keys(files).filter(f => f.endsWith('.asm'))) {
+    const r = assemble(files[n]);
+    if (!r.ok) { bad++; for (const e of r.errors) logLine(`${n}:${e.line}: ERROR: ${e.message}`); continue; }
+    words += r.words.length; logLine(`${n}: ${r.words.length} words, ${r.bytes} bytes -> ${n.slice(0, -4)}.hex`, 'st'); for (const l of listingText(r)) logLine('  ' + l, 'ls');
+  }
+  applyErrors(); showTab('log'); renderResTabs();
+  const st = $('status'); st.className = bad ? 'bad' : 'ok'; st.textContent = bad ? `assembly failed (${bad} file${bad > 1 ? 's' : ''})` : `assembled ${words} words`;
+};
+
+// ------------------------------------------------------------------ result tabs
+const TABS = [['log', 'Log'], ['report', 'Report'], ['schem', 'Schematic'], ['layout', 'Layout'], ['wave', 'Waveform'], ['formal', 'Formal']];
+let formalRes = null;
+let tab = 'log';
+function showTab(t) {
+  tab = t;
+  for (const [k] of TABS) $('p-' + k).classList.toggle('on', k === t);
+  renderResTabs(); if (t === 'schem' && schemDirty) drawSchem();
+  requestAnimationFrame(() => { layView.resize(); waveView.resize(); if (t === 'schem') fitSchem(); });
+}
+let errCount = 0;
+function renderResTabs() {
+  $('restabs').innerHTML = '';
+  for (const [k, label] of TABS) {
+    const b = document.createElement('button'); b.role = 'tab'; b.textContent = label; b.setAttribute('aria-selected', k === tab);
+    if (k === 'log' && errCount) { const i = document.createElement('i'); i.textContent = errCount; i.title = 'errors'; b.append(i); }
+    if (k === 'formal' && formalRes && formalRes.status !== 'PASS') { const i = document.createElement('i'); i.textContent = '!'; i.title = formalRes.status; b.append(i); }
+    b.onclick = () => showTab(k); $('restabs').append(b);
+  }
+}
+
+// ------------------------------------------------------------------ log
+const logEl = $('log');
+function logLine(text, cls = '') {
+  const d = document.createElement('div'); d.textContent = text;
+  if (!cls) cls = /error/i.test(text) ? 'er' : /warning/i.test(text) ? 'wa' : '';
+  if (cls === 'er' && !text.startsWith('ERROR: ')) { /* keep count of real errors only */ }
+  if (cls === 'er') { errCount++; const loc = errorLocation(text); if (loc) { d.classList.add('go'); d.title = 'Jump to source'; d.onclick = () => jumpTo(loc.file, loc.line); (errs[loc.file] ||= []).push({ line: loc.line, message: text.replace(/^.*?error:?\s*/i, '') || text }); if (loc.file === cur) applyErrors(); } }
+  d.className += ' ' + cls; d.dataset.k = cls || 'n'; if ($('errsOnly').checked && !cls) d.hidden = true;
+  logEl.append(d); if (logEl.scrollHeight - logEl.scrollTop - logEl.clientHeight < 80) logEl.scrollTop = logEl.scrollHeight;
+}
+$('errsOnly').onchange = () => { for (const d of logEl.children) d.hidden = $('errsOnly').checked && d.dataset.k === 'n'; };
+
+// ------------------------------------------------------------------ canvas view with pan/zoom
+class View {
+  constructor(canvas, draw) {
+    this.c = canvas; this.draw = draw; this.k = 1; this.tx = 0; this.ty = 0; this.ctx = canvas.getContext('2d'); this.dpr = 1;
+    new ResizeObserver(() => this.resize()).observe(canvas);
+    let drag = null;
+    canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture?.(e.pointerId); drag = { x: e.clientX, y: e.clientY }; });
+    canvas.addEventListener('pointerup', () => drag = null);
+    canvas.addEventListener('pointermove', e => {
+      if (drag) { this.tx += e.clientX - drag.x; this.ty += e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; this.redraw(); }
+      this.onhover?.(e);
+    });
+    canvas.addEventListener('pointerleave', () => this.onhover?.(null));
+    this.ready = true;
+  }
+  resize() { const r = this.c.getBoundingClientRect(); this.dpr = devicePixelRatio || 1; const w = Math.round(r.width * this.dpr), h = Math.round(r.height * this.dpr); if (!w || !h) return; if (this.c.width !== w || this.c.height !== h) { this.c.width = w; this.c.height = h; } this.redraw(); }
+  get w() { return this.c.width / this.dpr; } get h() { return this.c.height / this.dpr; }
+  redraw() { if (!this.c.width) return; this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0); this.ctx.clearRect(0, 0, this.w, this.h); this.draw(this.ctx, this); }
+  local(e) { const r = this.c.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; }
+}
+
+// ------------------------------------------------------------------ layout viewer
+let cellIdx = new Map(), cellByName = new Map(), bounds = { maxX: 0, maxY: 0 }, heatMax = 1;
+let cellSel = null, focus = null;      // focus = { cells } set when a critical-path row is clicked
+const sx = (v, x) => x * v.k + v.tx, sy = (v, y) => (bounds.maxY - y) * v.k + v.ty;
+const typeColor = t => t === 'ICESTORM_LC' ? css('--trace') : t === 'SB_IO' ? css('--ok') : css('--warn');
+// Where a cell is drawn inside its tile (screen px). Used for both drawing and click hit-testing.
+function cellRect(v, c) {
+  const k = v.k, s = Math.max(1.5, k * .13), m = /^lc(\d)$/.exec(c.bel), io = /^io(\d)$/.exec(c.bel);
+  if (m) { const n = +m[1]; return [sx(v, c.x + .12 + (n % 2) * .42), sy(v, c.y - .1 - (n >> 1) * .22), s * 2.4, s * 1.5]; }
+  if (io) return [sx(v, c.x + .15 + +io[1] * .4), sy(v, c.y - .3), s * 2.4, s * 2.4];
+  return [sx(v, c.x + .2), sy(v, c.y - .2), k * .6, k * .6];
+}
+const layView = new View($('cv-layout'), (g, v) => {
+  if (!layout) { g.fillStyle = css('--muted'); g.fillText('Run the flow to see placement and routing.', 16, 24); return; }
+  const k = v.k, ink = css('--ink'), line = css('--line'), hot = css('--hot'), W = v.w, H = v.h;
+  const vis = (x, y, w, h) => x + w > -20 && y + h > -20 && x < W + 20 && y < H + 20;
+  if ($('showHeat').checked) { g.fillStyle = hot; for (const [x, y, n] of layout.heat) { g.globalAlpha = .06 + .6 * n / heatMax; g.fillRect(sx(v, x), sy(v, y), k, k); } g.globalAlpha = 1; }
+  if (k > 7) { g.strokeStyle = line; g.lineWidth = 1; g.beginPath(); for (let x = 0; x <= bounds.maxX + 1; x++) { g.moveTo(sx(v, x), sy(v, -1)); g.lineTo(sx(v, x), sy(v, bounds.maxY)); } for (let y = 0; y <= bounds.maxY + 1; y++) { g.moveTo(sx(v, 0), sy(v, y - 1)); g.lineTo(sx(v, bounds.maxX + 1), sy(v, y - 1)); } g.stroke(); }
+  if (k > 55) { g.font = `${Math.min(11, k * .12)}px ${css('--mono')}`; g.fillStyle = css('--muted'); g.textAlign = 'left'; g.textBaseline = 'top';
+    for (let x = 0; x <= bounds.maxX; x++) for (let y = 0; y <= bounds.maxY; y++) { const px = sx(v, x), py = sy(v, y); if (vis(px, py, k, k)) g.fillText(`X${x} Y${y}`, px + 2, py + 1); } }
+  const drawNet = (n, style, w) => { g.strokeStyle = style; g.lineWidth = w; g.beginPath(); for (const e of n.edges) { g.moveTo(sx(v, e[0] + .5), sy(v, e[1] - .5)); g.lineTo(sx(v, e[2] + .5), sy(v, e[3] - .5)); } g.stroke(); };
+  if ($('showNets').checked) {
+    const hi = new Set(cellSel ? cellSel.conn.map(c => c[1]) : []), dim = netSel || cellSel;
+    g.globalAlpha = dim ? .12 : .35; for (const n of layout.nets) if (!rep?.criticalNets.has(n.name) && !hi.has(n.name)) drawNet(n, css('--trace'), 1); g.globalAlpha = 1;
+    for (const n of layout.nets) if (rep?.criticalNets.has(n.name)) drawNet(n, hot, 2);
+    for (const n of layout.nets) if (hi.has(n.name)) drawNet(n, ink, 2.5);
+    if (netSel) drawNet(netSel, ink, 3.5);
+  }
+  g.font = `${Math.min(10, k * .075)}px ${css('--mono')}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  for (const c of layout.cells) {
+    const [x, y, w, h] = cellRect(v, c); if (!vis(x, y, w, h)) continue;
+    g.fillStyle = typeColor(c.type); g.fillRect(x, y, w, h);
+    if (k > 110 && w > 16) { g.fillStyle = '#fff'; g.fillText(c.bel, x + w / 2, y + h / 2); }
+  }
+  const ring = (c, style, lw, pad) => { const [x, y, w, h] = cellRect(v, c); g.strokeStyle = style; g.lineWidth = lw; g.strokeRect(x - pad, y - pad, w + 2 * pad, h + 2 * pad); };
+  for (const c of focus?.cells || []) ring(c, hot, 2.5, 3);
+  if (cellSel) ring(cellSel, ink, 2, 2);
+});
+layView.fit = () => { if (!layout) return; const p = 1.5; layView.k = Math.max(2, Math.min(layView.w / (bounds.maxX + p), layView.h / (bounds.maxY + p))); layView.tx = (layView.w - (bounds.maxX + 1) * layView.k) / 2; layView.ty = (layView.h - (bounds.maxY + 1) * layView.k) / 2; layView.redraw(); };
+$('cv-layout').addEventListener('wheel', e => { e.preventDefault(); const [mx, my] = layView.local(e), f = e.deltaY < 0 ? 1.18 : 1 / 1.18; layView.tx = mx - (mx - layView.tx) * f; layView.ty = my - (my - layView.ty) * f; layView.k *= f; layView.redraw(); }, { passive: false });
+const tileAt = (v, mx, my) => [Math.floor((mx - v.tx) / v.k), bounds.maxY - Math.floor((my - v.ty) / v.k)];
+layView.onhover = e => {
+  const tip = $('tip'); if (!e || !layout) { tip.style.display = 'none'; return; }
+  const [mx, my] = layView.local(e), [tx, ty] = tileAt(layView, mx, my), cs = cellIdx.get(tx + ',' + ty);
+  if (!cs) { tip.style.display = 'none'; return; }
+  tip.textContent = `tile X${tx} Y${ty}\n` + cs.slice(0, 12).map(c => `${c.bel}  ${c.name}`).join('\n') + (cs.length > 12 ? `\n\u2026 +${cs.length - 12}` : '');
+  tip.style.display = 'block'; tip.style.left = Math.min(mx + 14, layView.w - 200) + 'px'; tip.style.top = (my + 14) + 'px';
+};
+// A click (not a drag) selects the cell under the pointer, or clears the selection on empty space.
+{ let down = null; const c = $('cv-layout');
+  c.addEventListener('pointerdown', e => { down = [e.clientX, e.clientY]; });
+  c.addEventListener('pointerup', e => {
+    if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 4 || !layout) { down = null; return; } down = null;
+    const [mx, my] = layView.local(e), [tx, ty] = tileAt(layView, mx, my), cs = cellIdx.get(tx + ',' + ty) || [];
+    let best = null, bd = 14;
+    for (const cell of cs) { const [x, y, w, h] = cellRect(layView, cell), d = Math.hypot(Math.max(x - mx, 0, mx - (x + w)), Math.max(y - my, 0, my - (y + h))); if (d < bd) { bd = d; best = cell; } }
+    best ? selectCell(best) : clearSelection();
+  });
+}
+function selectCell(c) { cellSel = c; netSel = null; focus = null; refreshSelection(); }
+function clearSelection() { cellSel = null; netSel = null; focus = null; refreshSelection(); }
+function refreshSelection() { renderCellInfo(); renderNetList(); layView.redraw(); }
+function renderCellInfo() {
+  const box = $('cellinfo'); box.replaceChildren();
+  if (!layout) return;
+  if (!cellSel) { box.textContent = 'Click a cell to see its connections.'; return; }
+  const c = cellSel, h = document.createElement('div'); h.className = 'ct'; h.textContent = c.name; h.title = c.name;
+  const sub = document.createElement('div'); sub.className = 'cs'; sub.textContent = `${c.type.replace(/^ICESTORM_/, '')} at X${c.x} Y${c.y} ${c.bel}` + (c.init ? `, LUT ${c.init}` : '');
+  box.append(h, sub);
+  for (const [port, net] of c.conn) {
+    const r = document.createElement('div'); r.className = 'cn'; r.textContent = `${port}  ${net}`; r.title = net;
+    const routed = layout.nets.find(n => n.name === net && n.edges.length); if (routed) { r.classList.add('lk'); r.onclick = () => { netSel = routed; focus = null; refreshSelection(); }; }
+    box.append(r);
+  }
+}
+function renderNetList() {
+  const q = $('netq').value.trim().toLowerCase(), box = $('nets'); box.innerHTML = '';
+  if (!layout) return;
+  const mine = new Set(cellSel ? cellSel.conn.map(c => c[1]) : []);
+  const list = layout.nets.filter(n => n.edges.length && n.name.toLowerCase().includes(q)).sort((a, b) => (mine.has(b.name) - mine.has(a.name)) || b.hops - a.hops).slice(0, 400);
+  for (const n of list) {
+    const d = document.createElement('div'); d.textContent = n.name; d.title = `${n.name}: ${n.hops} routing hops, ${n.edges.length} between tiles`; d.role = 'option';
+    if (rep?.criticalNets.has(n.name)) d.className = 'crit'; if (mine.has(n.name)) d.classList.add('mine'); if (netSel === n) d.classList.add('sel');
+    d.onclick = () => { netSel = netSel === n ? null : n; focus = null; refreshSelection(); }; box.append(d);
+  }
+}
+// Report > critical path row: jump here with the net highlighted and both end cells ringed.
+function focusCritical(p) {
+  if (!layout) return;
+  netSel = layout.nets.find(n => n.name === p.net) || null; cellSel = null;
+  focus = { cells: [p.fromCell, p.toCell].map(n => cellByName.get(n)).filter(Boolean) };
+  showTab('layout'); refreshSelection();
+}
+$('netq').oninput = () => renderNetList(); $('showNets').onchange = () => layView.redraw(); $('showHeat').onchange = () => layView.redraw(); $('fit1').onclick = () => layView.fit();
+function setLayout(l) {
+  layout = l; netSel = null; cellSel = null; focus = null; cellIdx = new Map(); cellByName = new Map();
+  for (const c of l.cells) { const k = c.x + ',' + c.y; (cellIdx.get(k) || cellIdx.set(k, []).get(k)).push(c); cellByName.set(c.name, c); }
+  bounds = layoutBounds(l); heatMax = Math.max(1, ...l.heat.map(h => h[2])); const lc = l.cells.filter(c => c.type === 'ICESTORM_LC').length;
+  $('layinfo').textContent = `${l.cells.length} cells (${lc} LC), ${l.nets.filter(n => n.edges.length).length} routed nets. Click a cell, wheel to zoom, drag to pan. Pink = critical path.`;
+  renderCellInfo(); renderNetList(); requestAnimationFrame(() => { layView.resize(); layView.fit(); });
+}
+
+// ------------------------------------------------------------------ schematic (RTL, from Yosys prep, drawn by netlistsvg)
+let rtl = null, schemDirty = false, schemRender = null, schemTok = 0, schemSvg = '';
+const sv = { k: 1, tx: 0, ty: 0, w: 0, h: 0 }, schemBox = $('schem'), schemImg = $('schem-img');
+const applySchem = () => { schemImg.style.transform = `translate(${sv.tx}px, ${sv.ty}px) scale(${sv.k})`; };
+function fitSchem() { const r = schemBox.getBoundingClientRect(); if (!sv.w || !r.width) return; sv.k = Math.min(r.width / sv.w, r.height / sv.h, 2) * .95; sv.tx = (r.width - sv.w * sv.k) / 2; sv.ty = (r.height - sv.h * sv.k) / 2; applySchem(); }
+schemBox.addEventListener('wheel', e => { e.preventDefault(); const r = schemBox.getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top, f = e.deltaY < 0 ? 1.18 : 1 / 1.18; sv.tx = mx - (mx - sv.tx) * f; sv.ty = my - (my - sv.ty) * f; sv.k *= f; applySchem(); }, { passive: false });
+{ let d = null; schemBox.addEventListener('pointerdown', e => { d = [e.clientX, e.clientY]; schemBox.setPointerCapture?.(e.pointerId); });
+  schemBox.addEventListener('pointermove', e => { if (!d) return; sv.tx += e.clientX - d[0]; sv.ty += e.clientY - d[1]; d = [e.clientX, e.clientY]; applySchem(); });
+  schemBox.addEventListener('pointerup', () => d = null); }
+function setRtl(text) {
+  rtl = null; schemSvg = '';
+  try { rtl = text ? JSON.parse(text) : null; } catch { rtl = null; }
+  const sel = $('schemMod'); sel.replaceChildren();
+  if (rtl) for (const n of Object.keys(rtl.modules).sort((a, b) => (!!rtl.modules[b].attributes?.top - !!rtl.modules[a].attributes?.top) || a.localeCompare(b)))
+    sel.append(Object.assign(document.createElement('option'), { value: n, textContent: n }));
+  schemDirty = true; if (tab === 'schem') drawSchem();
+}
+async function drawSchem() {
+  schemDirty = false; const msg = $('schem-msg'), my = ++schemTok;
+  if (!rtl) { msg.textContent = 'Run synthesis to see the schematic.'; schemImg.hidden = true; $('schemSave').hidden = true; return; }
+  const name = $('schemMod').value, mod = rtl.modules[name], n = Object.keys(mod.cells).length;
+  if (n > 800) { msg.textContent = `${name} has ${n} cells, too many to draw here. Choose a smaller module.`; schemImg.hidden = true; return; }
+  msg.textContent = `Drawing ${name} (${n} cells)\u2026`;
+  try {
+    schemRender ||= (await import('./vendor/schematic.js')).renderSchematic;
+    const svg = await schemRender({ modules: { [name]: mod } }); if (my !== schemTok) return;
+    schemSvg = svg; schemImg.onload = () => { sv.w = schemImg.naturalWidth; sv.h = schemImg.naturalHeight; schemImg.style.width = sv.w + 'px'; schemImg.style.height = sv.h + 'px'; fitSchem(); };
+    schemImg.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); schemImg.hidden = false; $('schemSave').hidden = false;
+    msg.textContent = `${name}: ${n} cells. Wheel to zoom, drag to pan. Pick another module to look inside an instance.`;
+  } catch (e) { if (my === schemTok) { msg.textContent = 'Could not draw the schematic: ' + (e.message || e); schemImg.hidden = true; } }
+}
+$('schemMod').onchange = drawSchem; $('fit3').onclick = fitSchem;
+$('schemSave').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([schemSvg], { type: 'image/svg+xml' })); a.download = `${$('schemMod').value}.svg`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+
+// ------------------------------------------------------------------ waveform viewer
+const NAMEW = 190, ROWH = 26, RULER = 24;
+let wv = { t0: 0, pxPer: 1, scroll: 0, cursor: null, sigs: [] };
+const waveView = new View($('cv-wave'), (g, v) => {
+  if (!wave) { g.fillStyle = css('--muted'); g.fillText('No waveform. Provide a testbench that writes wave.vcd.', 16, 24); return; }
+  const ink = css('--ink'), mut = css('--muted'), line = css('--line'), trace = css('--trace'), bad = css('--bad'), W = v.w, H = v.h;
+  g.font = '12px ' + css('--mono'); g.textBaseline = 'middle';
+  const X = t => NAMEW + (t - wv.t0) * wv.pxPer, T = x => wv.t0 + (x - NAMEW) / wv.pxPer;
+  const raw = [1, 2, 5]; let step = 1; outer: for (let p = 1; p < 1e15; p *= 10) for (const r of raw) if (r * p * wv.pxPer >= 80) { step = r * p; break outer; }
+  g.save(); g.beginPath(); g.rect(NAMEW, 0, W - NAMEW, H); g.clip();
+  g.strokeStyle = line; g.fillStyle = mut; g.textAlign = 'left';
+  for (let t = Math.ceil(T(NAMEW) / step) * step; X(t) < W; t += step) { g.beginPath(); g.moveTo(X(t), RULER - 4); g.lineTo(X(t), H); g.stroke(); g.fillText(t + wave.timescale.replace(/^1/, ''), X(t) + 3, 11); }
+  g.restore();
+  g.save(); g.beginPath(); g.rect(0, RULER, W, H - RULER); g.clip();
+  wv.sigs.forEach((s, i) => {
+    const y = RULER + i * ROWH - wv.scroll + 3, h = ROWH - 8; if (y + h < RULER || y > H) return;
+    g.fillStyle = ink; g.textAlign = 'left'; g.save(); g.beginPath(); g.rect(0, y - 3, NAMEW - 70, ROWH); g.clip(); g.fillText(s.name, 8, y + h / 2); g.restore();
+    if (wv.cursor != null) { g.fillStyle = mut; g.textAlign = 'right'; const val = valueAt(s, wv.cursor); g.fillText(s.width > 1 ? busToHex(val) : val, NAMEW - 8, y + h / 2); }
+    g.save(); g.beginPath(); g.rect(NAMEW, y - 3, W - NAMEW, ROWH); g.clip();
+    const c = s.changes, end = wave.end;
+    let lo = 0; { let a = 0, b = c.length - 1, r = 0; while (a <= b) { const m = (a + b) >> 1; if (c[m][0] <= T(NAMEW)) { r = m; a = m + 1; } else b = m - 1; } lo = r; }
+    g.lineWidth = 1.5; let prevY = null;
+    for (let j = lo; j < c.length && X(c[j][0]) < W; j++) {
+      const x0 = Math.max(NAMEW, X(c[j][0])), x1 = Math.min(W, X(j + 1 < c.length ? c[j + 1][0] : end)), val = c[j][1];
+      if (s.width === 1) {
+        const lv = val === '1' ? y : val === '0' ? y + h : y + h / 2, bit = val === 'x' ? bad : val === 'z' ? mut : trace;
+        g.strokeStyle = bit; g.beginPath(); if (prevY != null && X(c[j][0]) >= NAMEW) { g.moveTo(x0, prevY); g.lineTo(x0, lv); } else g.moveTo(x0, lv); g.lineTo(x1, lv); g.stroke(); prevY = lv;
+      } else {
+        g.strokeStyle = /[xz]/.test(val) ? bad : trace; g.beginPath(); g.moveTo(x0 + 2, y); g.lineTo(x1 - 2, y); g.lineTo(x1, y + h / 2); g.lineTo(x1 - 2, y + h); g.lineTo(x0 + 2, y + h); g.lineTo(x0, y + h / 2); g.closePath(); g.stroke();
+        if (x1 - x0 > 30) { g.fillStyle = ink; g.textAlign = 'center'; g.fillText(busToHex(val), (x0 + x1) / 2, y + h / 2); }
+      }
+    }
+    g.restore();
+  });
+  g.restore();
+  if (wv.cursor != null && X(wv.cursor) >= NAMEW) { g.strokeStyle = css('--hot'); g.lineWidth = 1; g.beginPath(); g.moveTo(X(wv.cursor), 0); g.lineTo(X(wv.cursor), H); g.stroke(); g.fillStyle = css('--hot'); g.textAlign = 'left'; g.fillText(Math.round(wv.cursor) + '', X(wv.cursor) + 4, H - 8); }
+  g.strokeStyle = line; g.beginPath(); g.moveTo(NAMEW, 0); g.lineTo(NAMEW, H); g.moveTo(0, RULER); g.lineTo(W, RULER); g.stroke();
+});
+waveView.fit = () => { if (!wave) return; wv.t0 = 0; wv.pxPer = Math.max(1e-9, (waveView.w - NAMEW - 16) / Math.max(1, wave.end)); wv.scroll = 0; waveView.redraw(); };
+function filterSigs() { const q = $('sigq').value.trim().toLowerCase(); wv.sigs = wave ? wave.signals.filter(s => s.name.toLowerCase().includes(q)).slice(0, 300) : []; waveView.redraw(); }
+$('sigq').oninput = filterSigs; $('fit2').onclick = () => waveView.fit();
+$('cv-wave').addEventListener('wheel', e => {
+  e.preventDefault(); if (!wave) return;
+  if (e.ctrlKey || e.metaKey) { const [mx] = waveView.local(e), f = e.deltaY < 0 ? 1.25 : .8, tAt = wv.t0 + (mx - NAMEW) / wv.pxPer; wv.pxPer *= f; wv.t0 = tAt - (mx - NAMEW) / wv.pxPer; }
+  else wv.scroll = Math.max(0, Math.min(Math.max(0, wv.sigs.length * ROWH - waveView.h + RULER), wv.scroll + e.deltaY));
+  waveView.redraw();
+}, { passive: false });
+{ let dr = null; const c = $('cv-wave');
+  c.addEventListener('pointerdown', e => { dr = e.clientX; });
+  window.addEventListener('pointerup', () => dr = null);
+  waveView.onhover = e => { if (!e || !wave) return; const [mx] = waveView.local(e); if (dr != null && e.buttons) { wv.t0 -= (e.clientX - dr) / wv.pxPer; dr = e.clientX; } wv.cursor = mx > NAMEW ? Math.max(0, wv.t0 + (mx - NAMEW) / wv.pxPer) : null; waveView.redraw(); };
+  // the generic View drag moves tx/ty which the wave view ignores; time panning is handled above
+}
+let waveSources = {};   // key -> { label, text }: the simulation and a formal counterexample can both be viewed
+function setWaveSources(src, pick) {
+  waveSources = src; const keys = Object.keys(src), sel = $('waveSrc');
+  sel.replaceChildren(...keys.map(k => Object.assign(document.createElement('option'), { value: k, textContent: src[k].label })));
+  $('waveSrcL').hidden = keys.length < 2;
+  if (!keys.length) { wave = null; filterSigs(); return; }
+  sel.value = keys.includes(pick) ? pick : keys[0]; setWave(src[sel.value].text, src[sel.value].label);
+}
+$('waveSrc').onchange = () => setWave(waveSources[$('waveSrc').value].text, waveSources[$('waveSrc').value].label);
+function setWave(text, label = '') {
+  wave = parseVCD(text); wv = { t0: 0, pxPer: 1, scroll: 0, cursor: null, sigs: [] };
+  $('waveinfo').textContent = `${label ? label + ': ' : ''}${wave.signals.length} signals, ${wave.end} ${wave.timescale.replace(/^1/, '')}; wheel: scroll, Ctrl+wheel: zoom, drag: pan`;
+  filterSigs(); requestAnimationFrame(() => { waveView.resize(); waveView.fit(); });
+}
+
+// ------------------------------------------------------------------ report
+function renderReport(r) {
+  const el = $('report'); el.innerHTML = '';
+  const h = (t) => { const e = document.createElement('h3'); e.textContent = t; el.append(e); };
+  const tbl = (head, rows) => { const t = document.createElement('table'); t.innerHTML = `<tr>${head.map(x => `<th>${x}</th>`).join('')}</tr>`; for (const row of rows) { const tr = document.createElement('tr'); for (const c of row) { const td = document.createElement('td'); if (c instanceof Node) td.append(c); else td.textContent = c; tr.append(td); } t.append(tr); } el.append(t); };
+  h('Timing');
+  if (!r.fmax.length) el.append(Object.assign(document.createElement('div'), { className: 'empty', textContent: 'No clocked paths found.' }));
+  else tbl(['Clock', 'Achieved', 'Target', ''], r.fmax.map(f => [f.clock, f.achieved.toFixed(2) + ' MHz', f.constraint + ' MHz', Object.assign(document.createElement('span'), { className: f.pass ? 'pass' : 'fail', textContent: f.pass ? 'PASS' : 'FAIL' })]));
+  h('Utilisation');
+  tbl(['Resource', 'Used', 'Available', ''], r.util.map(u => { const m = document.createElement('div'); m.className = 'meter'; m.innerHTML = `<b style="width:${Math.min(100, 100 * u.used / u.available)}%"></b>`; return [u.name, u.used, u.available, m]; }));
+  if (r.path.length) { h('Critical path'); tbl(['Type', 'Delay', 'From', 'To'], r.path.map(p => [p.type, (p.delay ?? 0).toFixed(2) + ' ns', p.from, p.to]));
+    [...el.querySelectorAll('table')].at(-1).querySelectorAll('tr:not(:first-child)').forEach((tr, i) => { tr.style.cursor = 'pointer'; tr.title = 'Show in layout'; tr.onclick = () => focusCritical(r.path[i]); }); }
+}
+
+// ------------------------------------------------------------------ formal result
+function renderFormal(f) {
+  formalRes = f; const el = $('formalrep'); el.replaceChildren();
+  const add = (tag, text, cls) => { const e = document.createElement(tag); e.textContent = text; if (cls) e.className = cls; el.append(e); return e; };
+  if (!f) { add('div', 'Tick Formal, then Run. Properties are written as assert() and cover() inside `ifdef FORMAL.', 'empty'); return; }
+  const head = add('h3', ''); const b = Object.assign(document.createElement('span'), { className: 'badge ' + f.status, textContent: f.status }); head.append(b, ` ${f.mode}, depth ${f.depth}`);
+  const goto = (file, line, msg) => { const d = add('div', msg, 'fl'); d.title = 'Jump to source'; d.onclick = () => jumpTo(file, line); };
+  if (f.error) add('p', f.error);
+  if (f.mode === 'bmc') {
+    if (f.status === 'PASS') add('p', `No assertion can fail in the first ${f.depth} clock cycles from reset, for any input the assumptions allow. This is a bounded check: it says nothing about cycles beyond ${f.depth}.`);
+    else if (f.status === 'FAIL') add('p', 'A solver found inputs that break an assertion. The counterexample is in the Waveform tab (Source: Formal).');
+  } else if (f.mode === 'prove') {
+    if (f.status === 'PASS') add('p', `Proven for all time: the assertions hold in every reachable state (k-induction, k = ${f.depth}).`);
+    else if (f.status === 'FAIL') add('p', 'Either an assertion can really fail, or it is true but not provable by induction alone, which needs a stronger invariant. Look at the counterexample: if it starts from a state the design can never reach, add an assert that rules that state out.');
+  } else if (f.status === 'PASS') add('p', 'Every cover() statement was reached.');
+  else add('p', 'At least one cover() statement was not reached within the depth: the situation may be impossible, or need more cycles.');
+  for (const x of f.failures) goto(x.file, x.line, `assertion at ${x.file}:${x.line} fails at step ${x.step}`);
+  for (const x of f.covers) x.reached ? goto(x.file, x.line, `cover at ${x.file}:${x.line} reached at step ${x.step}`) : goto(x.file, x.line, `cover at ${x.file}:${x.line} not reached`);
+  if (f.vcd) { const bt = add('button', f.mode === 'cover' ? 'Show the cover trace in Waveform' : 'Show the counterexample in Waveform'); bt.onclick = () => { $('waveSrc').value = 'formal'; $('waveSrc').onchange(); showTab('wave'); }; }
+}
+
+// ------------------------------------------------------------------ run
+let running = false, ctl = null;
+const cancel = () => ctl?.abort();
+async function run() {
+  if (running) return; files[cur] = ed.value;
+  const steps = [...($('stSynth').checked ? ['synth', 'pnr'] : []), ...($('stSim').checked ? ['sim'] : []), ...($('stFormal').checked ? ['formal'] : [])];
+  if (!steps.length) { $('status').className = 'bad'; $('status').textContent = 'enable synthesis, simulation or formal'; return; }
+  running = true;
+  layout = null; rep = null; wave = null; netSel = null; cellSel = null; focus = null; setRtl(null); renderCellInfo(); renderFormal(null); setWaveSources({});
+  for (const k in errs) delete errs[k]; applyErrors();   // never show results of an earlier run next to this one
+  $('report').innerHTML = '<div class="empty">Run the flow to see timing and utilisation.</div>'; $('layinfo').textContent = 'No layout yet'; renderNetList(); filterSigs(); layView.redraw();
+  const btn = $('run'), st = $('status'); btn.textContent = 'Cancel'; btn.classList.add('cancel'); st.className = ''; st.textContent = 'starting…'; ctl = new AbortController();
+  logEl.textContent = ''; errCount = 0; renderResTabs(); showTab('log'); $('dl').hidden = true;
+  const t0 = performance.now(), tick = setInterval(() => st.textContent = `${stage || 'running'} · ${((performance.now() - t0) / 1000).toFixed(1)}s`, 200); let stage = '';
+  const extras = Object.fromEntries(Object.entries(files).filter(([f]) => !CORE.includes(f)));
+  const body = { design: files['design.v'], tb: files['tb.v'], pcf: files['design.pcf'], files: extras, steps, top: $('top').value, formal: $('stFormal').checked ? { mode: $('fMode').value, depth: +$('fDepth').value, top: $('fTop').value.trim() || undefined } : undefined,
+    bram: $('useFast').checked && $('stSynth').checked && $('bramFile').value ? { file: $('bramFile').value, width: +$('bramShape').value.split('x')[0], depth: +$('bramShape').value.split('x')[1] } : undefined, device: $('device').value, package: $('package').value, freq: +$('freq').value };
+  let result = null, error = null, cancelled = false;
+  try {
+    const r = await fetch('/api/flow', { method: 'POST', body: JSON.stringify(body), signal: ctl.signal });
+    if (!r.ok) throw new Error(`server returned ${r.status}`);
+    const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
+    for (;;) {
+      const { done, value } = await rd.read(); if (done) break; buf += dec.decode(value, { stream: true });
+      let i; while ((i = buf.indexOf('\n')) >= 0) {
+        const ev = JSON.parse(buf.slice(0, i)); buf = buf.slice(i + 1);
+        if (ev.type === 'log') logLine(ev.text);
+        else if (ev.type === 'stage') { stage = ev.stage; logLine(`== ${ev.stage} ==`, 'st'); }
+        else if (ev.type === 'queued') logLine('Server busy, waiting in queue…', 'st');
+        else if (ev.type === 'result') { result = ev; if (ev.error) error = ev.error; }
+      }
+    }
+  } catch (e) { if (e.name === 'AbortError') cancelled = true; else error = e.message; }
+  clearInterval(tick); running = false; btn.textContent = 'Run flow'; btn.classList.remove('cancel'); ctl = null;
+  const total = ((performance.now() - t0) / 1000).toFixed(1);
+  if (cancelled) { logLine('Cancelled.', 'wa'); st.className = ''; st.textContent = `cancelled \u00b7 ${total}s`; renderResTabs(); return; }
+  if (error) { logLine('ERROR: ' + error); }
+  if (!result || !result.ok) { st.className = 'bad'; st.textContent = `failed${result?.failed ? ' at ' + result.failed : ''} · ${total}s`; renderResTabs(); return; }
+  const R = result.result; st.className = 'ok';
+  const extra = [R.formal ? `formal ${R.formal.status}` : '', R.fast ? `icebram ${R.fast.ms} ms${R.fast.hit ? ', cached build' : ''}` : ''].filter(Boolean).join(' \u00b7 ');
+  st.textContent = `done \u00b7 ${extra ? extra + ' \u00b7 ' : ''}${total}s`;
+  if (R.formal && R.formal.status !== 'PASS') st.className = 'bad';
+  if (R.report) { rep = summarizeReport(R.report); renderReport(rep); }
+  setRtl(R.rtl || null);
+  if (R.layout) setLayout(R.layout);
+  const sources = {}; if (R.vcd) sources.sim = { label: 'Simulation', text: R.vcd }; if (R.formal?.vcd) sources.formal = { label: 'Formal trace', text: R.formal.vcd };
+  const formalBad = R.formal && R.formal.status !== 'PASS';
+  setWaveSources(sources, formalBad && sources.formal ? 'formal' : 'sim');
+  renderFormal(R.formal || null);
+  for (const x of R.formal?.failures || []) { (errs[x.file] ||= []).push({ line: x.line, message: `assertion fails at step ${x.step}` }); } applyErrors();
+  if (R.bin) { const a = $('dl'); if (a.href) URL.revokeObjectURL(a.href); a.href = URL.createObjectURL(new Blob([Uint8Array.from(atob(R.bin), c => c.charCodeAt(0))])); a.download = `${R.top}.bin`; a.hidden = false; }
+  renderResTabs(); showTab(formalBad ? 'formal' : R.layout ? 'layout' : R.formal ? 'formal' : R.vcd ? 'wave' : 'log');
+}
+$('run').onclick = () => running ? cancel() : run();
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && running) cancel(); });
+
+renderFileTabs(); renderResTabs(); showTab('log');
+initExamples(); upgradeEditor();
+window.__app = { run, get files() { return files; }, get editor() { return impl; } }; // handy for debugging and tests

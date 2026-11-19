@@ -27,7 +27,7 @@
     { label: '03/b 記憶體', dir: '../03/b' },
     { label: '04 專案（hw）', dir: '../04/mult', dir2: '../04/fill' },
     { label: '05 CPU/電腦', dir: '../05' },
-    { label: '* 全鏈路（chain）', dir: 'gen/chain' },
+    { label: '* 全鏈路（chain＋sum）', dir: 'gen/chain', dir2: 'gen/sum' },
     { label: '06 RV32I 處理器', dir: 'Riscv32i' },
   ];
 

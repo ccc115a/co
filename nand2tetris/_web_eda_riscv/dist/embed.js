@@ -293,17 +293,11 @@ function assemble(asmText) {
   return { hack, bin };
 }
 
-/***** lib/asm/vm2asm.js *****/
-// VM → HACK 組語翻譯器（oracle＝08/vm2asm.c，單檔 byte 相容）
-// 每行 VM 前加 `// ` 註解、多檔才寫 bootstrap、return label 用全域計數器。
-// 多檔（bootstrap）模式下，`label/goto/if-goto` 標記加 `函式$` 前綴避免跨檔相撞
-// （跟上牌 _eda/vm2asm 一樣；C 版原樣輸出所以組不了多檔 OS）。
-
-let label_count = 0;
-let return_count = 0;
-let current_file = '';
-let scope = false;
-let cur_func = '';
+/***** lib/vm/vmparse.js *****/
+// VM 文字行共用解析（lib/asm/vm2asm.js＋lib/riscv/vm2riscv.js 共用）
+// 行為與原兩份內聯碼逐字一致；參數合法性檢查仍由各後端自理（兩邊規則不同：
+// vm2asm 要求所有帶參數 2 的行皆為整數，vm2riscv 只要求 push/pop/function/call）。
+// 本檔純 ESM、無 import，可被 tools/embed.js 直接綴合進瀏覽器。
 
 function trim(s) {
   let a = 0;
@@ -317,6 +311,38 @@ function removeComment(line) {
   const i = line.indexOf('//');
   return i >= 0 ? line.slice(0, i) : line;
 }
+
+/** 把已 trim 的非空行切成 { cmd, a1, a2, hasA2 }；a2 能轉整數就轉，否則留原文。 */
+function splitArgs(trimmed) {
+  const parts = trimmed.split(/\s+/);
+  return {
+    cmd: parts[0],
+    a1: parts[1] ?? '',
+    a2: Number.isInteger(Number(parts[2])) && parts[2] !== undefined ? Number(parts[2]) : parts[2] ?? '',
+    hasA2: parts[2] !== undefined,
+  };
+}
+
+/** 取檔名部分（含副檔名；去副檔名／消毒由各後端自理）。 */
+function fileBase(fn) {
+  const s = fn.replace(/\\/g, '/');
+  return s.slice(s.lastIndexOf('/') + 1);
+}
+
+
+/***** lib/asm/vm2asm.js *****/
+// VM → HACK 組語翻譯器（oracle＝08/vm2asm.c，單檔 byte 相容）
+// 每行 VM 前加 `// ` 註解、多檔才寫 bootstrap、return label 用全域計數器。
+// 多檔（bootstrap）模式下，`label/goto/if-goto` 標記加 `函式$` 前綴避免跨檔相撞
+// （跟上牌 _eda/vm2asm 一樣；C 版原樣輸出所以組不了多檔 OS）。
+// 行解析走共用 lib/vm/vmparse.js（與 vm2riscv 同一份）。
+
+
+let label_count = 0;
+let return_count = 0;
+let current_file = '';
+let scope = false;
+let cur_func = '';
 
 function writeArithmetic(out, command) {
   switch (command) {
@@ -451,11 +477,6 @@ function writeBootstrap(out) {
   writeCall(out, 'Sys.init', 0);
 }
 
-function basename(fn) {
-  const s = fn.replace(/\\/g, '/');
-  return s.slice(s.lastIndexOf('/') + 1);
-}
-
 function processCommand(out, cmd, a1, a2) {
   if (['add', 'sub', 'neg', 'eq', 'gt', 'lt', 'and', 'or', 'not'].includes(cmd)) {
     writeArithmetic(out, cmd);
@@ -482,7 +503,7 @@ function processCommand(out, cmd, a1, a2) {
 }
 
 function translateFile(out, filename, src) {
-  const base = basename(filename);
+  const base = fileBase(filename);
   let dot = base.lastIndexOf('.');
   if (dot < 0) dot = base.length;
   current_file = base.slice(0, dot);
@@ -493,11 +514,8 @@ function translateFile(out, filename, src) {
     const trimmed = trim(line);
     if (trimmed.length > 0) {
       out.push(`// ${trimmed}`);
-      const parts = trimmed.split(/\s+/);
-      const cmd = parts[0];
-      const a1 = parts[1] ?? '';
-      const a2 = Number.isInteger(Number(parts[2])) && parts[2] !== undefined ? Number(parts[2]) : parts[2] ?? '';
-      if (!Number.isInteger(a2) && parts[2] !== undefined) throw new Error(`參數 2 應為整數：${trimmed}`);
+      const { cmd, a1, a2, hasA2 } = splitArgs(trimmed);
+      if (!Number.isInteger(a2) && hasA2) throw new Error(`參數 2 應為整數：${trimmed}`);
       processCommand(out, cmd, a1, a2);
     }
   }
@@ -518,7 +536,7 @@ function translate(files) {
 /***** lib/riscv/vm2riscv.js *****/
 // VM → RISC-V 組語翻譯器（對應 lib/asm/vm2asm.js 的 RV32 版本）
 //
-// 目標：riscv/_web_tools 的 rvasm（RV32I+M）＋ rvemu；只用兩邊都懂的子集：
+// 目標：third_party/rvtools 的 rvasm（RV32I+M）＋ rvemu；只用兩邊都懂的子集：
 //   真指令 add/sub/slt/sltiu/and/or/xor/xori/lw/sw/addi/lui/jal/jalr/beq/bne/mul/div/ecall，
 //   偽指令 li/mv/j/jr/ret/call，指示 .text/.word，註解 `#`。
 // 每行 VM 前加 `# ` 註解、多檔才寫 bootstrap、return label 用全域計數器（與 vm2asm 同慣例）。
@@ -545,8 +563,9 @@ function translate(files) {
 // 顯示模式（translate 第二參數 { lenient: true }）照發 jal 並列在表頭僅供檢視。
 //
 // 注意：本檔包在 Vm2Rv 命名空間 IIFE 內——tools/embed.js 會把 lib/ 全部剝掉 import/export
-// 拼進同一全域作用域，本檔的 translate/trim/scope 等與 lib/asm/vm2asm.js 同名，
-// 不包起來會互相覆蓋（前例：tst.js 的 KEYWORDS 改名 TST_KEYWORDS）。
+// 拼進同一全域作用域，IIFE 內 symbols 不污染全域（前例：tst.js 的 KEYWORDS 改名 TST_KEYWORDS）。
+// 行解析走共用 lib/vm/vmparse.js（與 vm2asm 同一份；import 行會被 embed 剝掉，瀏覽器走全域）。
+
 
 const Vm2Rv = (() => {
 // 記憶體布局（byte 位址；rvemu 預設 256KB＝0x40000；程式從 0 載入，須＜TEMP_BASE）：
@@ -579,22 +598,8 @@ const fileIndex = new Map(); // sanitized file -> 輸入順序 k（static 位址
 const externalCalls = new Set(); // lenient 模式下未定義的 OS 呼叫（僅顯示用）
 let lenient = false;
 
-function trim(s) {
-  let a = 0;
-  let b = s.length;
-  while (a < b && /\s/.test(s[a])) a += 1;
-  while (b > a && /\s/.test(s[b - 1])) b -= 1;
-  return s.slice(a, b);
-}
-
-function removeComment(line) {
-  const i = line.indexOf('//');
-  return i >= 0 ? line.slice(0, i) : line;
-}
-
 function sanFile(fn) {
-  const s = fn.replace(/\\/g, '/');
-  const base = s.slice(s.lastIndexOf('/') + 1).replace(/\.[^.]*$/, '');
+  const base = fileBase(fn).replace(/\.[^.]*$/, '');
   const clean = base.replace(/[^A-Za-z0-9_]/g, '_') || 'File';
   return /^[0-9]/.test(clean) ? `F_${clean}` : clean;
 }
@@ -912,10 +917,7 @@ function translateFile(out, filename, src) {
     const trimmed = trim(line);
     if (trimmed.length > 0) {
       out.push(`# ${trimmed}`);
-      const parts = trimmed.split(/\s+/);
-      const cmd = parts[0];
-      const a1 = parts[1] ?? '';
-      const a2 = Number.isInteger(Number(parts[2])) && parts[2] !== undefined ? Number(parts[2]) : parts[2] ?? '';
+      const { cmd, a1, a2 } = splitArgs(trimmed);
       if ((cmd === 'push' || cmd === 'pop' || cmd === 'function' || cmd === 'call') && !Number.isInteger(a2)) {
         throw new Error(`參數 2 應為整數：${trimmed}`);
       }
@@ -3662,7 +3664,7 @@ class TopModel {
 /***** riscv toolchain (rvasm+rvemu) *****/
 const RvToolchain = (() => {
 
-/***** ../../riscv/_web_tools/lib/isa.js *****/
+/***** third_party/rvtools/isa.js *****/
 // lib/isa.js：RV32 指令集定義與編解碼原語（純 ES module、零依賴）。
 // 涵蓋 RV32I 全部真指令＋M 擴充 8 條＋fence/ecall/ebreak。
 
@@ -3894,7 +3896,7 @@ const INSTR_MAP = Object.fromEntries(INSTR.map(e => [e.mn, e]));
 const PSEUDO = ['nop', 'li', 'mv', 'not', 'neg', 'j', 'jr', 'ret', 'call'];
 
 
-/***** ../../riscv/_web_tools/lib/rvasm.js *****/
+/***** third_party/rvtools/rvasm.js *****/
 // lib/rvasm.js：RV32 組譯器（純 ES module、零依賴）。
 // assemble(src, {origin}) → {words, labels, listing, errors}；兩 pass；錯誤一律 throw（含行號）。
 
@@ -4282,7 +4284,7 @@ function packRange(bytes, o) {
 }
 
 
-/***** ../../riscv/_web_tools/lib/rvdis.js *****/
+/***** third_party/rvtools/rvdis.js *****/
 // lib/rvdis.js：RV32 反組譯器（純 ES module、零依賴）。
 // disassemble(words, origin) → string 陣列，每列 `addr8hex: word8hex  mn ops`。
 
@@ -4408,7 +4410,7 @@ function disassemble(words, origin = 0) {
 }
 
 
-/***** ../../riscv/_web_tools/lib/rvemu.js *****/
+/***** third_party/rvtools/rvemu.js *****/
 // lib/rvemu.js：RV32 模擬器（純 ES module、零依賴）。
 // 支援 INSTR 全部指令（含 M 擴充）；記憶體小端序；UART 位址 0x10000000。
 
@@ -4682,7 +4684,12 @@ return { assemble, disassemble, Emulator };
   };
   win.HackAsm = { D_MAP, C_MAP, J_MAP, PREDEFINED, parseAsmLine, code2binary, assemble };
   win.HackVm2Asm = { translate };
-  win.HackVm2Rv = { translate: Vm2Rv.translate };
+  win.HackVm2Rv = {
+    translate: Vm2Rv.translate,
+    STACK_BASE: Vm2Rv.STACK_BASE, TEMP_BASE: Vm2Rv.TEMP_BASE,
+    UART_BUF: Vm2Rv.UART_BUF, STATIC_BASE: Vm2Rv.STATIC_BASE,
+    STATIC_STRIDE: Vm2Rv.STATIC_STRIDE, MIRROR_BASE: Vm2Rv.MIRROR_BASE,
+  };
   win.HackRv = {
     assemble: RvToolchain.assemble,
     disassemble: RvToolchain.disassemble,

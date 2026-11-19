@@ -1,0 +1,37 @@
+// v0.7 裁剪版 Sys（gen/，非官方 12/Sys.jack）：
+// 官方 Sys.init 會呼叫 Output.init（內含 16K+ 字型資料），讓整個 OS 超過 Hack 的
+// 32K ROM 上限。此裁剪版跳過 Output/字型，只初始化被需要的模組（Math/Screen/
+// Keyboard/Memory），供「塞得進 32K ROM」的執行演示（如 Pong）使用。
+// 官方 8 檔全編的 byte-compat 證明仍以 M7.1 的 8/8 比對為準。
+class Sys {
+
+    /** 裁剪版初始化：Math → Screen → Keyboard → Memory → Main.main → 死迴圈。 */
+    function void init() {
+        do Memory.init();
+        do Math.init();
+        do Screen.init();
+        do Keyboard.init();
+        do Main.main();
+        do Sys.halt();
+        return;
+    }
+
+    function void halt() {
+        while (true) {}
+    }
+
+    function void wait(int duration) {
+        var int i;
+        var int j;
+        let i = 0;
+        while (i < duration) {
+            let j = 0;
+            while (j < 64) {
+                let j = j + 1;
+            }
+            let i = i + 1;
+        }
+        return;
+    }
+
+}

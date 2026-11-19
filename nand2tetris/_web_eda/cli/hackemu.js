@@ -3,6 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { Vm, KEY_LEFT, KEY_UP, KEY_RIGHT, KEY_DOWN } from '../lib/vm/hackemu.js';
+import { usageError, needVal, parseNonNeg, parseRange, parseMax } from './cliutil.js';
 
 const KEY_CODES = {
   newline: 128, backspace: 129, left: 130, up: 131, right: 132, down: 133,
@@ -34,8 +35,8 @@ function parseKeys(p) {
 function headless(args) {
   const file = args[0];
   if (!file) {
-    console.error('usage: node cli/hackemu.js --headless <file> [--max N] [--dump A,B] [--keys FILE] [--trace N]');
-    process.exit(2);
+    console.error('用法：node cli/hackemu.js --headless <file.bin|.hack> [--max N] [--dump A,B] [--keys F] [--trace N] [--img F]（A,B 可為十進位或 0x 十六進位，可重複；只支援 headless）');
+    process.exit(1);
   }
   let max = 100_000;
   let trace = 0;
@@ -44,15 +45,15 @@ function headless(args) {
   const dumps = [];
   let i = 1;
   while (i < args.length) {
-    if (args[i] === '--max') { max = Number(args[i + 1]); i += 2; }
+    if (args[i] === '--max') { max = parseMax(needVal(args, i, '--max')); i += 2; }
     else if (args[i] === '--dump') {
-      const toks = args[i + 1].split(',');
-      dumps.push([Number(toks[0]), Number(toks[1])]);
+      dumps.push(parseRange(needVal(args, i, '--dump')));
       i += 2;
     }
-    else if (args[i] === '--trace') { trace = Number(args[i + 1]); i += 2; }
-    else if (args[i] === '--keys') { keysPath = args[i + 1]; i += 2; }
-      else if (args[i] === '--img') { imgPath = args[i + 1]; i += 2; }
+    else if (args[i] === '--trace') { trace = parseNonNeg(needVal(args, i, '--trace')); i += 2; }
+    else if (args[i] === '--keys') { keysPath = needVal(args, i, '--keys'); i += 2; }
+    else if (args[i] === '--img') { imgPath = needVal(args, i, '--img'); i += 2; }
+    else if (args[i].startsWith('-')) usageError(`錯誤：未知選項 '${args[i]}'（用法見上）`);
     else i += 1;
   }
 
@@ -135,7 +136,7 @@ function headless(args) {
 const argv = process.argv.slice(2);
 const h = argv.indexOf('--headless');
 if (h < 0) {
-  console.error('hackemu 目前僅支援 headless：node cli/hackemu.js --headless <file> [--max N] …');
-  process.exit(2);
+  console.error('用法：node cli/hackemu.js --headless <file.bin|.hack> [--max N] [--dump A,B] [--keys F] [--trace N] [--img F]；目前僅支援 headless');
+  process.exit(1);
 }
 headless(argv.slice(h + 1));

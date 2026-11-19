@@ -1,6 +1,6 @@
 // VM → RISC-V 組語翻譯器（對應 lib/asm/vm2asm.js 的 RV32 版本）
 //
-// 目標：riscv/_web_tools 的 rvasm（RV32I+M）＋ rvemu；只用兩邊都懂的子集：
+// 目標：third_party/rvtools 的 rvasm（RV32I+M）＋ rvemu；只用兩邊都懂的子集：
 //   真指令 add/sub/slt/sltiu/and/or/xor/xori/lw/sw/addi/lui/jal/jalr/beq/bne/mul/div/ecall，
 //   偽指令 li/mv/j/jr/ret/call，指示 .text/.word，註解 `#`。
 // 每行 VM 前加 `# ` 註解、多檔才寫 bootstrap、return label 用全域計數器（與 vm2asm 同慣例）。
@@ -27,8 +27,10 @@
 // 顯示模式（translate 第二參數 { lenient: true }）照發 jal 並列在表頭僅供檢視。
 //
 // 注意：本檔包在 Vm2Rv 命名空間 IIFE 內——tools/embed.js 會把 lib/ 全部剝掉 import/export
-// 拼進同一全域作用域，本檔的 translate/trim/scope 等與 lib/asm/vm2asm.js 同名，
-// 不包起來會互相覆蓋（前例：tst.js 的 KEYWORDS 改名 TST_KEYWORDS）。
+// 拼進同一全域作用域，IIFE 內 symbols 不污染全域（前例：tst.js 的 KEYWORDS 改名 TST_KEYWORDS）。
+// 行解析走共用 lib/vm/vmparse.js（與 vm2asm 同一份；import 行會被 embed 剝掉，瀏覽器走全域）。
+
+import { trim, removeComment, splitArgs, fileBase } from '../vm/vmparse.js';
 
 export const Vm2Rv = (() => {
 // 記憶體布局（byte 位址；rvemu 預設 256KB＝0x40000；程式從 0 載入，須＜TEMP_BASE）：
@@ -61,22 +63,8 @@ const fileIndex = new Map(); // sanitized file -> 輸入順序 k（static 位址
 const externalCalls = new Set(); // lenient 模式下未定義的 OS 呼叫（僅顯示用）
 let lenient = false;
 
-function trim(s) {
-  let a = 0;
-  let b = s.length;
-  while (a < b && /\s/.test(s[a])) a += 1;
-  while (b > a && /\s/.test(s[b - 1])) b -= 1;
-  return s.slice(a, b);
-}
-
-function removeComment(line) {
-  const i = line.indexOf('//');
-  return i >= 0 ? line.slice(0, i) : line;
-}
-
 function sanFile(fn) {
-  const s = fn.replace(/\\/g, '/');
-  const base = s.slice(s.lastIndexOf('/') + 1).replace(/\.[^.]*$/, '');
+  const base = fileBase(fn).replace(/\.[^.]*$/, '');
   const clean = base.replace(/[^A-Za-z0-9_]/g, '_') || 'File';
   return /^[0-9]/.test(clean) ? `F_${clean}` : clean;
 }
@@ -394,10 +382,7 @@ function translateFile(out, filename, src) {
     const trimmed = trim(line);
     if (trimmed.length > 0) {
       out.push(`# ${trimmed}`);
-      const parts = trimmed.split(/\s+/);
-      const cmd = parts[0];
-      const a1 = parts[1] ?? '';
-      const a2 = Number.isInteger(Number(parts[2])) && parts[2] !== undefined ? Number(parts[2]) : parts[2] ?? '';
+      const { cmd, a1, a2 } = splitArgs(trimmed);
       if ((cmd === 'push' || cmd === 'pop' || cmd === 'function' || cmd === 'call') && !Number.isInteger(a2)) {
         throw new Error(`參數 2 應為整數：${trimmed}`);
       }
