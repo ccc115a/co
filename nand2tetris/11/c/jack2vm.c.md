@@ -27,7 +27,7 @@ C 語言實作的 Jack 編譯器最終版（單一檔案），具備完整的 BN
 | 6. Symbol Table 實作 | 305–366 | SymbolTable.py | `symbol_table_init`、`define`、`var_count`、`lookup` |
 | 7. VM Writer 實作 | 372–404 | VMWriter.py | 各種 VM 指令輸出函式 |
 | 8. Parser 實作 | 410–849 | Parser.py | 所有 `compile_xxx` 遞迴下降函式 |
-| 9. 主程式 | 855–898 | Compiler.py | `analyze_file`、`analyze_directory`、`main` |
+| 9. 主程式 | 855–899 | Compiler.py | `analyze_file`、`analyze_directory`、`main` |
 
 ### 整體呼叫流程
 
@@ -181,6 +181,9 @@ gcc -o jack2vm jack2vm.c
 ./jack2vm OS/Math.jack          # 編譯單一檔案
 ./jack2vm OS/                   # 編譯目錄下所有 .jack
 ```
+
+`analyze_directory` 只會挑選副檔名**正好**是 `.jack` 的檔案，因此同目錄下的
+`.jack.md` 說明檔不會被誤認為 Jack 原始碼。
 
 輸出的 `.vm` 檔案會寫入 `<原始路徑>/output/` 目錄。可在 VM Emulator 中載入執行，或與 Python 版的輸出做 diff 比對。
 

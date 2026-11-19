@@ -865,7 +865,8 @@ void analyze_directory(const char* dirpath) {
     if (!d) ERROR("Could not open directory");
     struct dirent* dir;
     while ((dir = readdir(d)) != NULL) {
-        if (strstr(dir->d_name, ".jack")) {
+        size_t len = strlen(dir->d_name);
+        if (len > 5 && strcmp(dir->d_name + len - 5, ".jack") == 0) {
             char filepath[MAX_PATH_LENGTH];
             snprintf(filepath, sizeof(filepath), "%s/%s", dirpath, dir->d_name);
             analyze_file(filepath);
@@ -886,7 +887,8 @@ int main(int argc, char* argv[]) {
     if (S_ISDIR(path_stat.st_mode)) {
         analyze_directory(path);
     } else {
-        if (strstr(path, ".jack")) {
+        size_t len = strlen(path);
+        if (len > 5 && strcmp(path + len - 5, ".jack") == 0) {
             analyze_file(path);
         } else {
             ERROR("Input must be a .jack file or a directory");
